@@ -64,6 +64,18 @@
       "linter": "eslint",
       "style": "scss",
       "unitTestRunner": "vitest-angular"
+    },
+     "@nx/angular:component": {
+      "style": "scss",
+      "inlineTemplate": false,
+      "inlineStyle": false,
+      "changeDetection": "OnPush",
+      "standalone": true
+    },
+    "@nx/angular:library": {
+      "style": "scss",
+      "standalone": true,
+      "publishable": true
     }
   }
 }

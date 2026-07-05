@@ -1,0 +1,21 @@
+{
+  "enabledPlugins": {
+    "commit-commands@claude-plugins-official": true,
+    "code-review@claude-plugins-official": true
+  },
+  "extraKnownMarketplaces": {
+    "nx-claude-plugins": {
+      "source": {
+        "source": "github",
+        "repo": "nrwl/nx-ai-agents-config"
+      }
+    }
+  },
+  "sandbox": {
+    "network": {
+      "allowedDomains": [
+        "www.google-analytics.com"
+      ]
+    }
+  }
+}

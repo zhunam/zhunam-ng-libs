@@ -21,18 +21,24 @@ export default [
             "@nx/enforce-module-boundaries": [
                 "error",
                 {
-                    enforceBuildableLibDependency: true,
-                    allow: [
-                        "^.*/eslint(\\.base)?\\.config\\.[cm]?[jt]s$"
-                    ],
-                    depConstraints: [
-                        {
-                            sourceTag: "*",
-                            onlyDependOnLibsWithTags: [
-                                "*"
-                            ]
-                        }
-                    ]
+                  enforceBuildableLibDependency: true,
+                  allow: [
+                    "^.*/eslint(\\.base)?\\.config\\.[cm]?[jt]s$"
+                  ],
+                  depConstraints: [
+                    {
+                      sourceTag: "type:app",
+                      onlyDependOnLibsWithTags: ["type:publishable", "type:shared"]
+                    },
+                    {
+                      sourceTag: "type:publishable",
+                      onlyDependOnLibsWithTags: ["type:shared"]
+                    },
+                    {
+                      sourceTag: "type:shared",
+                      onlyDependOnLibsWithTags: ["type:shared"]
+                    }
+                  ]
                 }
             ]
         }
