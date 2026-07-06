@@ -508,6 +508,46 @@ In this order, every time a new library is generated:
 6. Only then, generate the first component with
    `nx g @nx/angular:component`.
 
+## Commit conventions
+ 
+- Every commit follows Conventional Commits: `<type>: <imperative summary>`.
+- Types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `style`,
+  `build`, `perf`. No other prefixes.
+- A breaking change to a public API (see "Public API" and "Versioning and
+  releases") is marked with `!` after the type (e.g. `feat!:`) plus a
+  `BREAKING CHANGE:` footer explaining what changed and why.
+- The `/commit` command (commit-commands plugin) already generates
+  messages in this format by analyzing the diff — prefer it for routine
+  commits, write the message by hand only when more specific wording or a
+  breaking-change footer is needed.
+- Commit type prefixes and branch name prefixes serve different purposes
+  and are both used — one doesn't replace the other. Branch names organize
+  work in progress and get deleted after merge (see `/clean_gone`); commit
+  messages are permanent history and drive automatic changelog/SemVer
+  tooling. Losing the type from commits to keep it only in branch names
+  means that information disappears once the branch is deleted.
+- When merging a feature branch, prefer "squash and merge": intermediate
+  commits on the branch don't need strict type formatting, but the PR
+  title (which becomes the final commit message on the target branch)
+  must follow the Conventional Commits format above.
+  
+## Branching conventions
+ 
+- Branch names follow `<type>/<short-kebab-case-description>`, using the
+  same types as commits (e.g. `feat/data-grid-sorting`,
+  `fix/pagination-miscalculation`, `chore/eslint-config`).
+- When `/commit-push-pr` needs to create a branch, request this naming
+  explicitly if it isn't inferred correctly from the change.
+- Default flow: short-lived feature/fix branches off `main`, merged back
+  and deleted (`/clean_gone`). No permanent `develop` branch — this is a
+  solo/small-team npm library project, not a large coordinated release
+  train, so full Git Flow overhead isn't needed.
+- Exception: `release/<version>` or `hotfix/<version>` branches, cut from
+  a published version's git tag, are used only when a fix needs to ship
+  for an older published major version of a library while a newer major
+  is already in active development on `main`. This is the one case where
+  a longer-lived branch is justified
+
 ## Roadmap
 
 See `ROADMAP.md` for the full detail and the status of each phase. This
