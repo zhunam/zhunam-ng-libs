@@ -9,7 +9,7 @@ only reference it.
 - [x] Configure AI agents (`nx configure-ai-agents`)
 - [x] Install skills: angular-developer, frontend-design, commit-commands, code-review
 - [x] Write AGENTS.md / CLAUDE.md
-- [ ] Define v1 scope for the first library (pending: definition session)
+- [x] Define v1 scope for the first library (pending: definition session)
 
 ## Phase 1 — [First library name] v1
 
