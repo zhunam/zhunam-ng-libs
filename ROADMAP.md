@@ -11,26 +11,41 @@ only reference it.
 - [x] Write AGENTS.md / CLAUDE.md
 - [x] Define v1 scope for the first library (pending: definition session)
 
-## Phase 1 — [First library name] v1
+## Active phase
 
-Status: being defined.
+**Phase 1 — Data Grid v1** (in progress). Full detail — scope, API
+contract, tasks with file locations — lives in `libs/data-grid/ROADMAP.md`.
 
-The full detail (v1 scope, API contract, tasks) lives in
-`libs/<name>/ROADMAP.md`, not here — this root file only tracks which
-phase/library is the current focus.
+## Phases — full sequence
 
-## Backlog of future ideas (non-blocking)
+Each phase corresponds to one library. Only the active phase has its
+detailed breakdown written out (in its own `libs/<name>/ROADMAP.md`) —
+writing full task lists for phases months away tends to go stale before
+they're even started, so those stay as a one-line scope stub until their
+turn comes.
 
-- Data Grid — Freemium (core in zhunam-ng-libs, Pro in a separate private repo)
-- Dynamic Form Builder — Freemium + SaaS (paid persistence)
-- Financial/crypto dashboard — 100% free, not monetizable as a product
-- Modular auth system (Firebase/Supabase Auth) — 100% free
-- Client-side document (PDF) generator — Mostly free, possible template sales (Gumroad)
-- Real-time chat / notifications (embeddable Web Component) — Pure SaaS, main candidate for real revenue
-- Calendar with Google Calendar integration — Freemium UI + SaaS sync
+1. **Data Grid** — `libs/data-grid` — Freemium (core here, Pro in a
+   separate private repo) — **IN PROGRESS**
+2. **Dynamic Form Builder** — `libs/form-builder` — Freemium + SaaS (paid
+   persistence) — not started
+3. **Financial/crypto dashboard** — `apps/` (portfolio piece, not a
+   publishable lib) — 100% free, not monetizable as a product — not started
+4. **Modular auth system** — `libs/auth` (thin wrapper/starter around
+   Firebase/Supabase Auth) — 100% free — not started
+5. **Client-side document (PDF) generator** — `libs/pdf-generator` —
+   mostly free, possible template sales (Gumroad) — not started
+6. **Real-time chat / notifications** — `libs/chat-widget` (embeddable
+   Web Component) — pure SaaS, main candidate for real revenue — not started
+7. **Calendar with Google Calendar integration** — `libs/calendar` —
+   freemium UI + SaaS sync — not started
 
-> See the monetization definition conversation for the full reasoning
-> behind each classification.
+
+## Future ideas (not yet phased)
+
+Anything beyond the 7 above goes here first, unordered, until it's
+promoted into the numbered sequence above.
+
+- (none yet)
 
 ## Recurring maintenance notes
 

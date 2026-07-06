@@ -548,6 +548,17 @@ In this order, every time a new library is generated:
   is already in active development on `main`. This is the one case where
   a longer-lived branch is justified
 
+## Commit & branch suggestions
+
+- After finishing any change that warrants a commit, suggest the commit
+  message to use — Conventional Commits format, type included (see
+  "Commit conventions" above) — plus a short description of the change
+  when it adds useful context.
+- If at any point a new branch should be created (new feature/fix not
+  yet started on its own branch, or a `release`/`hotfix` branch per the
+  exception case above), say so explicitly and suggest the branch name
+  following "Branching conventions" above.
+
 ## Roadmap
 
 See `ROADMAP.md` for the full detail and the status of each phase. This

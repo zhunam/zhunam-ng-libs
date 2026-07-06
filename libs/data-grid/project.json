@@ -1,7 +1,7 @@
 {
   "name": "data-grid",
-  "$schema": "../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "data-grid/src",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/data-grid/src",
   "prefix": "lib",
   "projectType": "library",
   "release": {
@@ -11,19 +11,19 @@
       "fallbackCurrentVersionResolver": "disk"
     }
   },
-  "tags": ["scope:data-grid type:publishable"],
+  "tags": ["scope:data-grid", "type:publishable"],
   "targets": {
     "build": {
       "executor": "@nx/angular:package",
       "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
       "defaultConfiguration": "production",
       "options": {
-        "project": "data-grid/ng-package.json",
-        "tsConfig": "data-grid/tsconfig.lib.json"
+        "project": "libs/data-grid/ng-package.json",
+        "tsConfig": "libs/data-grid/tsconfig.lib.json"
       },
       "configurations": {
         "production": {
-          "tsConfig": "data-grid/tsconfig.lib.prod.json"
+          "tsConfig": "libs/data-grid/tsconfig.lib.prod.json"
         },
         "development": {}
       }
