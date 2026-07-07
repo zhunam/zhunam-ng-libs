@@ -1,13 +1,18 @@
-<table>
+<table translate="no">
   <thead>
     <tr>
       @for (column of columns(); track column.key) {
-        <th>{{ column.label }}</th>
+        <th (click)="sortBy(column)">
+          {{ column.label }}
+          @if (sortDirectionFor(column); as direction) {
+            <span>{{ direction === 'asc' ? '▲' : '▼' }}</span>
+          }
+        </th>
       }
     </tr>
   </thead>
   <tbody>
-    @for (row of data(); track $index) {
+    @for (row of sortedData(); track $index) {
       <tr>
         @for (column of columns(); track column.key) {
           <td>{{ row[column.key] }}</td>

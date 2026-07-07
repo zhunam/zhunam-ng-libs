@@ -27,7 +27,7 @@
       → `libs/data-grid/src/lib/data-grid/data-grid.ts` + `.html`
 - [x] Implement `data`/`columns` inputs, iterate rows/columns in template
       → same files as above
-- [ ] Sorting: header click + `computed()` for `sortedData`
+- [x] Sorting: header click + `computed()` for `sortedData`
       → `data-grid.ts`
 - [ ] Pagination: `computed()` for `paginatedData`/`totalPages` + nav controls
       → `data-grid.ts` + `.html`

@@ -13,7 +13,7 @@ export const mockUsers: User[] = [
 ];
 
 export const userColumns: ColumnConfig<User>[] = [
-  { key: 'nombre', label: 'Nombre' },
+  { key: 'nombre', label: 'Nombre', sortable: true },
   { key: 'email', label: 'Email' },
-  { key: 'rol', label: 'Rol' },
+  { key: 'rol', label: 'Rol', sortable: true },
 ];
