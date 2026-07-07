@@ -1,1 +1,18 @@
-<p>DataGrid works!</p>
+<table>
+  <thead>
+    <tr>
+      @for (column of columns; track column) {
+        <th>{{ column }}</th>
+      }
+    </tr>
+  </thead>
+  <tbody>
+    @for (row of rows; track row.email) {
+      <tr>
+        <td>{{ row.nombre }}</td>
+        <td>{{ row.email }}</td>
+        <td>{{ row.rol }}</td>
+      </tr>
+    }
+  </tbody>
+</table>

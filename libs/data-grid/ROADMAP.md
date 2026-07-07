@@ -23,22 +23,22 @@
       → `libs/data-grid/package.json`
 - [x] Create `ColumnConfig<T>`
       → `libs/data-grid/src/lib/models/column-config.ts`
-- [ ] Base component: static table with hardcoded data
-      → `libs/data-grid/src/lib/data-grid.component.ts` + `.html`
+- [x] Base component: static table with hardcoded data
+      → `libs/data-grid/src/lib/data-grid/data-grid.ts` + `.html`
 - [ ] Implement `data`/`columns` inputs, iterate rows/columns in template
       → same files as above
 - [ ] Sorting: header click + `computed()` for `sortedData`
-      → `data-grid.component.ts`
+      → `data-grid.ts`
 - [ ] Pagination: `computed()` for `paginatedData`/`totalPages` + nav controls
-      → `data-grid.component.ts` + `.html`
+      → `data-grid.ts` + `.html`
 - [ ] `rowClick` output
-      → `data-grid.component.ts`
+      → `data-grid.ts`
 - [ ] Encapsulated styles with CSS custom properties
-      → `data-grid.component.scss`
+      → `data-grid.scss`
 - [ ] Full JSDoc on the public API (`data`, `columns`, `pageSize`, `rowClick`)
-      → `data-grid.component.ts`
+      → `data-grid.ts`
 - [ ] Unit tests for sorting and pagination
-      → `data-grid.component.spec.ts`
+      → `data-grid.spec.ts`
 - [ ] Demo consuming the library
       → `apps/portfolio-showcase/src/app/pages/data-grid-demo/`
 - [ ] Public README (install, usage example, API table)
