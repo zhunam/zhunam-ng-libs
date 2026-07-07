@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { ColumnConfig } from '../models/column-config';
 
 @Component({
   selector: 'lib-data-grid',
@@ -7,13 +8,15 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
   styleUrl: './data-grid.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DataGrid {
-  // Temporary hardcoded data — replaced by the `data`/`columns` inputs in task 4.
-  protected readonly columns = ['Nombre', 'Email', 'Rol'];
+export class DataGrid<T> {
+  /**
+   * Data to render in the table.
+   * @default []
+   */
+  data = input<T[]>([]);
 
-  protected readonly rows = [
-    { nombre: 'Ana Torres', email: 'ana@example.com', rol: 'Admin' },
-    { nombre: 'Luis Pérez', email: 'luis@example.com', rol: 'Editor' },
-    { nombre: 'Marta Ruiz', email: 'marta@example.com', rol: 'Viewer' },
-  ];
+  /**
+   * Configuration of the columns to render, in display order.
+   */
+  columns = input.required<ColumnConfig<T>[]>();
 }

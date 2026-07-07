@@ -1,17 +1,17 @@
 <table>
   <thead>
     <tr>
-      @for (column of columns; track column) {
-        <th>{{ column }}</th>
+      @for (column of columns(); track column.key) {
+        <th>{{ column.label }}</th>
       }
     </tr>
   </thead>
   <tbody>
-    @for (row of rows; track row.email) {
+    @for (row of data(); track $index) {
       <tr>
-        <td>{{ row.nombre }}</td>
-        <td>{{ row.email }}</td>
-        <td>{{ row.rol }}</td>
+        @for (column of columns(); track column.key) {
+          <td>{{ row[column.key] }}</td>
+        }
       </tr>
     }
   </tbody>

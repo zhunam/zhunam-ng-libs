@@ -25,7 +25,7 @@
       → `libs/data-grid/src/lib/models/column-config.ts`
 - [x] Base component: static table with hardcoded data
       → `libs/data-grid/src/lib/data-grid/data-grid.ts` + `.html`
-- [ ] Implement `data`/`columns` inputs, iterate rows/columns in template
+- [x] Implement `data`/`columns` inputs, iterate rows/columns in template
       → same files as above
 - [ ] Sorting: header click + `computed()` for `sortedData`
       → `data-grid.ts`
