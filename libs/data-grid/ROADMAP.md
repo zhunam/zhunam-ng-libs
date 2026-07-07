@@ -29,7 +29,7 @@
       → same files as above
 - [x] Sorting: header click + `computed()` for `sortedData`
       → `data-grid.ts`
-- [ ] Pagination: `computed()` for `paginatedData`/`totalPages` + nav controls
+- [x] Pagination: `computed()` for `paginatedData`/`totalPages` + nav controls
       → `data-grid.ts` + `.html`
 - [ ] `rowClick` output
       → `data-grid.ts`

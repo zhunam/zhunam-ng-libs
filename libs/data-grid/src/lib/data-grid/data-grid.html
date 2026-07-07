@@ -12,7 +12,7 @@
     </tr>
   </thead>
   <tbody>
-    @for (row of sortedData(); track $index) {
+    @for (row of paginatedData(); track $index) {
       <tr>
         @for (column of columns(); track column.key) {
           <td>{{ row[column.key] }}</td>
@@ -21,3 +21,9 @@
     }
   </tbody>
 </table>
+
+<nav>
+  <button type="button" (click)="previousPage()" [disabled]="currentPage() === 1">Anterior</button>
+  <span>Página {{ currentPage() }} de {{ totalPages() }}</span>
+  <button type="button" (click)="nextPage()" [disabled]="currentPage() === totalPages()">Siguiente</button>
+</nav>

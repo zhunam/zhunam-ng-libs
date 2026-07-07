@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, input, signal } from '@angular/core';
 import { ColumnConfig } from '../models/column-config';
 
 type SortDirection = 'asc' | 'desc';
@@ -27,13 +27,18 @@ export class DataGrid<T> {
    */
   columns = input.required<ColumnConfig<T>[]>();
 
+  /**
+   * Number of rows rendered per page.
+   * @default 10
+   */
+  pageSize = input(10);
+
   private readonly sortState = signal<SortState<T> | null>(null);
 
-  /**
-   * `data()` sorted by the active column, or in its original order when
-   * nothing is sorted yet. Never mutates the array received via `data`.
-   */
-  protected readonly sortedData = computed(() => {
+  // 1-based so it maps directly to the "Página X de Y" label without an off-by-one translation.
+  protected readonly currentPage = signal(1);
+
+  private readonly sortedData = computed(() => {
     const state = this.sortState();
     const rows = this.data();
     if (!state) {
@@ -55,23 +60,56 @@ export class DataGrid<T> {
     });
   });
 
+  /**
+   * Total number of pages for the current `sortedData()` length and `pageSize()`.
+   * Always at least 1, so the page counter never shows a page 0 of 0.
+   */
+  protected readonly totalPages = computed(() =>
+    Math.max(1, Math.ceil(this.sortedData().length / this.pageSize())),
+  );
+
+  /**
+   * `sortedData()` sliced to the current page. Reads from `sortedData()`
+   * rather than `data()` so sorting is always applied before paginating.
+   */
+  protected readonly paginatedData = computed(() => {
+    const start = (this.currentPage() - 1) * this.pageSize();
+    return this.sortedData().slice(start, start + this.pageSize());
+  });
+
+  constructor() {
+    // Sorting, a new `data()`, or a different `pageSize()` can all shrink
+    // `totalPages()` below the page the user was on — fall back to page 1
+    // instead of rendering an empty page.
+    effect(() => {
+      if (this.currentPage() > this.totalPages()) {
+        this.currentPage.set(1);
+      }
+    });
+  }
+
   protected sortBy(column: ColumnConfig<T>): void {
     if (!column.sortable) {
       return;
     }
 
-    // TEMP DEBUG (task 5 sorting bug) — remove once the click/state mismatch is diagnosed.
-    console.log('[DataGrid] sortBy before:', this.sortState());
     this.sortState.update((state) =>
       state?.key === column.key
         ? { key: column.key, direction: state.direction === 'asc' ? 'desc' : 'asc' }
         : { key: column.key, direction: 'asc' },
     );
-    console.log('[DataGrid] sortBy after:', this.sortState());
   }
 
   protected sortDirectionFor(column: ColumnConfig<T>): SortDirection | null {
     const state = this.sortState();
     return state?.key === column.key ? state.direction : null;
+  }
+
+  protected previousPage(): void {
+    this.currentPage.update((page) => Math.max(1, page - 1));
+  }
+
+  protected nextPage(): void {
+    this.currentPage.update((page) => Math.min(this.totalPages(), page + 1));
   }
 }
