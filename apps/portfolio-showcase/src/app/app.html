@@ -1,12 +1,9 @@
-<!-- Temporary: moved to its own demo page in task 11 -->
-<div style="max-width:auto"> <!-- Temporary: pruebo el @container -->
-  <lib-data-grid
-    [data]="mockUsers"
-    [columns]="userColumns"
-    [pageSize]="3"
-    (rowClick)="onUserRowClick($event)"
-  />
-</div>
+<div class="flex min-h-screen flex-col">
+  <header class="border-b border-base-300 px-6 py-4">
+    <a routerLink="/" class="text-sm font-semibold tracking-tight hover:text-primary">Zhunam</a>
+  </header>
 
-<app-nx-welcome></app-nx-welcome>
-<router-outlet></router-outlet>
+  <main class="mx-auto w-full max-w-3xl flex-1 px-6 py-12">
+    <router-outlet />
+  </main>
+</div>

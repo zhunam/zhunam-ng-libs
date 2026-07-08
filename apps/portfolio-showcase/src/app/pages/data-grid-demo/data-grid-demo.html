@@ -1,0 +1,40 @@
+<div class="flex flex-col gap-8">
+  <header class="flex flex-col gap-2">
+    <h1 class="text-3xl font-bold tracking-tight">Data Grid</h1>
+    <p class="text-base-content/70">
+      Tabla con orden por columna, paginación client-side y selección de fila — probá clickeando un
+      header ordenable o una fila.
+    </p>
+  </header>
+
+  <section class="overflow-hidden rounded-box border border-base-300 bg-base-100 shadow-sm">
+    <lib-data-grid
+      [data]="users"
+      [columns]="columns"
+      [pageSize]="3"
+      (rowClick)="onUserRowClick($event)"
+    />
+  </section>
+
+  <section class="card bg-base-200">
+    <div class="card-body gap-3">
+      <h2 class="card-title text-base">Fila seleccionada</h2>
+      @if (selectedUser(); as user) {
+        <div class="flex items-center gap-4">
+          <div class="avatar placeholder">
+            <div class="w-10 rounded-full bg-primary text-primary-content">
+              <span>{{ user.nombre.charAt(0) }}</span>
+            </div>
+          </div>
+          <div class="flex flex-col">
+            <span class="font-medium">{{ user.nombre }}</span>
+            <span class="text-sm text-base-content/60">{{ user.email }}</span>
+          </div>
+          <span class="badge badge-primary badge-outline ml-auto">{{ user.rol }}</span>
+        </div>
+      } @else {
+        <p class="text-sm text-base-content/60">Todavía no clickeaste ninguna fila.</p>
+      }
+    </div>
+  </section>
+</div>
