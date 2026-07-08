@@ -46,7 +46,7 @@
       version pinning (tried 4.0.8, the declared peer — same failure);
       the only newer option is an Angular 22 major upgrade, out of scope
       here. Re-run `nx test data-grid` once upstream fixes land.
-- [ ] Demo consuming the library
+- [x] Demo consuming the library
       → `apps/portfolio-showcase/src/app/pages/data-grid-demo/`
 - [ ] Public README (install, usage example, API table)
       → `libs/data-grid/README.md`
