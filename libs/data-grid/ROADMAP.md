@@ -31,9 +31,9 @@
       → `data-grid.ts`
 - [x] Pagination: `computed()` for `paginatedData`/`totalPages` + nav controls
       → `data-grid.ts` + `.html`
-- [ ] `rowClick` output
+- [x] `rowClick` output
       → `data-grid.ts`
-- [ ] Encapsulated styles with CSS custom properties
+- [x] Encapsulated styles with CSS custom properties
       → `data-grid.scss`
 - [ ] Full JSDoc on the public API (`data`, `columns`, `pageSize`, `rowClick`)
       → `data-grid.ts`

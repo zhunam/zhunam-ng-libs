@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, effect, input, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { ColumnConfig } from '../models/column-config';
 
 type SortDirection = 'asc' | 'desc';
@@ -32,6 +40,13 @@ export class DataGrid<T> {
    * @default 10
    */
   pageSize = input(10);
+
+  /**
+   * Emitted when the user clicks a row.
+   * @example
+   * <lib-data-grid (rowClick)="onRowClick($event)" />
+   */
+  rowClick = output<T>();
 
   private readonly sortState = signal<SortState<T> | null>(null);
 
@@ -103,6 +118,21 @@ export class DataGrid<T> {
   protected sortDirectionFor(column: ColumnConfig<T>): SortDirection | null {
     const state = this.sortState();
     return state?.key === column.key ? state.direction : null;
+  }
+
+  protected ariaSortFor(column: ColumnConfig<T>): 'ascending' | 'descending' | 'none' {
+    const direction = this.sortDirectionFor(column);
+    if (direction === 'asc') {
+      return 'ascending';
+    }
+    if (direction === 'desc') {
+      return 'descending';
+    }
+    return 'none';
+  }
+
+  protected onRowClick(row: T): void {
+    this.rowClick.emit(row);
   }
 
   protected previousPage(): void {

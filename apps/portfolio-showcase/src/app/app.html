@@ -1,5 +1,12 @@
 <!-- Temporary: moved to its own demo page in task 11 -->
-<lib-data-grid [data]="mockUsers" [columns]="userColumns" [pageSize]="2" />
+<div style="max-width:auto"> <!-- Temporary: pruebo el @container -->
+  <lib-data-grid
+    [data]="mockUsers"
+    [columns]="userColumns"
+    [pageSize]="3"
+    (rowClick)="onUserRowClick($event)"
+  />
+</div>
 
 <app-nx-welcome></app-nx-welcome>
 <router-outlet></router-outlet>

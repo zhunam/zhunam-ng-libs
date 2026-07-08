@@ -1,29 +1,62 @@
-<table translate="no">
-  <thead>
-    <tr>
-      @for (column of columns(); track column.key) {
-        <th (click)="sortBy(column)">
-          {{ column.label }}
-          @if (sortDirectionFor(column); as direction) {
-            <span>{{ direction === 'asc' ? '▲' : '▼' }}</span>
-          }
-        </th>
-      }
-    </tr>
-  </thead>
-  <tbody>
-    @for (row of paginatedData(); track $index) {
+<div class="dg-table-wrapper">
+  <table translate="no" class="dg-table">
+    <thead>
       <tr>
         @for (column of columns(); track column.key) {
-          <td>{{ row[column.key] }}</td>
+          <th
+            class="dg-th"
+            [class.dg-th--sortable]="column.sortable"
+            [tabindex]="column.sortable ? 0 : null"
+            [attr.aria-sort]="column.sortable ? ariaSortFor(column) : null"
+            (click)="sortBy(column)"
+            (keydown.enter)="sortBy(column)"
+            (keydown.space)="$event.preventDefault(); sortBy(column)"
+          >
+            <span class="dg-th-content">
+              {{ column.label }}
+              @if (column.sortable) {
+                <span
+                  class="dg-sort-icon"
+                  [class.dg-sort-icon--active]="sortDirectionFor(column) !== null"
+                  [class.dg-sort-icon--desc]="sortDirectionFor(column) === 'desc'"
+                  aria-hidden="true"
+                  >▲</span
+                >
+              }
+            </span>
+          </th>
         }
       </tr>
-    }
-  </tbody>
-</table>
+    </thead>
+    <tbody>
+      @for (row of paginatedData(); track $index) {
+        <tr
+          class="dg-row"
+          tabindex="0"
+          (click)="onRowClick(row)"
+          (keydown.enter)="onRowClick(row)"
+          (keydown.space)="$event.preventDefault(); onRowClick(row)"
+        >
+          @for (column of columns(); track column.key) {
+            <td>{{ row[column.key] }}</td>
+          }
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
 
-<nav>
-  <button type="button" (click)="previousPage()" [disabled]="currentPage() === 1">Anterior</button>
-  <span>Página {{ currentPage() }} de {{ totalPages() }}</span>
-  <button type="button" (click)="nextPage()" [disabled]="currentPage() === totalPages()">Siguiente</button>
+<nav class="dg-pagination">
+  <button type="button" class="dg-page-btn" (click)="previousPage()" [disabled]="currentPage() === 1">
+    Anterior
+  </button>
+  <span class="dg-page-info">Página {{ currentPage() }} de {{ totalPages() }}</span>
+  <button
+    type="button"
+    class="dg-page-btn"
+    (click)="nextPage()"
+    [disabled]="currentPage() === totalPages()"
+  >
+    Siguiente
+  </button>
 </nav>
