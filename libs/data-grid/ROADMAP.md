@@ -38,7 +38,14 @@
 - [x] Full JSDoc on the public API (`data`, `columns`, `pageSize`, `rowClick`)
       → `data-grid.ts`
 - [ ] Unit tests for sorting and pagination
-      → `data-grid.spec.ts`
+      → `data-grid.spec.ts` — code written and compiles clean, but `nx test`
+      can't currently execute it in this workspace: a pre-existing Vitest
+      4.x / `@angular/build` 21.2.18 integration bug fails every project's
+      tests (confirmed on the untouched `portfolio-showcase` default spec
+      too) at the `angular:test-bed-init` virtual file. Not fixable via
+      version pinning (tried 4.0.8, the declared peer — same failure);
+      the only newer option is an Angular 22 major upgrade, out of scope
+      here. Re-run `nx test data-grid` once upstream fixes land.
 - [ ] Demo consuming the library
       → `apps/portfolio-showcase/src/app/pages/data-grid-demo/`
 - [ ] Public README (install, usage example, API table)
