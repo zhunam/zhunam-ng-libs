@@ -35,7 +35,7 @@
       → `data-grid.ts`
 - [x] Encapsulated styles with CSS custom properties
       → `data-grid.scss`
-- [ ] Full JSDoc on the public API (`data`, `columns`, `pageSize`, `rowClick`)
+- [x] Full JSDoc on the public API (`data`, `columns`, `pageSize`, `rowClick`)
       → `data-grid.ts`
 - [ ] Unit tests for sorting and pagination
       → `data-grid.spec.ts`

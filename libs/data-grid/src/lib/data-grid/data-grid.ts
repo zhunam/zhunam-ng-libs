@@ -32,6 +32,11 @@ export class DataGrid<T> {
 
   /**
    * Configuration of the columns to render, in display order.
+   * @example
+   * columns: ColumnConfig<User>[] = [
+   *   { key: 'name', label: 'Name', sortable: true },
+   *   { key: 'email', label: 'Email' },
+   * ];
    */
   columns = input.required<ColumnConfig<T>[]>();
 
