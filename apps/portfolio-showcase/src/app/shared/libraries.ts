@@ -11,7 +11,7 @@ export const libraries: LibraryEntry[] = [
   {
     name: 'Data Grid',
     importPath: '@zhunam/data-grid',
-    description: 'Tabla con orden por columna, paginación y selección de fila.',
+    description: 'Table with column sorting, pagination, and row selection.',
     route: '/data-grid',
     status: 'available',
   },

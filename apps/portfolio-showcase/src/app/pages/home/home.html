@@ -3,19 +3,18 @@
   <section class="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
     <div class="flex flex-col gap-6">
       <h1 class="text-5xl font-bold tracking-tight text-balance text-slate-900">
-        Angular libraries, built for
-        <span class="text-primary">real products</span>
+        Angular libraries, built for real products
       </h1>
       <p class="max-w-prose text-lg leading-relaxed text-pretty text-slate-600">
-        Cada componente se publica como una librería Angular independiente — standalone, tipada
-        con signals, lista para instalarse en tu propio proyecto tal como está.
+        Every component ships as an independent Angular library — standalone, signal-typed, ready
+        to install in your own project exactly as it is.
       </p>
       <div class="flex flex-wrap gap-3">
         <a
           routerLink="/data-grid"
           class="btn btn-primary transition-transform duration-200 ease-out hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
-          Ver Data Grid
+          View <span translate="no">Data Grid</span>
         </a>
         <a
           href="https://github.com/zhunam/zhunam-ng-libs"
@@ -48,14 +47,14 @@
   <section class="flex flex-col gap-6">
     <div class="flex flex-col gap-2">
       <h2 class="text-2xl font-bold tracking-tight text-slate-900">Library Explorer</h2>
-      <p class="text-slate-600">Expandiendo el ecosistema con primitivas listas para producción.</p>
+      <p class="text-slate-600">Expanding the ecosystem with production-ready primitives.</p>
     </div>
 
     <div class="flex max-w-2xl flex-col gap-4 rounded-box border border-slate-200 p-6">
-      <span class="badge badge-primary w-fit text-xs">Disponible</span>
+      <span class="badge badge-primary w-fit text-xs">Available</span>
 
       <div class="flex flex-col gap-1">
-        <h3 class="font-semibold text-slate-900">{{ dataGridLibrary.name }}</h3>
+        <h3 class="font-semibold text-slate-900" translate="no">{{ dataGridLibrary.name }}</h3>
         <p class="text-sm text-slate-600">{{ dataGridLibrary.description }}</p>
         <span class="font-mono text-xs text-slate-400">{{ dataGridLibrary.importPath }}</span>
       </div>
@@ -64,22 +63,22 @@
         <li class="flex gap-2">
           <span class="text-primary">&#10003;</span>
           <span
-            ><strong class="text-slate-900">Signal-based</strong> — inputs y outputs con la API de
-            signals de Angular.</span
+            ><strong class="text-slate-900">Signal-based</strong> — inputs and outputs built on
+            Angular's signals API.</span
           >
         </li>
         <li class="flex gap-2">
           <span class="text-primary">&#10003;</span>
           <span
-            ><strong class="text-slate-900">Container Queries</strong> — se adapta al contenedor
-            real, no al viewport.</span
+            ><strong class="text-slate-900">Container Queries</strong> — adapts to its real
+            container, not the viewport.</span
           >
         </li>
         <li class="flex gap-2">
           <span class="text-primary">&#10003;</span>
           <span
-            ><strong class="text-slate-900">Accesible</strong> — aria-sort, focus-visible y
-            navegación por teclado.</span
+            ><strong class="text-slate-900">Accessible</strong> — aria-sort, focus-visible, and
+            full keyboard navigation.</span
           >
         </li>
       </ul>
@@ -88,7 +87,7 @@
         [routerLink]="dataGridLibrary.route"
         class="btn btn-primary btn-sm mt-2 w-fit transition-transform duration-200 ease-out hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
       >
-        Ver demo completa →
+        View full demo →
       </a>
     </div>
 

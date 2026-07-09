@@ -1,20 +1,20 @@
 import { ColumnConfig } from '@zhunam/data-grid';
 
 export interface User {
-  nombre: string;
+  name: string;
   email: string;
-  rol: string;
+  role: string;
 }
 
 export const mockUsers: User[] = [
-  { nombre: 'Ana Torres', email: 'ana@example.com', rol: 'Admin' },
-  { nombre: 'Luis Pérez', email: 'luis@example.com', rol: 'Editor' },
-  { nombre: 'cuis Pérez', email: 'vuis@example.com', rol: 'sditor' },
-  { nombre: 'Marta Ruiz', email: 'marta@example.com', rol: 'Viewer' },
+  { name: 'Ana Torres', email: 'ana@example.com', role: 'Admin' },
+  { name: 'Luis Pérez', email: 'luis@example.com', role: 'Editor' },
+  { name: 'cuis Pérez', email: 'vuis@example.com', role: 'sditor' },
+  { name: 'Marta Ruiz', email: 'marta@example.com', role: 'Viewer' },
 ];
 
 export const userColumns: ColumnConfig<User>[] = [
-  { key: 'nombre', label: 'Nombre', sortable: true },
-  { key: 'email', label: 'Email' , sortable: true},
-  { key: 'rol', label: 'Rol', sortable: true },
+  { key: 'name', label: 'Name', sortable: true },
+  { key: 'email', label: 'Email', sortable: true },
+  { key: 'role', label: 'Role', sortable: true },
 ];

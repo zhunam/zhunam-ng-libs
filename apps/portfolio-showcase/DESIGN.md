@@ -78,7 +78,7 @@ This is a **product** surface (register confirmed in PRODUCT.md): a developer-hu
 **Key Characteristics:**
 - Pure white page background, no gray section fills — regions are separated by spacing and a single 1px hairline border, never by a `bg-slate-100` panel.
 - One accent (teal) used deliberately: primary actions, the one live status badge, focus rings. Never decoration for its own sake.
-- One type family, hierarchy from weight and size — a two-tone hero heading (ink + teal) is the one place color carries typographic emphasis.
+- One type family, hierarchy from weight and size only — never color. A title mixing an accent-colored word into an otherwise ink-colored sentence is the "generic AI landing page" tell; every heading in this system is a single color.
 - The one dark surface in the system — a console-styled install panel — is a deliberate, contained departure, not inconsistent theming; its accent tint is a *lighter* teal tuned separately for that background (the base teal fails contrast on dark).
 
 ## 2. Colors
@@ -86,7 +86,7 @@ This is a **product** surface (register confirmed in PRODUCT.md): a developer-hu
 A single accent over near-white, Tailwind's own Slate scale carrying every neutral — restrained by design, per the product register default and the brief's explicit "one accent" instruction.
 
 ### Primary
-- **Signal Teal** (`#2c5f5d`): the only accent. Used for primary buttons, the hero's emphasized word, the one "Disponible" / live-package badge, hover/focus states on links and cards. 7.24:1 against white in both directions (text-on-white and white-on-fill) — verified, not eyeballed.
+- **Signal Teal** (`#2c5f5d`): the only accent. Used for primary buttons, the one "Available" / live-package badge, hover/focus states on links and cards — never inside heading or body text. 7.24:1 against white in both directions (text-on-white and white-on-fill) — verified, not eyeballed.
 - **Signal Teal (on dark)** (`#8ba7a6`): a lightened variant used exclusively inside the console-styled install panel. The base Signal Teal measures only 2.47:1 against the panel's near-black background — this lighter tint (7.33:1) is the value that actually stays legible there. Two values, one hue, each scoped to the surface it's readable on.
 
 ### Neutral
@@ -109,14 +109,14 @@ A single accent over near-white, Tailwind's own Slate scale carrying every neutr
 **Character:** One system sans across the whole interface — no Google Fonts request. Evaluated against the brief's own ask (Hanken Grotesk/Inter vs. system-ui): the visual gain from a licensed grotesk over a modern OS system font is marginal on a product surface (Segoe UI Variable / San Francisco / Linux system sans are already well-drawn), while a Google Fonts load adds a second external origin, a render-blocking or FOUC-prone request, and an IP-logging third party — real costs for a "precise, credible" tool site with nothing to gain visually that weight/size hierarchy doesn't already deliver. The one monospace exception renders real code and real package identifiers only, never decoration.
 
 ### Hierarchy
-- **Hero Heading** (700, `text-5xl`/80px, 1.1 line-height, tight tracking, `text-wrap: balance`): one per page, home only. Two-tone: the emphasized closing phrase renders in Signal Teal, the rest in Ink — the single place in the system where color carries typographic weight.
-- **Section Heading** (700, `text-2xl`–`text-4xl`): "Live Playground", "Library Explorer", one per section.
+- **Hero Heading** (700, `text-5xl`/80px, 1.1 line-height, tight tracking, `text-wrap: balance`): one per page, home only. Single color (Ink) — no accent-colored word mixed into the sentence; that two-tone-title pattern reads as generic AI-landing-page scaffolding and is explicitly banned (see Do's and Don'ts).
+- **Section Heading** (700, `text-2xl`–`text-4xl`): "Live Demo", "Library Explorer", one per section.
 - **Body** (400, `text-base`–`text-lg`, 1.625 line-height, `max-w-prose`): descriptive paragraphs under a heading.
 - **Label** (600, `text-sm`): card titles, sidebar entries, the "Featured Project" section tag — sentence case, not uppercase-tracked (an uppercase eyebrow above every section is an explicit anti-pattern; this system uses normal-case bold labels instead).
 - **Mono Label** (500, `text-xs`): package identifiers (`@zhunam/data-grid`) and the usage code panel only.
 
 ### Named Rules
-**The Single-Face Rule.** No second typeface, licensed or system. Every hierarchy level is the same family; only weight, size, and (once, in the hero) color change.
+**The Single-Face Rule.** No second typeface, licensed or system. Every hierarchy level is the same family; only weight and size change — never color within a single heading or sentence.
 
 ## 4. Elevation
 
@@ -155,6 +155,7 @@ Flat by default, split by role exactly as before: a surface is either a **bounde
 Directly enforces PRODUCT.md's anti-references, plus two new rules this redesign introduced: no fabricated facts, and no gray section fills.
 
 ### Do:
+- **Do** keep every heading and sentence a single color (Ink). Signal Teal marks controls and status, never a word inside a title.
 - **Do** use Signal Teal as the only accent — one hue, used deliberately (primary actions, the live badge, focus rings).
 - **Do** separate sections with spacing and a single hairline border, never a gray background fill.
 - **Do** use the lightened `#8ba7a6` teal (not the base `#2c5f5d`) for any accent placed on the dark console panel.
@@ -162,6 +163,7 @@ Directly enforces PRODUCT.md's anti-references, plus two new rules this redesign
 - **Do** render "Coming Soon" library entries as non-interactive elements (`<span>`/`<div>`), never as a dead link.
 
 ### Don't:
+- **Don't** color part of a heading or sentence to create emphasis ("built for **real products**"-style two-tone titles). It's one of the most recognizable generic-AI-landing tells — every title stays one color; use weight or a separate element for emphasis instead.
 - **Don't** introduce a second accent color for status/info. One teal, two roles at most (filled = live, outlined = inactive), never a second hue.
 - **Don't** add a `bg-slate-100`/`bg-slate-200` fill to separate a section — that's the exact gray-panel pattern this redesign replaced.
 - **Don't** fabricate a version number, a build log, or a usage statistic ("v1.4.0", "42 entries", "Optimizing bundles...") for anything that isn't actually published or measured yet.
