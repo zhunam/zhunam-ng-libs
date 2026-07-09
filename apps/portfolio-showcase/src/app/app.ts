@@ -9,4 +9,5 @@ import { RouterLink, RouterOutlet } from '@angular/router';
 })
 export class App {
   protected title = 'portfolio-showcase';
+  protected readonly currentYear = new Date().getFullYear();
 }

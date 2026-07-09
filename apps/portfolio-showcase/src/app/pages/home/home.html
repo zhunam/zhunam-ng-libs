@@ -1,14 +1,126 @@
-<div class="flex flex-col gap-3">
-  <p class="text-sm font-medium tracking-wide text-base-content/50 uppercase">Portafolio</p>
-  <h1 class="text-4xl font-bold tracking-tight">Zhunam</h1>
-  <p class="max-w-prose text-base-content/70">
-    Librerías Angular reales, pensadas para instalarse en proyectos de terceros — no solo demos.
-  </p>
-</div>
+<div class="flex flex-col gap-24">
+  <!-- Hero -->
+  <section class="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
+    <div class="flex flex-col gap-6">
+      <h1 class="text-5xl font-bold tracking-tight text-balance text-slate-900">
+        Angular libraries, built for
+        <span class="text-primary">real products</span>
+      </h1>
+      <p class="max-w-prose text-lg leading-relaxed text-pretty text-slate-600">
+        Cada componente se publica como una librería Angular independiente — standalone, tipada
+        con signals, lista para instalarse en tu propio proyecto tal como está.
+      </p>
+      <div class="flex flex-wrap gap-3">
+        <a
+          routerLink="/data-grid"
+          class="btn btn-primary transition-transform duration-200 ease-out hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          Ver Data Grid
+        </a>
+        <a
+          href="https://github.com/zhunam/zhunam-ng-libs"
+          target="_blank"
+          rel="noopener"
+          class="btn btn-outline border-slate-300 text-slate-700 transition-colors duration-200 hover:border-primary hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          GitHub
+        </a>
+      </div>
+    </div>
 
-<a routerLink="/data-grid" class="card mt-8 w-fit bg-base-200 transition-colors hover:bg-base-300">
-  <div class="card-body">
-    <h2 class="card-title">Data Grid</h2>
-    <p class="text-sm text-base-content/60">Tabla con orden, paginación y selección de fila.</p>
-  </div>
-</a>
+    <div class="rounded-box bg-slate-900 p-6 font-mono text-sm text-slate-100 shadow-sm">
+      <p class="text-slate-400">$ npm install &#64;zhunam/data-grid</p>
+      <ul class="mt-4 flex flex-col gap-2">
+        <li class="flex items-center gap-2">
+          <span class="text-[#8ba7a6]">&#10003;</span> Standalone Angular component
+        </li>
+        <li class="flex items-center gap-2">
+          <span class="text-[#8ba7a6]">&#10003;</span> Signal-based inputs &amp; outputs
+        </li>
+        <li class="flex items-center gap-2">
+          <span class="text-[#8ba7a6]">&#10003;</span> Zero runtime dependencies
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Featured Project -->
+  <section class="flex flex-col gap-6">
+    <div class="flex flex-col gap-2">
+      <p class="text-sm font-semibold text-slate-900">Featured Project</p>
+      <span class="badge badge-primary w-fit font-mono text-xs">&#64;zhunam/data-grid</span>
+    </div>
+
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_280px]">
+      <div class="overflow-hidden rounded-box border border-slate-200 bg-base-100">
+        <lib-data-grid [data]="users" [columns]="columns" [pageSize]="3" />
+      </div>
+
+      <div class="flex flex-col gap-4 rounded-box border border-slate-200 p-6">
+        <h2 class="text-sm font-semibold text-slate-900">Technical Foundation</h2>
+        <ul class="flex flex-col gap-3 text-sm text-slate-600">
+          <li class="flex gap-2">
+            <span class="text-primary">&#10003;</span>
+            <span
+              ><strong class="text-slate-900">Signal-based</strong> — inputs y outputs con la API
+              de signals de Angular.</span
+            >
+          </li>
+          <li class="flex gap-2">
+            <span class="text-primary">&#10003;</span>
+            <span
+              ><strong class="text-slate-900">Container Queries</strong> — se adapta al contenedor
+              real, no al viewport.</span
+            >
+          </li>
+          <li class="flex gap-2">
+            <span class="text-primary">&#10003;</span>
+            <span
+              ><strong class="text-slate-900">Accesible</strong> — aria-sort, focus-visible y
+              navegación por teclado.</span
+            >
+          </li>
+        </ul>
+        <a
+          routerLink="/data-grid"
+          class="btn btn-primary btn-sm mt-2 w-fit transition-transform duration-200 ease-out hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          Ver demo completa →
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Library Explorer -->
+  <section class="flex flex-col gap-6">
+    <div class="flex flex-col gap-2">
+      <h2 class="text-2xl font-bold tracking-tight text-slate-900">Library Explorer</h2>
+      <p class="text-slate-600">Expandiendo el ecosistema con primitivas listas para producción.</p>
+    </div>
+
+    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      @for (lib of libraries; track lib.name) {
+        @if (lib.status === 'available') {
+          <a
+            [routerLink]="lib.route"
+            class="flex flex-col gap-3 rounded-box border border-slate-200 p-6 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          >
+            <span class="badge badge-primary w-fit text-xs">Disponible</span>
+            <h3 class="font-semibold text-slate-900">{{ lib.name }}</h3>
+            <p class="text-sm text-slate-600">{{ lib.description }}</p>
+            <span class="font-mono text-xs text-slate-400">{{ lib.importPath }}</span>
+          </a>
+        } @else {
+          <div class="flex flex-col gap-3 rounded-box border border-slate-200 p-6 opacity-60">
+            <span class="badge badge-outline w-fit border-slate-300 text-xs text-slate-500"
+              >Coming Soon</span
+            >
+            <h3 class="font-semibold text-slate-900">{{ lib.name }}</h3>
+            <p class="text-sm text-slate-600">{{ lib.description }}</p>
+            <span class="font-mono text-xs text-slate-400">{{ lib.importPath }}</span>
+          </div>
+        }
+      }
+    </div>
+  </section>
+</div>

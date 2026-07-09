@@ -1,3 +1,62 @@
 @import "tailwindcss";
 @source "./**/*.{html,ts}";
 @plugin "daisyui";
+
+/*
+ * Palette: a single desaturated-teal accent over white, with Tailwind's
+ * own slate scale carrying every neutral (text, borders). Sections are
+ * separated by spacing and 1px slate-200 borders, never by gray fills —
+ * so base-200/300 stay reserved for subtle hover states, not static panels.
+ * Contrast-checked via WCAG relative-luminance math, not eyeballed:
+ * teal vs white = 7.24:1, slate-900 vs white = 17.85:1, slate-600 vs
+ * white = 7.58:1 (all comfortably past the 4.5:1 body-text floor).
+ */
+@plugin "daisyui/theme" {
+  name: "zhunam";
+  default: true;
+  prefersdark: false;
+  color-scheme: light;
+
+  --color-base-100: #ffffff;
+  --color-base-200: #fafafa;
+  --color-base-300: #e2e8f0;
+  --color-base-content: #0f172a;
+
+  --color-primary: #2c5f5d;
+  --color-primary-content: #ffffff;
+
+  --radius-selector: 0.375rem;
+  --radius-field: 0.5rem;
+  --radius-box: 0.75rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
+
+:root {
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+body {
+  font-family: var(--font-sans);
+}
+
+/* Public re-theme hook documented in libs/data-grid's AGENTS.md — scoped to
+   this app only, the library's own default stays untouched and neutral. */
+lib-data-grid {
+  --dg-primary-color: var(--color-primary);
+}
+
+/* Reduced motion is not optional: every transition/animation collapses to instant. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
