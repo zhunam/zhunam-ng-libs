@@ -44,53 +44,6 @@
     </div>
   </section>
 
-  <!-- Featured Project -->
-  <section class="flex flex-col gap-6">
-    <div class="flex flex-col gap-2">
-      <p class="text-sm font-semibold text-slate-900">Featured Project</p>
-      <span class="badge badge-primary w-fit font-mono text-xs">&#64;zhunam/data-grid</span>
-    </div>
-
-    <div class="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_280px]">
-      <div class="overflow-hidden rounded-box border border-slate-200 bg-base-100">
-        <lib-data-grid [data]="users" [columns]="columns" [pageSize]="3" />
-      </div>
-
-      <div class="flex flex-col gap-4 rounded-box border border-slate-200 p-6">
-        <h2 class="text-sm font-semibold text-slate-900">Technical Foundation</h2>
-        <ul class="flex flex-col gap-3 text-sm text-slate-600">
-          <li class="flex gap-2">
-            <span class="text-primary">&#10003;</span>
-            <span
-              ><strong class="text-slate-900">Signal-based</strong> — inputs y outputs con la API
-              de signals de Angular.</span
-            >
-          </li>
-          <li class="flex gap-2">
-            <span class="text-primary">&#10003;</span>
-            <span
-              ><strong class="text-slate-900">Container Queries</strong> — se adapta al contenedor
-              real, no al viewport.</span
-            >
-          </li>
-          <li class="flex gap-2">
-            <span class="text-primary">&#10003;</span>
-            <span
-              ><strong class="text-slate-900">Accesible</strong> — aria-sort, focus-visible y
-              navegación por teclado.</span
-            >
-          </li>
-        </ul>
-        <a
-          routerLink="/data-grid"
-          class="btn btn-primary btn-sm mt-2 w-fit transition-transform duration-200 ease-out hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-        >
-          Ver demo completa →
-        </a>
-      </div>
-    </div>
-  </section>
-
   <!-- Library Explorer -->
   <section class="flex flex-col gap-6">
     <div class="flex flex-col gap-2">
@@ -98,29 +51,47 @@
       <p class="text-slate-600">Expandiendo el ecosistema con primitivas listas para producción.</p>
     </div>
 
-    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-      @for (lib of libraries; track lib.name) {
-        @if (lib.status === 'available') {
-          <a
-            [routerLink]="lib.route"
-            class="flex flex-col gap-3 rounded-box border border-slate-200 p-6 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+    <div class="flex max-w-2xl flex-col gap-4 rounded-box border border-slate-200 p-6">
+      <span class="badge badge-primary w-fit text-xs">Disponible</span>
+
+      <div class="flex flex-col gap-1">
+        <h3 class="font-semibold text-slate-900">{{ dataGridLibrary.name }}</h3>
+        <p class="text-sm text-slate-600">{{ dataGridLibrary.description }}</p>
+        <span class="font-mono text-xs text-slate-400">{{ dataGridLibrary.importPath }}</span>
+      </div>
+
+      <ul class="flex flex-col gap-2 text-sm text-slate-600">
+        <li class="flex gap-2">
+          <span class="text-primary">&#10003;</span>
+          <span
+            ><strong class="text-slate-900">Signal-based</strong> — inputs y outputs con la API de
+            signals de Angular.</span
           >
-            <span class="badge badge-primary w-fit text-xs">Disponible</span>
-            <h3 class="font-semibold text-slate-900">{{ lib.name }}</h3>
-            <p class="text-sm text-slate-600">{{ lib.description }}</p>
-            <span class="font-mono text-xs text-slate-400">{{ lib.importPath }}</span>
-          </a>
-        } @else {
-          <div class="flex flex-col gap-3 rounded-box border border-slate-200 p-6 opacity-60">
-            <span class="badge badge-outline w-fit border-slate-300 text-xs text-slate-500"
-              >Coming Soon</span
-            >
-            <h3 class="font-semibold text-slate-900">{{ lib.name }}</h3>
-            <p class="text-sm text-slate-600">{{ lib.description }}</p>
-            <span class="font-mono text-xs text-slate-400">{{ lib.importPath }}</span>
-          </div>
-        }
-      }
+        </li>
+        <li class="flex gap-2">
+          <span class="text-primary">&#10003;</span>
+          <span
+            ><strong class="text-slate-900">Container Queries</strong> — se adapta al contenedor
+            real, no al viewport.</span
+          >
+        </li>
+        <li class="flex gap-2">
+          <span class="text-primary">&#10003;</span>
+          <span
+            ><strong class="text-slate-900">Accesible</strong> — aria-sort, focus-visible y
+            navegación por teclado.</span
+          >
+        </li>
+      </ul>
+
+      <a
+        [routerLink]="dataGridLibrary.route"
+        class="btn btn-primary btn-sm mt-2 w-fit transition-transform duration-200 ease-out hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+      >
+        Ver demo completa →
+      </a>
     </div>
+
+    <p class="text-sm text-slate-500">More libraries coming soon.</p>
   </section>
 </div>
