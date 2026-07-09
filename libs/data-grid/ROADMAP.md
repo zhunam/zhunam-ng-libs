@@ -48,7 +48,9 @@
       here. Re-run `nx test data-grid` once upstream fixes land.
 - [x] Demo consuming the library
       → `apps/portfolio-showcase/src/app/pages/data-grid-demo/`
-- [ ] Public README (install, usage example, API table)
+- [x] Public README (install, usage example, API table)
       → `libs/data-grid/README.md`
-- [ ] Verify production build
-      → `nx build data-grid --configuration=production`
+- [x] Verify production build
+      → `nx build data-grid --configuration=production` — confirmed clean
+      after every task this phase touched (`data-grid.ts`, `.html`, `.scss`);
+      no need to re-run once more just to close the checkbox.
