@@ -24,12 +24,12 @@
     <nav aria-label="Breadcrumb" class="text-sm text-slate-500">
       <a routerLink="/" class="hover:text-primary"><span translate="no">Home</span></a>
       <span class="mx-1.5">/</span>
-      <span class="text-slate-900" translate="no">Data Grid</span>
+      <span class="text-base-content" translate="no">Data Grid</span>
     </nav>
 
     <header class="flex flex-col gap-3">
       <span class="text-primary font-bold w-fit font-mono text-2xl">&#64;zhunam/data-grid</span>
-      <h1 class="text-lg font-bold tracking-tight text-balance text-slate-900">Live Demo</h1>
+      <h1 class="text-lg font-bold tracking-tight text-balance text-base-content">Live Demo</h1>
       <p class="max-w-prose text-slate-600">
         Table with column sorting, client-side pagination, and row selection — try clicking a
         sortable header or a row.
@@ -47,7 +47,7 @@
       </section>
 
       <section class="rounded-box border border-slate-200 p-6">
-        <h2 class="mb-3 text-sm font-semibold text-slate-900" >Selected row</h2>
+        <h2 class="mb-3 text-sm font-semibold text-base-content" >Selected row</h2>
         @if (selectedUser(); as user) {
           <div class="flex items-center gap-4" translate="no">
             <div class="avatar avatar-placeholder">
@@ -56,7 +56,7 @@
               </div>
             </div>
             <div class="flex flex-col" >
-              <span class="font-medium text-slate-900">{{ user['name'] }}</span>
+              <span class="font-medium text-base-content">{{ user['name'] }}</span>
               <span class="text-sm text-slate-600">{{ user['email'] }}</span>
             </div>
             <span class="badge badge-outline ml-auto border-slate-300 text-slate-700" >{{ user['role'] }}</span>
@@ -69,7 +69,7 @@
 
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
       <section class="rounded-box border border-slate-200 p-6">
-        <h2 class="mb-1 text-sm font-semibold text-slate-900">Edit columns</h2>
+        <h2 class="mb-1 text-sm font-semibold text-base-content">Edit columns</h2>
         <p class="mb-3 text-xs text-slate-500">
           Valid JSON reshapes the table live — add, remove, or rename a column.
         </p>
@@ -80,7 +80,7 @@
           spellcheck="false"
           rows="10"
           aria-label="Data Grid columns as JSON"
-          class="w-full resize-y rounded-md border border-slate-200 p-3 font-mono text-xs text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          class="w-full resize-y rounded-md border border-slate-200 p-3 font-mono text-xs text-base-content focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         ></textarea>
         @if (columnsJsonError(); as error) {
           <p class="mt-2 text-xs text-red-600">{{ error }}</p>
@@ -88,7 +88,7 @@
       </section>
 
       <section class="rounded-box border border-slate-200 p-6">
-        <h2 class="mb-1 text-sm font-semibold text-slate-900">Edit data</h2>
+        <h2 class="mb-1 text-sm font-semibold text-base-content">Edit data</h2>
         <p class="mb-3 text-xs text-slate-500">Valid JSON updates the table instantly.</p>
         <textarea
           #usersInput
@@ -97,7 +97,7 @@
           spellcheck="false"
           rows="10"
           aria-label="Data Grid rows as JSON"
-          class="w-full resize-y rounded-md border border-slate-200 p-3 font-mono text-xs text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          class="w-full resize-y rounded-md border border-slate-200 p-3 font-mono text-xs text-base-content focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         ></textarea>
         @if (usersJsonError(); as error) {
           <p class="mt-2 text-xs text-red-600">{{ error }}</p>
@@ -105,9 +105,9 @@
       </section>
 
       <section class="rounded-box border border-slate-200 p-6">
-        <h2 class="mb-3 text-sm font-semibold text-slate-900">Usage</h2>
+        <h2 class="mb-3 text-sm font-semibold text-base-content mb-7">Usage</h2>
         <pre
-          class="overflow-x-auto rounded-md bg-slate-900 p-4 text-xs leading-relaxed text-slate-100"
+          class="overflow-x-auto rounded-md bg-base-content p-4 text-xs leading-relaxed text-slate-100"
         ><code class="font-mono">{{ usageSnippet }}</code></pre>
       </section>
     </div>
@@ -118,7 +118,7 @@
     <aside
       class="h-fit w-72 bg-base-100 border-0 shadow-none p-4 max-lg:border-r max-lg:border-slate-200 lg:sticky lg:top-6 lg:w-55 lg:rounded-box lg:border lg:border-slate-200"
     >
-      <h2 class="mb-3 text-sm font-semibold text-slate-900">Library Explorer</h2>
+      <h2 class="mb-3 text-sm font-semibold text-base-content">Library Explorer</h2>
       <nav class="flex flex-col gap-1">
         @for (lib of libraries; track lib.name) {
           @if (lib.route) {
