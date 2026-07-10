@@ -22,7 +22,7 @@
         class="group inline-flex items-center gap-2 text-sm font-semibold text-white transition-colors duration-200 hover:text-[#8ba7a6] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8ba7a6]"
       >
         Explore the libraries
-        <span class="transition-transform duration-200 group-hover:translate-x-1" aria-hidden="true">→</span>
+        <!-- <span class="transition-transform duration-200 group-hover:translate-x-1" aria-hidden="true">→</span> -->
       </a>
     </div>
   </section>
@@ -104,11 +104,28 @@
   <!-- FAQ -->
   <section class="flex flex-col gap-6">
     <div class="flex flex-col gap-2">
-      <h2 class="text-2xl font-bold tracking-tight text-slate-900">FAQ</h2>
-      <p class="text-slate-600">Honest answers to what you'd actually ask before installing this.</p>
+      <h2 class="text-2xl font-bold text-slate-900">FAQ</h2>
     </div>
 
-    <div class="flex flex-col divide-y divide-slate-200 border-y border-slate-200">
+    <div class="flex flex-col divide-y divide-slate-200">
+      <details class="group py-5">
+        <summary
+          class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          <span>How many libraries are here right now?</span>
+          <span
+            class="shrink-0 text-xl leading-none font-normal text-slate-400 transition-transform duration-200 ease-out group-open:rotate-45"
+            aria-hidden="true"
+            >+</span
+          >
+        </summary>
+        <p class="mt-3 text-slate-600">
+          Just one, <span translate="no"> Data Grid. </span> This site is built to host a growing
+          set of them, new ones show up in the Library Explorer above as they're finished, not
+          bundled into this one.
+        </p>
+      </details>
+
       <details class="group py-5">
         <summary
           class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
@@ -121,9 +138,9 @@
           >
         </summary>
         <p class="mt-3 text-slate-600">
-          Yes — <span translate="no">Data Grid</span> ships under the MIT license, free for any
-          use. Future libraries in this ecosystem may add optional paid Pro tiers for specific
-          advanced features, but there's no fixed timeline for that yet.
+          Yes, every library in this ecosystem ships under the MIT license, free for any use.
+          Some may add optional paid Pro tiers for specific advanced features down the line, but
+          there's no fixed timeline for that yet.
         </p>
       </details>
 
@@ -139,8 +156,9 @@
           >
         </summary>
         <p class="mt-3 text-slate-600">
-          <span class="font-mono text-sm">^20.0.0 || ^21.0.0 || ^22.0.0</span> — the peer
-          dependency range declared in the package, reviewed each time Angular ships a new major.
+          Every library here targets the same floor:
+          <span class="font-mono text-sm">^20.0.0 || ^21.0.0 || ^22.0.0</span>, reviewed each time
+          Angular ships a new major.
         </p>
       </details>
 
@@ -148,7 +166,7 @@
         <summary
           class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
-          <span>Why not just use Angular Material or AG Grid?</span>
+          <span>Why build these instead of using something like Angular Material?</span>
           <span
             class="shrink-0 text-xl leading-none font-normal text-slate-400 transition-transform duration-200 ease-out group-open:rotate-45"
             aria-hidden="true"
@@ -156,16 +174,11 @@
           >
         </summary>
         <p class="mt-3 text-slate-600">
-          Both are excellent at what they do, but often more than a project needs. AG Grid ships
-          200+ features and an enterprise licensing model; Angular Material means adopting its
-          whole design system and CDK. <span translate="no">Data Grid</span> covers the
-          in-between case — sorting, pagination, row selection — with no CSS framework dependency
-          and a small footprint. It's not a replacement for either when you actually need what
-          they offer.
+          Complete design systems are excellent, but they require adopting their entire visual language and CDK just to obtain a single component. Each library presented here focuses on a single problem, has no dependencies on CSS frameworks, and is small in size. They don't replace a complete design system when you really need one, but rather serve as an alternative when you don't.
         </p>
       </details>
 
-      <details class="group py-5">
+      <!-- <details class="group py-5">
         <summary
           class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
@@ -177,12 +190,13 @@
           >
         </summary>
         <p class="mt-3 text-slate-600">
-          It's v1 of the first library in this ecosystem, in active development. The core API —
-          sorting, pagination, row selection — is stable and exercised in this demo, but it
-          hasn't been published to npm yet or used in a production app outside this repo.
-          Evaluate accordingly.
+          <span translate="no">Data Grid</span>, the first library here, is v1 and in active
+          development — its core API (sorting, pagination, row selection) is stable and exercised
+          in this demo, but it hasn't shipped to npm yet or run in a production app outside this
+          repo. Evaluate accordingly; check the Library Explorer above for what's currently
+          available.
         </p>
-      </details>
+      </details> -->
     </div>
   </section>
 </div>
