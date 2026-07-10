@@ -1,9 +1,21 @@
 <div class="flex min-h-screen flex-col">
-  <header class="border-b border-slate-200 px-6 py-4">
-    <div class="mx-auto flex w-full max-w-6xl items-center justify-between">
+  <header
+    class="sticky top-0 z-50 h-16 border-b transition-colors duration-300"
+    [class]="
+      headerIsTransparent()
+        ? 'border-transparent bg-transparent'
+        : 'border-slate-200 bg-white/95 shadow-sm backdrop-blur-sm'
+    "
+  >
+    <div class="mx-auto flex h-full w-[90%] items-center justify-between">
       <a
         routerLink="/"
-        class="rounded-sm text-sm font-bold tracking-tight text-slate-900 transition-colors duration-200 hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+        class="rounded-sm text-sm font-bold tracking-tight transition-colors duration-300 focus-visible:outline-2 focus-visible:outline-offset-4"
+        [class]="
+          headerIsTransparent()
+            ? 'text-white hover:text-[#8ba7a6] focus-visible:outline-[#8ba7a6]'
+            : 'text-slate-900 hover:text-primary focus-visible:outline-primary'
+        "
       >
         <span translate="no">Zhunam</span>
       </a>
@@ -11,20 +23,25 @@
         href="https://github.com/zhunam/zhunam-ng-libs"
         target="_blank"
         rel="noopener"
-        class="rounded-sm text-sm font-medium text-slate-600 transition-colors duration-200 hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+        class="rounded-sm text-sm font-medium transition-colors duration-300 focus-visible:outline-2 focus-visible:outline-offset-4"
+        [class]="
+          headerIsTransparent()
+            ? 'text-slate-200 hover:text-[#8ba7a6] focus-visible:outline-[#8ba7a6]'
+            : 'text-slate-600 hover:text-primary focus-visible:outline-primary'
+        "
       >
         GitHub
       </a>
     </div>
   </header>
 
-  <main class="mx-auto w-full max-w-6xl flex-1 px-6 py-12">
+  <main class="mx-auto w-[90%] flex-1 px-6 py-12">
     <router-outlet />
   </main>
 
   <footer class="border-t border-slate-200 px-6 py-8">
     <div
-      class="mx-auto flex w-full max-w-6xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+      class="mx-auto flex w-[90%] flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
     >
       <p class="text-sm text-slate-600">
         <span translate="no">Zhunam</span> — Ariana Mora · {{ currentYear }} · MIT License

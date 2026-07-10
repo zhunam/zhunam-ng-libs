@@ -39,8 +39,15 @@
   --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   font-family: var(--font-sans);
+  /* Guards the hero's full-bleed (100vw) trick from introducing a horizontal
+     scrollbar on browsers that reserve layout space for it. */
+  overflow-x: hidden;
 }
 
 /* Public re-theme hook documented in libs/data-grid's AGENTS.md — scoped to

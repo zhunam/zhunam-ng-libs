@@ -1,6 +1,6 @@
-<div class="grid grid-cols-1 gap-10 lg:grid-cols-[240px_1fr]">
-  <aside class="flex flex-col gap-4">
-    <h2 class="text-sm font-semibold text-slate-900">Library Explorer</h2>
+<div class="grid grid-cols-1 gap-6 lg:grid-cols-[220px_1fr]">
+  <aside class="h-fit rounded-box border border-slate-200 p-4 lg:sticky lg:top-6">
+    <h2 class="mb-3 text-sm font-semibold text-slate-900">Library Explorer</h2>
     <nav class="flex flex-col gap-1">
       @for (lib of libraries; track lib.name) {
         @if (lib.route) {
@@ -17,7 +17,7 @@
     </nav>
   </aside>
 
-  <div class="flex flex-col gap-8">
+  <div class="flex min-w-0 flex-col gap-8">
     <nav aria-label="Breadcrumb" class="text-sm text-slate-500">
       <a routerLink="/" class="hover:text-primary"><span translate="no">Portfolio</span></a>
       <span class="mx-1.5">/</span>
@@ -33,33 +33,71 @@
       </p>
     </header>
 
-    <section class="overflow-hidden rounded-box border border-slate-200 bg-base-100">
-      <lib-data-grid
-        [data]="users"
-        [columns]="columns"
-        [pageSize]="3"
-        (rowClick)="onUserRowClick($event)"
-      />
-    </section>
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
+      <section class="overflow-hidden rounded-box border border-slate-200 bg-base-100">
+        <lib-data-grid
+          [data]="users()"
+          [columns]="columns()"
+          [pageSize]="3"
+          (rowClick)="onUserRowClick($event)"
+        />
+      </section>
 
-    <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
       <section class="rounded-box border border-slate-200 p-6">
         <h2 class="mb-3 text-sm font-semibold text-slate-900">Selected row</h2>
         @if (selectedUser(); as user) {
           <div class="flex items-center gap-4">
             <div class="avatar avatar-placeholder">
               <div class="w-10 rounded-full bg-primary text-primary-content">
-                <span>{{ user.name.charAt(0) }}</span>
+                <span>{{ initial(user) }}</span>
               </div>
             </div>
             <div class="flex flex-col">
-              <span class="font-medium text-slate-900">{{ user.name }}</span>
-              <span class="text-sm text-slate-600">{{ user.email }}</span>
+              <span class="font-medium text-slate-900">{{ user['name'] }}</span>
+              <span class="text-sm text-slate-600">{{ user['email'] }}</span>
             </div>
-            <span class="badge badge-outline ml-auto border-slate-300 text-slate-700">{{ user.role }}</span>
+            <span class="badge badge-outline ml-auto border-slate-300 text-slate-700">{{ user['role'] }}</span>
           </div>
         } @else {
           <p class="text-sm text-slate-500">You haven't clicked a row yet.</p>
+        }
+      </section>
+    </div>
+
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <section class="rounded-box border border-slate-200 p-6">
+        <h2 class="mb-1 text-sm font-semibold text-slate-900">Edit columns</h2>
+        <p class="mb-3 text-xs text-slate-500">
+          Valid JSON reshapes the table live — add, remove, or rename a column.
+        </p>
+        <textarea
+          #columnsInput
+          [value]="columnsJsonText()"
+          (input)="onColumnsJsonInput(columnsInput.value)"
+          spellcheck="false"
+          rows="10"
+          aria-label="Data Grid columns as JSON"
+          class="w-full resize-y rounded-md border border-slate-200 p-3 font-mono text-xs text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        ></textarea>
+        @if (columnsJsonError(); as error) {
+          <p class="mt-2 text-xs text-red-600">{{ error }}</p>
+        }
+      </section>
+
+      <section class="rounded-box border border-slate-200 p-6">
+        <h2 class="mb-1 text-sm font-semibold text-slate-900">Edit data</h2>
+        <p class="mb-3 text-xs text-slate-500">Valid JSON updates the table instantly.</p>
+        <textarea
+          #usersInput
+          [value]="usersJsonText()"
+          (input)="onUsersJsonInput(usersInput.value)"
+          spellcheck="false"
+          rows="10"
+          aria-label="Data Grid rows as JSON"
+          class="w-full resize-y rounded-md border border-slate-200 p-3 font-mono text-xs text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        ></textarea>
+        @if (usersJsonError(); as error) {
+          <p class="mt-2 text-xs text-red-600">{{ error }}</p>
         }
       </section>
 
