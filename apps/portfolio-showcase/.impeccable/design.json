@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-09T00:00:00.000Z",
+  "title": "Design System: Zhunam Portfolio Showcase",
+  "extensions": {
+    "colorMeta": {
+      "signal-teal": {
+        "role": "primary",
+        "displayName": "Signal Teal",
+        "canonical": "#2c5f5d",
+        "tonalRamp": ["#070e0e", "#0f2121", "#1a3938", "#25514f", "#4c7775", "#809f9e", "#b5c7c6", "#dfe7e7"]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#0f172a",
+        "tonalRamp": ["#020306", "#05080f", "#090e19", "#0d1424", "#333a4a", "#6f747f", "#abaeb4", "#dbdcdf"]
+      },
+      "vellum": {
+        "role": "neutral",
+        "displayName": "Vellum",
+        "canonical": "#ffffff",
+        "tonalRamp": ["#f5f5f5", "#eeeeee", "#e2e8f0", "#cbd5e1", "#94a3b8", "#64748b", "#475569", "#0f172a"]
+      }
+    },
+    "typographyMeta": {
+      "heading": { "displayName": "Hero Heading", "purpose": "One per page, home only. Two-tone: closing phrase in Signal Teal." },
+      "body": { "displayName": "Body", "purpose": "Descriptive paragraphs under a heading, capped at max-w-prose." },
+      "label": { "displayName": "Label", "purpose": "Card titles, sidebar entries, section tags — sentence case, never uppercase-tracked." },
+      "mono-label": { "displayName": "Mono Label", "purpose": "Real package identifiers and the usage code panel only." }
+    },
+    "shadows": [
+      { "name": "raised-card", "value": "daisyUI depth:1 (generated)", "purpose": "Reserved for interactive destinations only (Library Explorer cards, buttons) — not static content panels." }
+    ],
+    "motion": [
+      { "name": "ease-standard", "value": "ease-out, 200ms", "purpose": "Default for color/border/transform transitions on hover and focus." }
+    ],
+    "breakpoints": []
+  },
+  "components": [
+    {
+      "name": "Bounded Panel",
+      "kind": "card",
+      "refersTo": "card-bounded",
+      "description": "Static content region — table wrapper, selected-row panel, usage-code panel. Hairline border, no shadow, no gray fill.",
+      "html": "<section class=\"ds-panel\">\n  <h2 class=\"ds-panel-title\">Fila seleccionada</h2>\n  <p class=\"ds-panel-text\">Todavía no clickeaste ninguna fila.</p>\n</section>",
+      "css": ".ds-panel { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 1.5rem; } .ds-panel-title { font-size: 0.875rem; font-weight: 600; color: #0f172a; margin: 0 0 0.75rem; } .ds-panel-text { font-size: 0.875rem; color: #64748b; margin: 0; }"
+    },
+    {
+      "name": "Interactive Card",
+      "kind": "card",
+      "refersTo": "card-interactive",
+      "description": "Library Explorer card for an available library — the only card type that lifts/shadows on hover.",
+      "html": "<a href=\"#\" class=\"ds-card\">\n  <span class=\"ds-badge-signal\">Disponible</span>\n  <h3 class=\"ds-card-title\">Data Grid</h3>\n  <p class=\"ds-card-text\">Tabla con orden, paginación y selección de fila.</p>\n  <span class=\"ds-card-mono\">&#64;zhunam/data-grid</span>\n</a>",
+      "css": ".ds-card { display: flex; flex-direction: column; gap: 0.75rem; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 1.5rem; text-decoration: none; transition: border-color 0.2s ease-out, transform 0.2s ease-out; } .ds-card:hover { border-color: #2c5f5d; transform: translateY(-2px); } .ds-card:focus-visible { outline: 2px solid #2c5f5d; outline-offset: 2px; } .ds-card-title { font-size: 1rem; font-weight: 600; color: #0f172a; margin: 0; } .ds-card-text { font-size: 0.875rem; color: #475569; margin: 0; } .ds-card-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.75rem; color: #94a3b8; }"
+    },
+    {
+      "name": "Signal Badge",
+      "kind": "chip",
+      "refersTo": "badge-signal",
+      "description": "Filled teal pill for the one live/actionable fact in a given context (package name, 'Disponible'). Never repeated as decoration.",
+      "html": "<span class=\"ds-badge-signal\">&#64;zhunam/data-grid</span>",
+      "css": ".ds-badge-signal { display: inline-flex; align-items: center; background: #2c5f5d; color: #ffffff; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.75rem; font-weight: 500; padding: 0.125rem 0.625rem; border-radius: 9999px; }"
+    },
+    {
+      "name": "Coming Soon Badge",
+      "kind": "chip",
+      "refersTo": "badge-coming-soon",
+      "description": "Outline pill for an unreleased library — no fill, recedes visually to match its non-interactive role.",
+      "html": "<span class=\"ds-badge-outline\">Coming Soon</span>",
+      "css": ".ds-badge-outline { display: inline-flex; align-items: center; background: transparent; border: 1px solid #cbd5e1; color: #64748b; font-size: 0.75rem; padding: 0.125rem 0.625rem; border-radius: 9999px; }"
+    },
+    {
+      "name": "Console Panel",
+      "kind": "custom",
+      "refersTo": "console-panel",
+      "description": "Signature component: the one dark surface on the site, showing the real install command plus verifiable facts — never a fabricated build log.",
+      "html": "<div class=\"ds-console\">\n  <p class=\"ds-console-prompt\">$ npm install &#64;zhunam/data-grid</p>\n  <ul class=\"ds-console-list\">\n    <li><span class=\"ds-console-check\">&#10003;</span> Standalone Angular component</li>\n    <li><span class=\"ds-console-check\">&#10003;</span> Signal-based inputs &amp; outputs</li>\n    <li><span class=\"ds-console-check\">&#10003;</span> Zero runtime dependencies</li>\n  </ul>\n</div>",
+      "css": ".ds-console { background: #0f172a; color: #f1f5f9; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.875rem; border-radius: 0.75rem; padding: 1.5rem; } .ds-console-prompt { color: #94a3b8; margin: 0; } .ds-console-list { list-style: none; margin: 1rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; } .ds-console-check { color: #8ba7a6; margin-right: 0.5rem; }"
+    },
+    {
+      "name": "Sidebar Nav Item",
+      "kind": "nav",
+      "refersTo": "sidebar-nav",
+      "description": "Library Explorer sidebar entry — active state gets a teal-tinted background; unreleased libraries render as a non-interactive span, never a dead link.",
+      "html": "<a href=\"#\" class=\"ds-sidebar-item ds-sidebar-item--active\">Data Grid</a>\n<span class=\"ds-sidebar-item ds-sidebar-item--disabled\">Form Builder <em>Coming Soon</em></span>",
+      "css": ".ds-sidebar-item { display: flex; align-items: center; justify-content: space-between; border-radius: 0.5rem; padding: 0.5rem 0.75rem; font-size: 0.875rem; font-weight: 500; text-decoration: none; } .ds-sidebar-item--active { background: rgb(44 95 93 / 0.1); color: #2c5f5d; } .ds-sidebar-item--disabled { color: #94a3b8; } .ds-sidebar-item--disabled em { font-style: normal; font-size: 0.75rem; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Single Signal",
+    "overview": "One accent, everywhere it appears, means the same thing: this is real and it works. Desaturated teal is the only color in the system besides ink-on-white — no second brand hue, no status-color vocabulary to learn. Everything else is slate: near-black text, mid-slate secondary text, a hairline border to separate sections instead of gray fill panels.\n\nThis is a product surface: a developer-hub layout built to prove the @zhunam/* libraries work, not to sell a story. It rejects the AI-generated-portfolio look — no cream/beige background, no gradient text, no repeated uppercase eyebrow, no fabricated version numbers or fake terminal logs. Every fact shown is something actually true of the code today.",
+    "keyCharacteristics": [
+      "Pure white page background, no gray section fills — regions separated by spacing and a single hairline border.",
+      "One accent (teal) used deliberately: primary actions, the one live status badge, focus rings.",
+      "One type family, hierarchy from weight and size — a two-tone hero heading is the one place color carries typographic emphasis.",
+      "The one dark surface (console panel) uses a separately-tuned lighter teal, because the base teal fails contrast on dark."
+    ],
+    "rules": [
+      { "name": "The One Accent Rule", "body": "Teal is the only brand color. A badge is either filled teal (live) or plain slate-outlined (informational). Never invent a second accent.", "section": "colors" },
+      { "name": "The No-Fill-Section Rule", "body": "Never use a gray background to separate a region. Separation comes from spacing and a hairline border, never bg-slate-100/200 panels.", "section": "colors" },
+      { "name": "The Single-Face Rule", "body": "No second typeface, licensed or system. Every hierarchy level is the same family; only weight, size, and (once, in the hero) color change.", "section": "typography" },
+      { "name": "The Ghost-Card Refusal", "body": "Never pair a 1px border with a box-shadow on the same element.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use Signal Teal as the only accent, used deliberately.",
+      "Do separate sections with spacing and a single hairline border, never a gray fill.",
+      "Do use the lightened #8ba7a6 teal (not the base #2c5f5d) on the dark console panel.",
+      "Do show only verifiable facts in the console panel and library cards.",
+      "Do render Coming Soon library entries as non-interactive elements, never a dead link."
+    ],
+    "donts": [
+      "Don't introduce a second accent color for status/info.",
+      "Don't add a bg-slate-100/200 fill to separate a section.",
+      "Don't fabricate a version number, build log, or usage statistic.",
+      "Don't pair a 1px border with a box-shadow on the same card.",
+      "Don't load a second typeface via Google Fonts or any external font CDN.",
+      "Don't link a nav item, button, or sidebar entry to a page that doesn't exist."
+    ]
+  }
+}

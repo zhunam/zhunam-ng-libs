@@ -1,0 +1,162 @@
+:host {
+  // Re-theme any of these from the consumer app — nothing here is brand-specific.
+  --dg-font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --dg-font-size: 0.9375rem;
+  --dg-text-color: #1f2937;
+  --dg-header-text-color: #374151;
+  --dg-header-bg: #f9fafb;
+  --dg-border-color: #e5e7eb;
+  --dg-row-hover-bg: rgb(15 23 42 / 4.5%);
+  --dg-header-hover-bg: rgb(15 23 42 / 6%);
+  --dg-primary-color: #3b82f6;
+  --dg-radius: 0.5rem;
+  --dg-cell-padding-y: 0.75rem;
+  --dg-cell-padding-x: 1rem;
+  --dg-transition-duration: 150ms;
+
+  display: block;
+  container-type: inline-size;
+  font-family: var(--dg-font-family);
+  font-size: var(--dg-font-size);
+  color: var(--dg-text-color);
+}
+
+.dg-table-wrapper {
+  overflow-x: auto;
+  border: 1px solid var(--dg-border-color);
+  border-radius: var(--dg-radius);
+}
+
+.dg-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: auto;
+}
+
+.dg-th,
+td {
+  padding: var(--dg-cell-padding-y) var(--dg-cell-padding-x);
+  text-align: left;
+  // Forces horizontal scroll on narrow containers instead of squeezing/wrapping content.
+  white-space: nowrap;
+}
+
+.dg-th {
+  background: var(--dg-header-bg);
+  color: var(--dg-header-text-color);
+  font-weight: 600;
+  border-bottom: 1px solid var(--dg-border-color);
+  user-select: none;
+}
+
+.dg-th--sortable {
+  cursor: pointer;
+  transition: background-color var(--dg-transition-duration) ease;
+
+  &:hover {
+    background: var(--dg-header-hover-bg);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--dg-primary-color);
+    outline-offset: -2px;
+  }
+}
+
+.dg-th-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.dg-sort-icon {
+  display: inline-block;
+  font-size: 0.625rem;
+  color: var(--dg-primary-color);
+  opacity: 0;
+  transform: translateY(0.125rem) rotate(0deg);
+  transition:
+    opacity var(--dg-transition-duration) ease,
+    transform var(--dg-transition-duration) ease;
+}
+
+.dg-sort-icon--active {
+  opacity: 1;
+  transform: translateY(0) rotate(0deg);
+}
+
+.dg-sort-icon--desc {
+  transform: translateY(0) rotate(180deg);
+}
+
+tbody tr:not(:last-child) td {
+  border-bottom: 1px solid var(--dg-border-color);
+}
+
+.dg-row {
+  cursor: pointer;
+  transition: background-color var(--dg-transition-duration) ease;
+
+  &:hover {
+    background: var(--dg-row-hover-bg);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--dg-primary-color);
+    outline-offset: -2px;
+  }
+}
+
+.dg-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 0.75rem 0.125rem 0;
+  font-size: 0.875rem;
+  color: var(--dg-header-text-color);
+}
+
+.dg-page-btn {
+  appearance: none;
+  border: 1px solid var(--dg-border-color);
+  border-radius: calc(var(--dg-radius) / 2);
+  background: transparent;
+  color: var(--dg-text-color);
+  padding: 0.375rem 0.75rem;
+  font: inherit;
+  cursor: pointer;
+  transition:
+    background-color var(--dg-transition-duration) ease,
+    border-color var(--dg-transition-duration) ease,
+    opacity var(--dg-transition-duration) ease;
+
+  &:hover:not(:disabled) {
+    background: var(--dg-header-hover-bg);
+    border-color: var(--dg-primary-color);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--dg-primary-color);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+// Below this, the component has less room than usual (e.g. embedded in a
+// sidebar or a modal) — tighten spacing instead of relying on the viewport.
+@container (max-width: 28rem) {
+  :host {
+    --dg-cell-padding-x: 0.625rem;
+    --dg-cell-padding-y: 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  .dg-pagination {
+    justify-content: space-between;
+  }
+}

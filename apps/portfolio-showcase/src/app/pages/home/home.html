@@ -1,0 +1,202 @@
+<div class="flex flex-col gap-24">
+  <!-- Hero: full-bleed dark surface, sits behind the sticky transparent header — verified AA, see DESIGN.md -->
+  <section
+    class="relative -mt-28 left-1/2 right-1/2 ml-[-50vw] mr-[-50vw] w-screen overflow-hidden bg-base-content pt-16"
+  >
+    <div class="pointer-events-none absolute inset-0 flex items-center justify-center" aria-hidden="true">
+      <div class="h-230 w-315 rounded-full bg-primary/80 blur-[150px]"></div>
+    </div>
+
+    <div
+      class="relative mx-auto flex min-h-[90vh] max-w-3xl flex-col items-center justify-center gap-8 px-6 py-24 text-center"
+    >
+      <h1 class="text-6xl font-bold tracking-tight text-balance text-white lg:text-7xl">
+        Angular libraries, built for real products
+      </h1>
+      <p class="max-w-prose text-xl leading-relaxed text-pretty text-slate-300">
+        Every component ships as an independent Angular library, standalone, signal-typed, ready
+        to install in your own project exactly as it is.
+      </p>
+      <a
+        href="#library-explorer"
+        class="group inline-flex items-center gap-2 text-sm font-semibold text-white transition-colors duration-200 hover:text-[#8ba7a6] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8ba7a6]"
+      >
+        Explore the libraries
+        <!-- <span class="transition-transform duration-200 group-hover:translate-x-1" aria-hidden="true">→</span> -->
+      </a>
+    </div>
+  </section>
+
+  <!-- Library Explorer -->
+  <section id="library-explorer" class="flex scroll-mt-24 flex-col gap-6">
+    <div class="flex flex-col gap-2">
+      <h2 class="text-2xl font-bold tracking-tight text-base-content">Library Explorer</h2>
+      <p class="text-slate-600">Expanding the ecosystem with production-ready primitives.</p>
+    </div>
+
+    <div class="flex max-w-4xl flex-wrap items-stretch gap-6">
+      <div
+        class="flex w-full max-w-md min-w-70 flex-1 flex-col justify-center gap-4 rounded-box border border-slate-200 p-8 sm:w-auto"
+      >
+        <!-- <span class="badge badge-primary w-fit text-xs">Available</span> -->
+
+        <div class="flex flex-col gap-1">
+          <h3 class="font-semibold text-base-content" translate="no">{{ dataGridLibrary.name }}</h3>
+          <p class="text-sm text-slate-600">{{ dataGridLibrary.description }}</p>
+          <span class="font-mono text-xs text-slate-400">{{ dataGridLibrary.importPath }}</span>
+        </div>
+
+        <ul class="flex flex-col gap-2 text-sm text-slate-600">
+          <li class="flex gap-2">
+            <span class="text-primary">&#10003;</span>
+            <span
+              ><strong class="text-base-content">Signal-based</strong> — inputs and outputs built on
+              Angular's signals API.</span
+            >
+          </li>
+          <li class="flex gap-2">
+            <span class="text-primary">&#10003;</span>
+            <span
+              ><strong class="text-base-content">Container Queries</strong> — adapts to its real
+              container, not the viewport.</span
+            >
+          </li>
+          <li class="flex gap-2">
+            <span class="text-primary">&#10003;</span>
+            <span
+              ><strong class="text-base-content">Accessible</strong> — aria-sort, focus-visible, and
+              full keyboard navigation.</span
+            >
+          </li>
+        </ul>
+
+        <a
+          [routerLink]="dataGridLibrary.route"
+          class="btn btn-primary btn-sm mt-2 w-fit transition-transform duration-200 ease-out hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          View full demo
+        </a>
+      </div>
+
+      <div
+        class="flex w-full max-w-xs min-w-56 flex-1 flex-col items-center justify-center gap-4 rounded-box border border-dashed border-slate-300 p-8 text-center text-slate-500 sm:w-auto"
+      >
+        <div class="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="h-8 w-8 text-primary"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 7v5l3.5 2" />
+          </svg>
+        </div>
+        <p class="text-sm">More libraries are on the way.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="flex flex-col gap-6">
+    <div class="flex flex-col gap-2">
+      <h2 class="text-2xl font-bold text-base-content">FAQ</h2>
+    </div>
+
+    <div class="flex flex-col divide-y divide-slate-200">
+      <details class="group py-5">
+        <summary
+          class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-base-content focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          <span>How many libraries are here right now?</span>
+          <span
+            class="shrink-0 text-xl leading-none font-normal text-slate-400 transition-transform duration-200 ease-out group-open:rotate-45"
+            aria-hidden="true"
+            >+</span
+          >
+        </summary>
+        <p class="mt-3 text-slate-600">
+          Just one, <span translate="no"> Data Grid. </span> This site is built to host a growing
+          set of them, new ones show up in the Library Explorer above as they're finished, not
+          bundled into this one.
+        </p>
+      </details>
+
+      <details class="group py-5">
+        <summary
+          class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-base-content focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          <span>Is this free to use?</span>
+          <span
+            class="shrink-0 text-xl leading-none font-normal text-slate-400 transition-transform duration-200 ease-out group-open:rotate-45"
+            aria-hidden="true"
+            >+</span
+          >
+        </summary>
+        <p class="mt-3 text-slate-600">
+          Yes, every library in this ecosystem ships under the MIT license, free for any use.
+          Some may add optional paid Pro tiers for specific advanced features down the line, but
+          there's no fixed timeline for that yet.
+        </p>
+      </details>
+
+      <details class="group py-5">
+        <summary
+          class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-base-content focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          <span>What Angular versions are supported?</span>
+          <span
+            class="shrink-0 text-xl leading-none font-normal text-slate-400 transition-transform duration-200 ease-out group-open:rotate-45"
+            aria-hidden="true"
+            >+</span
+          >
+        </summary>
+        <p class="mt-3 text-slate-600">
+          Every library here targets the same floor:
+          <span class="font-mono text-sm">^20.0.0 || ^21.0.0 || ^22.0.0</span>, reviewed each time
+          Angular ships a new major.
+        </p>
+      </details>
+
+      <details class="group py-5">
+        <summary
+          class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-base-content focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          <span>Why build these instead of using something like Angular Material?</span>
+          <span
+            class="shrink-0 text-xl leading-none font-normal text-slate-400 transition-transform duration-200 ease-out group-open:rotate-45"
+            aria-hidden="true"
+            >+</span
+          >
+        </summary>
+        <p class="mt-3 text-slate-600">
+          Complete design systems are excellent, but they require adopting their entire visual language and CDK just to obtain a single component. Each library presented here focuses on a single problem, has no dependencies on CSS frameworks, and is small in size. They don't replace a complete design system when you really need one, but rather serve as an alternative when you don't.
+        </p>
+      </details>
+
+      <!-- <details class="group py-5">
+        <summary
+          class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-base-content focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          <span>Is this production-ready?</span>
+          <span
+            class="shrink-0 text-xl leading-none font-normal text-slate-400 transition-transform duration-200 ease-out group-open:rotate-45"
+            aria-hidden="true"
+            >+</span
+          >
+        </summary>
+        <p class="mt-3 text-slate-600">
+          <span translate="no">Data Grid</span>, the first library here, is v1 and in active
+          development — its core API (sorting, pagination, row selection) is stable and exercised
+          in this demo, but it hasn't shipped to npm yet or run in a production app outside this
+          repo. Evaluate accordingly; check the Library Explorer above for what's currently
+          available.
+        </p>
+      </details> -->
+    </div>
+  </section>
+</div>

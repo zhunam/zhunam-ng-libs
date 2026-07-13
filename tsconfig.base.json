@@ -13,7 +13,9 @@
     "lib": ["es2020", "dom"],
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
-    "paths": {}
+    "paths": {
+      "@zhunam/data-grid": ["./libs/data-grid/src/index.ts"]
+    }
   },
   "exclude": ["node_modules", "tmp"]
 }

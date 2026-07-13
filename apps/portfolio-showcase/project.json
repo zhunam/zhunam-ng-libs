@@ -24,7 +24,7 @@
           }
         ],
         "styles": [
-          "apps/portfolio-showcase/src/styles.scss"
+          "apps/portfolio-showcase/src/styles.css"
         ]
       },
       "configurations": {
