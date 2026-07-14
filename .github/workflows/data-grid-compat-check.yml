@@ -1,0 +1,98 @@
+name: Data Grid Compatibility Check
+
+# Verifies real installation of @zhunam/data-grid on the floor and ceiling
+# of its supported Angular range (see AGENTS.md > "Compatibility testing
+# before publishing"). Manual trigger only — this isn't part of normal CI,
+# it's run before a release.
+on:
+  workflow_dispatch:
+
+jobs:
+  compat-check:
+    strategy:
+      fail-fast: false
+      matrix:
+        angular-version: [20, 22]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install workspace dependencies
+        run: npm ci
+
+      - name: Build data-grid (production)
+        run: npx nx build data-grid --configuration=production
+
+      - name: Pack data-grid tarball
+        run: |
+          mkdir -p "${{ github.workspace }}/tarball"
+          cd dist/libs/data-grid
+          npm pack --pack-destination "${{ github.workspace }}/tarball"
+
+      - name: Create clean Angular ${{ matrix.angular-version }} project
+        working-directory: ${{ runner.temp }}
+        run: |
+          npx -y -p @angular/cli@${{ matrix.angular-version }} ng new data-grid-consumer \
+            --standalone --routing=false --style=scss --skip-git --defaults --ssr=false
+
+      - name: Install data-grid tarball
+        working-directory: ${{ runner.temp }}/data-grid-consumer
+        run: |
+          TARBALL=$(ls "${{ github.workspace }}/tarball"/*.tgz)
+          npm install "$TARBALL"
+
+      - name: Add minimal <lib-data-grid> usage
+        working-directory: ${{ runner.temp }}/data-grid-consumer
+        run: |
+          cat > src/app/app.ts <<'EOF'
+          import { Component } from '@angular/core';
+          import { ColumnConfig, DataGrid } from '@zhunam/data-grid';
+
+          interface Row {
+            name: string;
+            email: string;
+            role: string;
+          }
+
+          @Component({
+            selector: 'app-root',
+            imports: [DataGrid],
+            templateUrl: './app.html',
+            styleUrl: './app.scss',
+          })
+          export class App {
+            protected readonly rows: Row[] = [
+              { name: 'Ana Torres', email: 'ana@example.com', role: 'Admin' },
+              { name: 'Luis Pérez', email: 'luis@example.com', role: 'Editor' },
+              { name: 'Marta Ruiz', email: 'marta@example.com', role: 'Viewer' },
+            ];
+
+            protected readonly columns: ColumnConfig<Row>[] = [
+              { key: 'name', label: 'Name', sortable: true },
+              { key: 'email', label: 'Email', sortable: true },
+              { key: 'role', label: 'Role', sortable: true },
+            ];
+
+            protected onRowClick(row: Row): void {
+              console.log('row clicked', row);
+            }
+          }
+          EOF
+          cat > src/app/app.html <<'EOF'
+          <lib-data-grid
+            [data]="rows"
+            [columns]="columns"
+            [pageSize]="2"
+            (rowClick)="onRowClick($event)"
+          />
+          EOF
+
+      - name: Build consumer project (production)
+        working-directory: ${{ runner.temp }}/data-grid-consumer
+        run: npx ng build --configuration production

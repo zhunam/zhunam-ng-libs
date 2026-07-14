@@ -120,6 +120,42 @@ describe('DataGrid', () => {
       // Ascending by age: Alice (25), Charlie (30), Bob (40)
       expect(getNameColumnValues(fixture)).toEqual(['Alice', 'Charlie', 'Bob']);
     });
+
+    it('sorts when a sortable header is activated with Enter', () => {
+      const fixture = createFixture(unsortedRows);
+      root(fixture)
+        .querySelectorAll<HTMLElement>('th')[0]
+        .dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+      fixture.detectChanges();
+
+      expect(getNameColumnValues(fixture)).toEqual(['Alice', 'Bob', 'Charlie']);
+    });
+
+    it('sorts when a sortable header is activated with Space', () => {
+      const fixture = createFixture(unsortedRows);
+      root(fixture)
+        .querySelectorAll<HTMLElement>('th')[0]
+        .dispatchEvent(new KeyboardEvent('keydown', { key: ' ' }));
+      fixture.detectChanges();
+
+      expect(getNameColumnValues(fixture)).toEqual(['Alice', 'Bob', 'Charlie']);
+    });
+
+    it('keeps the original relative order of rows that tie on the sorted column', () => {
+      const rowsWithTie: TestRow[] = [
+        { name: 'Bob', age: 40 },
+        { name: 'Bob', age: 20 },
+        { name: 'Alice', age: 25 },
+      ];
+      const fixture = createFixture(rowsWithTie);
+      clickHeader(fixture, 0); // sort by name ascending — the two "Bob" rows are equal on this column
+
+      const ages = Array.from(
+        root(fixture).querySelectorAll<HTMLElement>('tbody tr td:nth-child(2)'),
+      ).map((cell) => cell.textContent?.trim());
+      // Alice sorts first; the two equal "Bob" rows must keep their original 40-then-20 order.
+      expect(ages).toEqual(['25', '40', '20']);
+    });
   });
 
   describe('pagination', () => {
@@ -152,6 +188,13 @@ describe('DataGrid', () => {
     it('does not go before the first page', () => {
       const fixture = createFixture(fiveRows, { pageSize: 2 });
       clickPrevious(fixture); // already on the first page
+      expect(getPageInfo(fixture)).toBe('Página 1 de 3');
+    });
+
+    it('goes back a page when clicking Anterior from a later page', () => {
+      const fixture = createFixture(fiveRows, { pageSize: 2 });
+      clickNext(fixture); // page 2
+      clickPrevious(fixture); // back to page 1
       expect(getPageInfo(fixture)).toBe('Página 1 de 3');
     });
 
@@ -190,6 +233,42 @@ describe('DataGrid', () => {
 
       // Full ascending order is Alice, Bob, Charlie — page 2 (pageSize 2) is just Charlie.
       expect(getNameColumnValues(fixture)).toEqual(['Charlie']);
+    });
+  });
+
+  describe('row selection', () => {
+    it('emits rowClick with the clicked row', () => {
+      const fixture = createFixture(unsortedRows);
+      const clicked: TestRow[] = [];
+      fixture.componentInstance.rowClick.subscribe((row) => clicked.push(row));
+
+      root(fixture).querySelectorAll<HTMLElement>('tbody tr')[1].click();
+
+      expect(clicked).toEqual([unsortedRows[1]]);
+    });
+
+    it('emits rowClick when a row is activated with Enter', () => {
+      const fixture = createFixture(unsortedRows);
+      const clicked: TestRow[] = [];
+      fixture.componentInstance.rowClick.subscribe((row) => clicked.push(row));
+
+      root(fixture)
+        .querySelectorAll<HTMLElement>('tbody tr')[0]
+        .dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+
+      expect(clicked).toEqual([unsortedRows[0]]);
+    });
+
+    it('emits rowClick when a row is activated with Space', () => {
+      const fixture = createFixture(unsortedRows);
+      const clicked: TestRow[] = [];
+      fixture.componentInstance.rowClick.subscribe((row) => clicked.push(row));
+
+      root(fixture)
+        .querySelectorAll<HTMLElement>('tbody tr')[0]
+        .dispatchEvent(new KeyboardEvent('keydown', { key: ' ' }));
+
+      expect(clicked).toEqual([unsortedRows[0]]);
     });
   });
 
