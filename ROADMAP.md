@@ -14,12 +14,7 @@ only reference it.
 ## Active phase
 
 **Phase 1 — Data Grid v1** — **done**. Full detail — scope, API contract,
-task list — lives in `libs/data-grid/ROADMAP.md`. One known exception, not
-a pending item: the unit test suite (`data-grid.spec.ts`) is written and
-compiles clean, but can't currently execute due to a pre-existing Vitest
-4.x / `@angular/build` 21.2.18 integration bug affecting the whole
-workspace (documented in that file) — re-run `nx test data-grid` once
-upstream fixes land.
+task list — lives in `libs/data-grid/ROADMAP.md`.
 
 Phase 2 (Dynamic Form Builder) has not started yet.
 
