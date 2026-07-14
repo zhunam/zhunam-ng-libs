@@ -3,6 +3,12 @@
 All notable changes to `@zhunam/data-grid` are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/), versioning follows [SemVer](https://semver.org/).
 
+## [1.0.1] - 2026-07-14
+
+### Fixed
+- Corrected `license` field in package.json (was missing/defaulting to
+  "Proprietary" instead of MIT).
+
 ## [1.0.0] - 2026-07-13
 
 ### Added

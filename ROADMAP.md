@@ -13,8 +13,10 @@ only reference it.
 
 ## Active phase
 
-**Phase 1 — Data Grid v1** — **done**. Full detail — scope, API contract,
-task list — lives in `libs/data-grid/ROADMAP.md`.
+**Phase 1 — Data Grid v1** — **done and published**. `@zhunam/data-grid@1.0.1`
+is live on the public npm registry — this isn't just "code complete," the
+library is real and installable. Full detail — scope, API contract, task
+list — lives in `libs/data-grid/ROADMAP.md`.
 
 Phase 2 (Dynamic Form Builder) has not started yet.
 
@@ -27,7 +29,7 @@ they're even started, so those stay as a one-line scope stub until their
 turn comes.
 
 1. **Data Grid** — `libs/data-grid` — Freemium (core here, Pro in a
-   separate private repo) — **DONE**
+   separate private repo) — **DONE, published on npm as `@zhunam/data-grid@1.0.1`**
 2. **Dynamic Form Builder** — `libs/form-builder` — Freemium + SaaS (paid
    persistence) — not started
 3. **Financial/crypto dashboard** — `apps/` (portfolio piece, not a
