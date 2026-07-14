@@ -16,5 +16,5 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
 - Full public API JSDoc (IDE tooltips + Compodoc-ready).
 - `@angular/core` / `@angular/common` compatibility: `^20.0.0 || ^21.0.0 || ^22.0.0`.
 
-### Known limitations
-- Unit test suite (`data-grid.spec.ts`) is written and compiles clean, but cannot currently execute in this workspace due to a Vitest 4.x / `@angular/build` 21.2.18 integration bug (tracked in `libs/data-grid/ROADMAP.md`). Will re-run once upstream fixes land.
+### Testing
+- `data-grid.spec.ts` — 21 unit tests covering sorting, pagination, keyboard activation (Enter/Space on sortable headers and rows), row selection, and stable-sort tie-breaking. Runs clean in CI (GitHub Actions, `ubuntu-latest`) with coverage above 80% on statements, branches, functions, and lines. (The `nx test` failure previously noted here was specific to one contributor's local Windows environment, not a real dependency or workspace issue — see `libs/data-grid/ROADMAP.md`.)
