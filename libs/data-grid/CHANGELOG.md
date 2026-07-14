@@ -3,7 +3,7 @@
 All notable changes to `@zhunam/data-grid` are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/), versioning follows [SemVer](https://semver.org/).
 
-## [Unreleased]
+## [1.0.0] - 2026-07-13
 
 ### Added
 - `DataGrid<T>` standalone component with client-side rendering from a `data` input.
