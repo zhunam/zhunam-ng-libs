@@ -10,5 +10,7 @@ Ver ROADMAP.md en esta misma carpeta para el detalle completo.
 
 ## Contrato de API pública
 - `fields: input.required<FieldConfig<T>[]>` — configuración de campos
-- `crossFieldValidators: input<ValidatorFn[]>` — validadores a nivel de formulario
+- `crossFieldValidators: input<CrossFieldValidator<T>[]>` — validadores
+  declarativos a nivel de formulario (sin exponer ValidatorFn/AbstractControl
+  de Angular)
 - `submit: output<T>` — emite los valores del formulario al enviar válido

@@ -17,7 +17,7 @@
 
 ### Tasks
 - [x] Generar librería con tags + ajustar peerDependencies
-- [ ] Crear FieldConfig<T> y tipos relacionados
+- [x] Crear FieldConfig<T> y tipos relacionados
 - [ ] Componente base: renderizar campos desde el array de config
 - [ ] Implementar validación nativa por campo
 - [ ] Implementar validación cruzada (crossFieldValidators input)
