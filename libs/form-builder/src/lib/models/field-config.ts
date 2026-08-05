@@ -13,7 +13,7 @@ export type FieldType =
   | 'date';
 
 /**
- * A single selectable choice for `select`, `radio`, and `checkbox` fields.
+ * A single selectable choice for `select` and `radio` fields.
  */
 export interface FieldOption {
   /**

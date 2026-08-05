@@ -24,7 +24,7 @@
 - [x] formSubmit output con valores tipados
 - [x] Estilos encapsulados con CSS custom properties
 - [ ] JSDoc completo en API pública
-- [ ] Unit tests
+- [x] Unit tests
 - [ ] Demo consumiendo la librería en apps/portfolio-showcase
 - [ ] README público
 - [ ] Verificar build de producción
