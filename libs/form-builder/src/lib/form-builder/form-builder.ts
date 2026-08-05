@@ -62,6 +62,15 @@ export class FormBuilder<T> {
    * confirming a password). Run separately from Angular's native
    * per-control validation, only when the native `FormGroup` is valid.
    * @default []
+   * @example
+   * crossFieldValidators: CrossFieldValidator<User>[] = [
+   *   {
+   *     validate: (value) =>
+   *       value.password !== value.confirmPassword
+   *         ? { confirmPassword: 'Passwords must match' }
+   *         : null,
+   *   },
+   * ];
    */
   crossFieldValidators = input<CrossFieldValidator<T>[]>([]);
 
