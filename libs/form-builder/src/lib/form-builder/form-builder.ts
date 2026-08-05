@@ -1,7 +1,15 @@
 // NUNCA usar [innerHTML], bypassSecurityTrustHtml, ni ningún mecanismo de inserción de HTML crudo en el DOM del componente.
 // label, placeholder, errorMessages, y FieldOption.label se renderizan siempre con interpolación {{ }} normal de Angular — nunca vía binding de propiedad que inserte HTML.
 
-import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+  output,
+  signal,
+  ViewEncapsulation,
+} from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, ValidatorFn, Validators } from '@angular/forms';
 import { CrossFieldValidator, FieldConfig, FieldOption } from '../models/field-config';
 import { assertSafePattern } from '../utils/safe-pattern';
@@ -37,6 +45,7 @@ const DEFAULT_ERROR_MESSAGES: Record<ErrorKey, string> = {
   templateUrl: './form-builder.html',
   styleUrl: './form-builder.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.Emulated,
 })
 export class FormBuilder<T> {
   /**
