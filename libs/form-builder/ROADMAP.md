@@ -8,7 +8,7 @@
 - Validación nativa de Angular por campo (required, min, max, minLength,
   maxLength, pattern, email)
 - Validación cruzada a nivel de formulario (ej. confirmar password)
-- submit output con los valores tipados
+- formSubmit output con los valores tipados
 
 ### Out of scope
 - UI visual drag & drop para armar formularios → Pro (private repo) o v2
@@ -18,10 +18,10 @@
 ### Tasks
 - [x] Generar librería con tags + ajustar peerDependencies
 - [x] Crear FieldConfig<T> y tipos relacionados
-- [ ] Componente base: renderizar campos desde el array de config
-- [ ] Implementar validación nativa por campo
-- [ ] Implementar validación cruzada (crossFieldValidators input)
-- [ ] submit output con valores tipados
+- [x] Componente base: renderizar campos desde el array de config
+- [x] Implementar validación nativa por campo
+- [x] Implementar validación cruzada (crossFieldValidators input)
+- [x] formSubmit output con valores tipados
 - [ ] Estilos encapsulados con CSS custom properties
 - [ ] JSDoc completo en API pública
 - [ ] Unit tests

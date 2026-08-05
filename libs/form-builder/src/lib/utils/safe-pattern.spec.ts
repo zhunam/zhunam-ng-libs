@@ -15,6 +15,12 @@ describe('assertSafePattern', () => {
     expect(() => assertSafePattern('(a+)+')).toThrow();
   });
 
+  // The classic catastrophic-backtracking ReDoS example, anchored at the
+  // end the way it's usually cited (e.g. against input like "aaaaaaaa!").
+  it('throws for the classic ReDoS pattern (a+)+$', () => {
+    expect(() => assertSafePattern('(a+)+$')).toThrow();
+  });
+
   it('throws for a nested-quantifier pattern like (a*)*', () => {
     expect(() => assertSafePattern('(a*)*')).toThrow();
   });

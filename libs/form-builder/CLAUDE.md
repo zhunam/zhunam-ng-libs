@@ -13,4 +13,4 @@ Ver ROADMAP.md en esta misma carpeta para el detalle completo.
 - `crossFieldValidators: input<CrossFieldValidator<T>[]>` — validadores
   declarativos a nivel de formulario (sin exponer ValidatorFn/AbstractControl
   de Angular)
-- `submit: output<T>` — emite los valores del formulario al enviar válido
+- `formSubmit: output<T>` — emite los valores del formulario al enviar válido

@@ -111,7 +111,7 @@ export interface FieldConfig<T> {
   placeholder?: string;
 
   /**
-   * Choices available for `select`, `radio`, and `checkbox` fields.
+   * Choices available for `select` and `radio` fields.
    */
   options?: FieldOption[];
 
