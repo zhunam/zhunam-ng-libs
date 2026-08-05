@@ -7,8 +7,11 @@
   --fb-border-color: #d1d5db;
   --fb-error-color: #dc2626;
   --fb-primary-color: #3b82f6;
-  --fb-radius: 0.5rem;
-  --fb-field-gap: 1rem;
+  // Independent from --fb-primary-color so a consumer can keep their brand
+  // color but pick a higher-contrast focus ring (or vice versa) for a11y.
+  --fb-focus-color: var(--fb-primary-color);
+  --fb-border-radius: 0.5rem;
+  --fb-spacing: 1rem;
   --fb-control-padding-y: 0.5rem;
   --fb-control-padding-x: 0.75rem;
   --fb-transition-duration: 150ms;
@@ -20,15 +23,18 @@
 }
 
 .fb-form {
+  // Column, mobile-first: fields never assume a minimum container width.
   display: flex;
   flex-direction: column;
-  gap: var(--fb-field-gap);
+  gap: var(--fb-spacing);
+  width: 100%;
 }
 
 .fb-field {
   display: flex;
   flex-direction: column;
-  gap: 0.375rem;
+  gap: calc(var(--fb-spacing) / 2.5);
+  min-width: 0;
 }
 
 .fb-label {
@@ -39,18 +45,20 @@
 }
 
 .fb-control {
+  box-sizing: border-box;
+  width: 100%;
   font: inherit;
   color: inherit;
   padding: var(--fb-control-padding-y) var(--fb-control-padding-x);
   border: 1px solid var(--fb-border-color);
-  border-radius: var(--fb-radius);
+  border-radius: var(--fb-border-radius);
   background: transparent;
   transition: border-color var(--fb-transition-duration) ease;
 
   &:focus-visible {
-    outline: 2px solid var(--fb-primary-color);
+    outline: 2px solid var(--fb-focus-color);
     outline-offset: -1px;
-    border-color: var(--fb-primary-color);
+    border-color: var(--fb-focus-color);
   }
 }
 
@@ -59,10 +67,14 @@ textarea.fb-control {
   resize: vertical;
 }
 
+select.fb-control {
+  cursor: pointer;
+}
+
 .fb-radio-group {
   display: flex;
   flex-direction: column;
-  gap: 0.375rem;
+  gap: calc(var(--fb-spacing) / 2.5);
 }
 
 .fb-radio-option,
@@ -75,6 +87,18 @@ textarea.fb-control {
   cursor: pointer;
 }
 
+// Native radio/checkbox inputs aren't `.fb-control` (they keep their
+// intrinsic size), but they're just as interactive — focus must stay visible.
+.fb-radio-option input,
+.fb-checkbox-option input {
+  accent-color: var(--fb-primary-color);
+
+  &:focus-visible {
+    outline: 2px solid var(--fb-focus-color);
+    outline-offset: 2px;
+  }
+}
+
 .fb-error {
   margin: 0;
   font-size: 0.8125rem;
@@ -85,7 +109,7 @@ textarea.fb-control {
   appearance: none;
   align-self: flex-start;
   border: none;
-  border-radius: var(--fb-radius);
+  border-radius: var(--fb-border-radius);
   background: var(--fb-primary-color);
   color: #fff;
   padding: var(--fb-control-padding-y) 1.25rem;
@@ -95,7 +119,7 @@ textarea.fb-control {
   transition: opacity var(--fb-transition-duration) ease;
 
   &:focus-visible {
-    outline: 2px solid var(--fb-primary-color);
+    outline: 2px solid var(--fb-focus-color);
     outline-offset: 2px;
   }
 

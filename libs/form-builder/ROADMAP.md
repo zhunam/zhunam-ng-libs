@@ -22,7 +22,7 @@
 - [x] Implementar validación nativa por campo
 - [x] Implementar validación cruzada (crossFieldValidators input)
 - [x] formSubmit output con valores tipados
-- [ ] Estilos encapsulados con CSS custom properties
+- [x] Estilos encapsulados con CSS custom properties
 - [ ] JSDoc completo en API pública
 - [ ] Unit tests
 - [ ] Demo consumiendo la librería en apps/portfolio-showcase
