@@ -1,0 +1,42 @@
+name: Lib Tests
+
+# Runs each publishable library's unit test suite with coverage whenever a
+# PR touches it. See libs/data-grid/ROADMAP.md — test execution is
+# currently blocked workspace-wide by a Vitest 4.x / @angular/build 21.2.18
+# bug (angular:test-bed-init virtual module), so this workflow is expected
+# to fail until that's fixed upstream. It's wired up now so it starts
+# passing automatically once it is.
+#
+# Paths are listed explicitly per library (not libs/*/**) so adding a new
+# libs/* doesn't silently start triggering this before it has a project.json
+# `test` target and coverageThresholds set up to match — add the new
+# library to both the `paths` list below and the `project` matrix once it
+# does.
+on:
+  pull_request:
+    paths:
+      - "libs/data-grid/**"
+      - "libs/form-builder/**"
+
+jobs:
+  test:
+    name: Lib Tests (${{ matrix.project }})
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [data-grid, form-builder]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install workspace dependencies
+        run: npm ci
+
+      - name: Run ${{ matrix.project }} unit tests with coverage
+        run: npx nx test ${{ matrix.project }} --coverage
