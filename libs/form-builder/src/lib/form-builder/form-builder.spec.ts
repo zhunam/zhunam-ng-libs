@@ -543,6 +543,63 @@ describe('FormBuilder', () => {
     });
   });
 
+  describe('accessibility (ARIA)', () => {
+    it('does not set aria-invalid or aria-describedby before the error is shown', () => {
+      const fixture = createFixture([
+        { key: 'name', label: 'Name', type: 'text', validators: { required: true } },
+      ]);
+      const input = getInput(fixture, 'text');
+
+      expect(input.hasAttribute('aria-invalid')).toBe(false);
+      expect(input.hasAttribute('aria-describedby')).toBe(false);
+    });
+
+    it('sets aria-invalid and aria-describedby once the error becomes visible', () => {
+      const fixture = createFixture([
+        { key: 'name', label: 'Name', type: 'text', validators: { required: true } },
+      ]);
+      const input = getInput(fixture, 'text');
+      blur(input, fixture);
+
+      const errorEl = root(fixture).querySelector('.fb-error') as HTMLElement;
+      expect(input.getAttribute('aria-invalid')).toBe('true');
+      expect(input.getAttribute('aria-describedby')).toBe(errorEl.id);
+    });
+
+    it('clears aria-invalid and aria-describedby again once the field becomes valid', () => {
+      const fixture = createFixture([
+        { key: 'name', label: 'Name', type: 'text', validators: { required: true } },
+      ]);
+      const input = getInput(fixture, 'text');
+      blur(input, fixture);
+      expect(input.getAttribute('aria-invalid')).toBe('true');
+
+      setValue(input, 'Ada', fixture);
+
+      expect(input.hasAttribute('aria-invalid')).toBe(false);
+      expect(input.hasAttribute('aria-describedby')).toBe(false);
+    });
+
+    it('gives the radio group a radiogroup role labelled by its legend', () => {
+      const fixture = createFixture([
+        {
+          key: 'plan',
+          label: 'Plan',
+          type: 'radio',
+          options: [
+            { value: 1, label: 'Basic' },
+            { value: 2, label: 'Pro' },
+          ],
+        },
+      ]);
+      const fieldset = root(fixture).querySelector('fieldset') as HTMLElement;
+      const legend = root(fixture).querySelector('legend') as HTMLElement;
+
+      expect(fieldset.getAttribute('role')).toBe('radiogroup');
+      expect(fieldset.getAttribute('aria-labelledby')).toBe(legend.id);
+    });
+  });
+
   describe('security', () => {
     it('renders label, placeholder, and FieldOption.label as plain text, never as HTML', () => {
       const malicious = '<script>alert(1)</script>';

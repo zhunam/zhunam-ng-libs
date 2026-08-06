@@ -9,13 +9,23 @@
         @switch (field.type) {
           @case ('checkbox') {
             <label class="fb-checkbox-option">
-              <input type="checkbox" [formControl]="controlFor(field)" [disabled]="!!field.disabled" />
+              <input
+                type="checkbox"
+                [formControl]="controlFor(field)"
+                [disabled]="!!field.disabled"
+                [attr.aria-invalid]="activeErrorFor(field) ? true : null"
+                [attr.aria-describedby]="activeErrorFor(field) ? errorId(field) : null"
+              />
               {{ field.label }}
             </label>
           }
           @case ('radio') {
-            <fieldset class="fb-radio-group">
-              <legend class="fb-label">{{ field.label }}</legend>
+            <fieldset
+              class="fb-radio-group"
+              role="radiogroup"
+              [attr.aria-labelledby]="legendId(field)"
+            >
+              <legend class="fb-label" [id]="legendId(field)">{{ field.label }}</legend>
               @for (option of optionsFor(field); track option.value) {
                 <label class="fb-radio-option">
                   <input
@@ -24,6 +34,8 @@
                     [name]="fieldId(field)"
                     [value]="option.value"
                     [disabled]="!!field.disabled"
+                    [attr.aria-invalid]="activeErrorFor(field) ? true : null"
+                    [attr.aria-describedby]="activeErrorFor(field) ? errorId(field) : null"
                   />
                   {{ option.label }}
                 </label>
@@ -37,6 +49,8 @@
               [formControl]="controlFor(field)"
               [placeholder]="field.placeholder ?? ''"
               [disabled]="!!field.disabled"
+              [attr.aria-invalid]="activeErrorFor(field) ? true : null"
+              [attr.aria-describedby]="activeErrorFor(field) ? errorId(field) : null"
             ></textarea>
           }
           @case ('select') {
@@ -45,6 +59,8 @@
               [id]="fieldId(field)"
               [formControl]="controlFor(field)"
               [disabled]="!!field.disabled"
+              [attr.aria-invalid]="activeErrorFor(field) ? true : null"
+              [attr.aria-describedby]="activeErrorFor(field) ? errorId(field) : null"
             >
               @for (option of optionsFor(field); track option.value) {
                 <option [ngValue]="option.value">{{ option.label }}</option>
@@ -59,16 +75,14 @@
               [formControl]="controlFor(field)"
               [placeholder]="field.placeholder ?? ''"
               [disabled]="!!field.disabled"
+              [attr.aria-invalid]="activeErrorFor(field) ? true : null"
+              [attr.aria-describedby]="activeErrorFor(field) ? errorId(field) : null"
             />
           }
         }
 
-        @if (errorMessageFor(field); as message) {
-          <p class="fb-error">{{ message }}</p>
-        } @else if (serverErrorFor(field); as serverMessage) {
-          <p class="fb-error">{{ serverMessage }}</p>
-        } @else if (crossFieldErrorFor(field); as crossMessage) {
-          <p class="fb-error">{{ crossMessage }}</p>
+        @if (activeErrorFor(field); as message) {
+          <p class="fb-error" [id]="errorId(field)">{{ message }}</p>
         }
       </div>
     }

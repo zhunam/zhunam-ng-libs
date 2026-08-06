@@ -250,6 +250,22 @@ export class FormBuilder<T> {
     return this.crossFieldErrors()[String(field.key)] ?? null;
   }
 
+  // Single source of truth for "is an error currently shown for this
+  // field, and what does it say" — both the visible `.fb-error` message
+  // and its ARIA wiring (aria-invalid, aria-describedby) read from this,
+  // so the two can never drift out of sync with each other.
+  protected activeErrorFor(field: FieldConfig<T>): string | null {
+    return this.errorMessageFor(field) ?? this.serverErrorFor(field) ?? this.crossFieldErrorFor(field);
+  }
+
+  protected errorId(field: FieldConfig<T>): string {
+    return `${this.fieldId(field)}-error`;
+  }
+
+  protected legendId(field: FieldConfig<T>): string {
+    return `${this.fieldId(field)}-legend`;
+  }
+
   protected isSubmitDisabled(): boolean {
     return this.formGroup().invalid || Object.keys(this.crossFieldErrors()).length > 0;
   }
