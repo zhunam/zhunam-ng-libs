@@ -6,6 +6,7 @@ import {
   input,
   output,
   signal,
+  ViewEncapsulation,
 } from '@angular/core';
 import { ColumnConfig } from '../models/column-config';
 
@@ -22,6 +23,7 @@ interface SortState<T> {
   templateUrl: './data-grid.html',
   styleUrl: './data-grid.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.Emulated,
 })
 export class DataGrid<T> {
   /**

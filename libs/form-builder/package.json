@@ -1,0 +1,9 @@
+{
+  "name": "@zhunam/form-builder",
+  "version": "0.0.1",
+  "peerDependencies": {
+    "@angular/core": "^20.0.0 || ^21.0.0 || ^22.0.0",
+    "@angular/forms": "^20.0.0 || ^21.0.0 || ^22.0.0"
+  },
+  "sideEffects": false
+}

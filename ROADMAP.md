@@ -13,12 +13,13 @@ only reference it.
 
 ## Active phase
 
-**Phase 1 — Data Grid v1** — **done and published**. `@zhunam/data-grid@1.0.1`
-is live on the public npm registry — this isn't just "code complete," the
-library is real and installable. Full detail — scope, API contract, task
-list — lives in `libs/data-grid/ROADMAP.md`.
+**Phase 2 — Dynamic Form Builder** — starting. Scope definition session
+pending before any component is generated (per the "Checklist: when
+creating a new library" in AGENTS.md). Full detail will live in
+libs/form-builder/ROADMAP.md once scope is defined.
 
-Phase 2 (Dynamic Form Builder) has not started yet.
+Phase 1 (Data Grid) is done: `@zhunam/data-grid@1.0.1` is live on the
+public npm registry.
 
 ## Phases — full sequence
 
@@ -31,7 +32,7 @@ turn comes.
 1. **Data Grid** — `libs/data-grid` — Freemium (core here, Pro in a
    separate private repo) — **DONE, published on npm as `@zhunam/data-grid@1.0.1`**
 2. **Dynamic Form Builder** — `libs/form-builder` — Freemium + SaaS (paid
-   persistence) — not started
+   persistence) — scope definition in progress.
 3. **Financial/crypto dashboard** — `apps/` (portfolio piece, not a
    publishable lib) — 100% free, not monetizable as a product — not started
 4. **Modular auth system** — `libs/auth` (thin wrapper/starter around
@@ -49,7 +50,13 @@ turn comes.
 Anything beyond the 7 above goes here first, unordered, until it's
 promoted into the numbered sequence above.
 
-- (none yet)
+- **i18n / customizable text in libs/*** — varias librerías tienen
+  strings hardcodeados en un idioma fijo (ej. paginación en español en
+  data-grid, botón "Submit" en inglés en form-builder). Evaluar un
+  patrón consistente de customización de texto (inputs opcionales para
+  labels de UI, o soporte de i18n real) antes de que la lista de
+  librerías crezca más y el problema se replique. Detectado en
+  libs/data-grid/ROADMAP.md durante el desarrollo de form-builder.
 
 ## Recurring maintenance notes
 

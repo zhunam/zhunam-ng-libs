@@ -1,0 +1,92 @@
+<form class="fb-form" [formGroup]="formGroup()" (ngSubmit)="onSubmit()" novalidate>
+  <div class="fb-fields-grid" [style.--fb-columns]="columns()">
+    @for (field of fields(); track field.key) {
+      <div class="fb-field" [class.fb-field--span-2]="field.colSpan === 2">
+        @if (field.type !== 'checkbox' && field.type !== 'radio') {
+          <label class="fb-label" [attr.for]="fieldId(field)">{{ field.label }}</label>
+        }
+
+        @switch (field.type) {
+          @case ('checkbox') {
+            <label class="fb-checkbox-option">
+              <input
+                type="checkbox"
+                [formControl]="controlFor(field)"
+                [disabled]="!!field.disabled"
+                [attr.aria-invalid]="activeErrorFor(field) ? true : null"
+                [attr.aria-describedby]="activeErrorFor(field) ? errorId(field) : null"
+              />
+              {{ field.label }}
+            </label>
+          }
+          @case ('radio') {
+            <fieldset
+              class="fb-radio-group"
+              role="radiogroup"
+              [attr.aria-labelledby]="legendId(field)"
+            >
+              <legend class="fb-label" [id]="legendId(field)">{{ field.label }}</legend>
+              @for (option of optionsFor(field); track option.value) {
+                <label class="fb-radio-option">
+                  <input
+                    type="radio"
+                    [formControl]="controlFor(field)"
+                    [name]="fieldId(field)"
+                    [value]="option.value"
+                    [disabled]="!!field.disabled"
+                    [attr.aria-invalid]="activeErrorFor(field) ? true : null"
+                    [attr.aria-describedby]="activeErrorFor(field) ? errorId(field) : null"
+                  />
+                  {{ option.label }}
+                </label>
+              }
+            </fieldset>
+          }
+          @case ('textarea') {
+            <textarea
+              class="fb-control"
+              [id]="fieldId(field)"
+              [formControl]="controlFor(field)"
+              [placeholder]="field.placeholder ?? ''"
+              [disabled]="!!field.disabled"
+              [attr.aria-invalid]="activeErrorFor(field) ? true : null"
+              [attr.aria-describedby]="activeErrorFor(field) ? errorId(field) : null"
+            ></textarea>
+          }
+          @case ('select') {
+            <select
+              class="fb-control"
+              [id]="fieldId(field)"
+              [formControl]="controlFor(field)"
+              [disabled]="!!field.disabled"
+              [attr.aria-invalid]="activeErrorFor(field) ? true : null"
+              [attr.aria-describedby]="activeErrorFor(field) ? errorId(field) : null"
+            >
+              @for (option of optionsFor(field); track option.value) {
+                <option [ngValue]="option.value">{{ option.label }}</option>
+              }
+            </select>
+          }
+          @default {
+            <input
+              class="fb-control"
+              [id]="fieldId(field)"
+              [type]="field.type"
+              [formControl]="controlFor(field)"
+              [placeholder]="field.placeholder ?? ''"
+              [disabled]="!!field.disabled"
+              [attr.aria-invalid]="activeErrorFor(field) ? true : null"
+              [attr.aria-describedby]="activeErrorFor(field) ? errorId(field) : null"
+            />
+          }
+        }
+
+        @if (activeErrorFor(field); as message) {
+          <p class="fb-error" [id]="errorId(field)">{{ message }}</p>
+        }
+      </div>
+    }
+  </div>
+
+  <button type="submit" class="fb-submit" [disabled]="isSubmitDisabled()">Submit</button>
+</form>

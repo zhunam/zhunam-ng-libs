@@ -14,7 +14,8 @@
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "paths": {
-      "@zhunam/data-grid": ["./libs/data-grid/src/index.ts"]
+      "@zhunam/data-grid": ["./libs/data-grid/src/index.ts"],
+      "@zhunam/form-builder": ["./libs/form-builder/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

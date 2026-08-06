@@ -122,7 +122,7 @@
       <nav class="flex flex-col gap-1">
         @for (lib of libraries; track lib.name) {
           @if (lib.route) {
-            <a [routerLink]="lib.route" [class]="sidebarLinkClasses(true)"
+            <a [routerLink]="lib.route" [class]="sidebarLinkClasses(lib.route === currentUrl())"
               ><span translate="no">{{ lib.name }}</span></a
             >
           } @else {
