@@ -30,11 +30,37 @@
   width: 100%;
 }
 
+.fb-fields-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--fb-columns, 1), 1fr);
+  // Reuses --fb-spacing (already the vertical rhythm between stacked
+  // fields) instead of a new custom property — at the 1-column default
+  // it's the exact same gap as before this feature existed, so nothing
+  // about the non-grid layout changes.
+  gap: var(--fb-spacing);
+}
+
 .fb-field {
   display: flex;
   flex-direction: column;
   gap: calc(var(--fb-spacing) / 2.5);
   min-width: 0;
+}
+
+.fb-field--span-2 {
+  grid-column: span 2;
+}
+
+// Below this, every field always spans the single available column —
+// mobile-first, regardless of the `columns` input or any `colSpan`.
+@media (max-width: 640px) {
+  .fb-fields-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .fb-field--span-2 {
+    grid-column: span 1;
+  }
 }
 
 .fb-label {

@@ -58,6 +58,16 @@ export class FormBuilder<T> {
   fields = input.required<FieldConfig<T>[]>();
 
   /**
+   * Number of grid columns fields are laid out in on desktop. Always
+   * collapses to a single column below a mobile breakpoint, regardless
+   * of this value — mobile-first, like the rest of the library.
+   * @default 1
+   * @example
+   * <lib-form-builder [fields]="fields" [columns]="2" />
+   */
+  columns = input<number>(1);
+
+  /**
    * Form-level validators that check values across multiple fields (e.g.
    * confirming a password). Run separately from Angular's native
    * per-control validation, only when the native `FormGroup` is valid.

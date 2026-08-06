@@ -22,6 +22,7 @@ export class FormBuilderDemo {
   protected readonly sidebarLinkClasses = sidebarLinkClasses;
 
   protected readonly fields = registrationFields;
+  protected readonly columns = 2;
   protected readonly crossFieldValidators = [passwordsMatchValidator];
   protected readonly submittedValue = signal<RegistrationForm | null>(null);
 
@@ -29,6 +30,7 @@ export class FormBuilderDemo {
 
 <lib-form-builder
   [fields]="fields"
+  [columns]="2"
   [crossFieldValidators]="crossFieldValidators"
   (formSubmit)="onFormSubmit($event)"
 />`;

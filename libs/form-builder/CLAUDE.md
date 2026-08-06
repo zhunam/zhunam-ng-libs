@@ -10,6 +10,8 @@ Ver ROADMAP.md en esta misma carpeta para el detalle completo.
 
 ## Contrato de API pública
 - `fields: input.required<FieldConfig<T>[]>` — configuración de campos
+- `columns: input<number>` — cantidad de columnas del grid en desktop
+  (default 1), siempre colapsa a 1 columna en mobile
 - `crossFieldValidators: input<CrossFieldValidator<T>[]>` — validadores
   declarativos a nivel de formulario (sin exponer ValidatorFn/AbstractControl
   de Angular)

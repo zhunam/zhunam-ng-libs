@@ -124,6 +124,15 @@ export interface FieldConfig<T> {
    * Initial value assigned to the field before user interaction.
    */
   defaultValue?: T[keyof T];
+
+  /**
+   * How many grid columns this field spans, when the component's
+   * `columns` input is 2 or more. Has no effect at 1 column (the
+   * default) or below the mobile breakpoint, where every field always
+   * spans the full row.
+   * @default 1
+   */
+  colSpan?: 1 | 2;
 }
 
 /**

@@ -18,12 +18,15 @@ interface TestModel {
 
 function createFixture(
   fields: FieldConfig<TestModel>[],
-  options: { crossFieldValidators?: CrossFieldValidator<TestModel>[] } = {},
+  options: { crossFieldValidators?: CrossFieldValidator<TestModel>[]; columns?: number } = {},
 ): ComponentFixture<FormBuilder<TestModel>> {
   const fixture = TestBed.createComponent(FormBuilder<TestModel>);
   fixture.componentRef.setInput('fields', fields);
   if (options.crossFieldValidators) {
     fixture.componentRef.setInput('crossFieldValidators', options.crossFieldValidators);
+  }
+  if (options.columns !== undefined) {
+    fixture.componentRef.setInput('columns', options.columns);
   }
   fixture.detectChanges();
   return fixture;
@@ -31,6 +34,10 @@ function createFixture(
 
 function root(fixture: ComponentFixture<FormBuilder<TestModel>>): HTMLElement {
   return fixture.nativeElement as HTMLElement;
+}
+
+function getFieldsGrid(fixture: ComponentFixture<FormBuilder<TestModel>>): HTMLElement {
+  return root(fixture).querySelector('.fb-fields-grid') as HTMLElement;
 }
 
 function getInput(
@@ -423,6 +430,39 @@ describe('FormBuilder', () => {
 
       setValue(getInput(fixture, 'text'), 'Ada', fixture);
       expect(getSubmitButton(fixture).disabled).toBe(false);
+    });
+  });
+
+  describe('grid layout', () => {
+    it('defaults to a single column when columns is not specified', () => {
+      const fixture = createFixture([{ key: 'name', label: 'Name', type: 'text' }]);
+
+      // jsdom doesn't resolve `grid-template-columns: repeat(var(--fb-columns), 1fr)`
+      // from an actual stylesheet, so the custom property itself — exactly
+      // what the component sets — is the reliable, meaningful assertion here.
+      expect(getFieldsGrid(fixture).style.getPropertyValue('--fb-columns')).toBe('1');
+    });
+
+    it('sets the --fb-columns custom property to the columns input value', () => {
+      const fixture = createFixture([{ key: 'name', label: 'Name', type: 'text' }], {
+        columns: 2,
+      });
+
+      expect(getFieldsGrid(fixture).style.getPropertyValue('--fb-columns')).toBe('2');
+    });
+
+    it('spans the full grid width for a field with colSpan: 2', () => {
+      const fixture = createFixture(
+        [
+          { key: 'name', label: 'Name', type: 'text' },
+          { key: 'email', label: 'Email', type: 'email', colSpan: 2 },
+        ],
+        { columns: 2 },
+      );
+      const fieldEls = root(fixture).querySelectorAll('.fb-field');
+
+      expect(fieldEls[0].classList.contains('fb-field--span-2')).toBe(false);
+      expect(fieldEls[1].classList.contains('fb-field--span-2')).toBe(true);
     });
   });
 

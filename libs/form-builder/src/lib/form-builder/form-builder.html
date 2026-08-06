@@ -1,66 +1,68 @@
 <form class="fb-form" [formGroup]="formGroup()" (ngSubmit)="onSubmit()" novalidate>
-  @for (field of fields(); track field.key) {
-    <div class="fb-field">
-      @if (field.type !== 'checkbox' && field.type !== 'radio') {
-        <label class="fb-label" [attr.for]="fieldId(field)">{{ field.label }}</label>
-      }
+  <div class="fb-fields-grid" [style.--fb-columns]="columns()">
+    @for (field of fields(); track field.key) {
+      <div class="fb-field" [class.fb-field--span-2]="field.colSpan === 2">
+        @if (field.type !== 'checkbox' && field.type !== 'radio') {
+          <label class="fb-label" [attr.for]="fieldId(field)">{{ field.label }}</label>
+        }
 
-      @switch (field.type) {
-        @case ('checkbox') {
-          <label class="fb-checkbox-option">
-            <input type="checkbox" [formControl]="controlFor(field)" />
-            {{ field.label }}
-          </label>
+        @switch (field.type) {
+          @case ('checkbox') {
+            <label class="fb-checkbox-option">
+              <input type="checkbox" [formControl]="controlFor(field)" />
+              {{ field.label }}
+            </label>
+          }
+          @case ('radio') {
+            <fieldset class="fb-radio-group">
+              <legend class="fb-label">{{ field.label }}</legend>
+              @for (option of optionsFor(field); track option.value) {
+                <label class="fb-radio-option">
+                  <input
+                    type="radio"
+                    [formControl]="controlFor(field)"
+                    [name]="fieldId(field)"
+                    [value]="option.value"
+                  />
+                  {{ option.label }}
+                </label>
+              }
+            </fieldset>
+          }
+          @case ('textarea') {
+            <textarea
+              class="fb-control"
+              [id]="fieldId(field)"
+              [formControl]="controlFor(field)"
+              [placeholder]="field.placeholder ?? ''"
+            ></textarea>
+          }
+          @case ('select') {
+            <select class="fb-control" [id]="fieldId(field)" [formControl]="controlFor(field)">
+              @for (option of optionsFor(field); track option.value) {
+                <option [ngValue]="option.value">{{ option.label }}</option>
+              }
+            </select>
+          }
+          @default {
+            <input
+              class="fb-control"
+              [id]="fieldId(field)"
+              [type]="field.type"
+              [formControl]="controlFor(field)"
+              [placeholder]="field.placeholder ?? ''"
+            />
+          }
         }
-        @case ('radio') {
-          <fieldset class="fb-radio-group">
-            <legend class="fb-label">{{ field.label }}</legend>
-            @for (option of optionsFor(field); track option.value) {
-              <label class="fb-radio-option">
-                <input
-                  type="radio"
-                  [formControl]="controlFor(field)"
-                  [name]="fieldId(field)"
-                  [value]="option.value"
-                />
-                {{ option.label }}
-              </label>
-            }
-          </fieldset>
-        }
-        @case ('textarea') {
-          <textarea
-            class="fb-control"
-            [id]="fieldId(field)"
-            [formControl]="controlFor(field)"
-            [placeholder]="field.placeholder ?? ''"
-          ></textarea>
-        }
-        @case ('select') {
-          <select class="fb-control" [id]="fieldId(field)" [formControl]="controlFor(field)">
-            @for (option of optionsFor(field); track option.value) {
-              <option [ngValue]="option.value">{{ option.label }}</option>
-            }
-          </select>
-        }
-        @default {
-          <input
-            class="fb-control"
-            [id]="fieldId(field)"
-            [type]="field.type"
-            [formControl]="controlFor(field)"
-            [placeholder]="field.placeholder ?? ''"
-          />
-        }
-      }
 
-      @if (errorMessageFor(field); as message) {
-        <p class="fb-error">{{ message }}</p>
-      } @else if (crossFieldErrorFor(field); as crossMessage) {
-        <p class="fb-error">{{ crossMessage }}</p>
-      }
-    </div>
-  }
+        @if (errorMessageFor(field); as message) {
+          <p class="fb-error">{{ message }}</p>
+        } @else if (crossFieldErrorFor(field); as crossMessage) {
+          <p class="fb-error">{{ crossMessage }}</p>
+        }
+      </div>
+    }
+  </div>
 
   <button type="submit" class="fb-submit" [disabled]="isSubmitDisabled()">Submit</button>
 </form>

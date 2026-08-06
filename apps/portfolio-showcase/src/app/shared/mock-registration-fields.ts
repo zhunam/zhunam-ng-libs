@@ -18,6 +18,7 @@ export const registrationFields: FieldConfig<RegistrationForm>[] = [
     type: 'text',
     placeholder: 'Ada Lovelace',
     validators: { required: true, minLength: 2 },
+    colSpan: 2,
   },
   {
     key: 'email',
@@ -25,18 +26,21 @@ export const registrationFields: FieldConfig<RegistrationForm>[] = [
     type: 'email',
     placeholder: 'ada@example.com',
     validators: { required: true, email: true },
+    colSpan: 2,
   },
   {
     key: 'password',
     label: 'Password',
     type: 'password',
     validators: { required: true, minLength: 8 },
+    colSpan: 1,
   },
   {
     key: 'confirmPassword',
     label: 'Confirm password',
     type: 'password',
     validators: { required: true },
+    colSpan: 1,
   },
   {
     key: 'country',
@@ -47,8 +51,10 @@ export const registrationFields: FieldConfig<RegistrationForm>[] = [
       { value: 'br', label: 'Brasil' },
       { value: 'cl', label: 'Chile' },
       { value: 'uy', label: 'Uruguay' },
+      { value: 'co', label: 'Colombia' },
     ],
     validators: { required: true },
+    colSpan: 1,
   },
   {
     key: 'accountType',
@@ -59,16 +65,19 @@ export const registrationFields: FieldConfig<RegistrationForm>[] = [
       { value: 'business', label: 'Business' },
     ],
     defaultValue: 'personal',
+    colSpan: 1,
   },
   {
     key: 'subscribeNewsletter',
     label: 'Subscribe to the newsletter',
     type: 'checkbox',
+    colSpan: 2,
   },
   {
     key: 'birthDate',
     label: 'Birth date',
     type: 'date',
+    colSpan: 2,
   },
 ];
 
