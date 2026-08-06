@@ -473,6 +473,41 @@ describe('FormBuilder', () => {
     });
   });
 
+  describe('disabled fields', () => {
+    it('includes a disabled field with a defaultValue in the value formSubmit emits', () => {
+      const fixture = createFixture([
+        { key: 'name', label: 'Name', type: 'text', validators: { required: true } },
+        { key: 'plan', label: 'Plan', type: 'text', disabled: true, defaultValue: 3 },
+      ]);
+      setValue(getInput(fixture, 'text'), 'Ada', fixture);
+
+      const emitted: TestModel[] = [];
+      fixture.componentInstance.formSubmit.subscribe((value) => emitted.push(value));
+      submitForm(fixture);
+
+      // `.value` would silently drop `plan` here since it's disabled —
+      // confirms formSubmit uses `getRawValue()` instead.
+      expect(emitted).toEqual([{ name: 'Ada', plan: 3 }]);
+    });
+
+    it('does not let a required + disabled field invalidate the form', () => {
+      const fixture = createFixture([
+        {
+          key: 'name',
+          label: 'Name',
+          type: 'text',
+          disabled: true,
+          validators: { required: true },
+        },
+      ]);
+
+      // Angular excludes disabled controls from their parent's validity
+      // aggregation entirely — this documents that native behavior for a
+      // required + disabled field, since it's easy to assume otherwise.
+      expect(isFormValid(fixture)).toBe(true);
+    });
+  });
+
   describe('serverErrors', () => {
     it('shows the server error message for a field listed in serverErrors', () => {
       const fixture = createFixture([{ key: 'email', label: 'Email', type: 'email' }], {

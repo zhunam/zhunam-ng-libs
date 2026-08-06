@@ -133,6 +133,16 @@ export interface FieldConfig<T> {
    * @default 1
    */
   colSpan?: 1 | 2;
+
+  /**
+   * Renders the control disabled from the start and excludes it from
+   * native validation, matching Angular's own disabled-control
+   * semantics. Still included in the object `formSubmit` emits
+   * (`FormBuilder` reads the raw form value, not the disabled-excluding
+   * one) — useful for a read-only field seeded via `defaultValue`.
+   * @default false
+   */
+  disabled?: boolean;
 }
 
 /**

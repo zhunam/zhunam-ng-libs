@@ -9,7 +9,7 @@
         @switch (field.type) {
           @case ('checkbox') {
             <label class="fb-checkbox-option">
-              <input type="checkbox" [formControl]="controlFor(field)" />
+              <input type="checkbox" [formControl]="controlFor(field)" [disabled]="!!field.disabled" />
               {{ field.label }}
             </label>
           }
@@ -23,6 +23,7 @@
                     [formControl]="controlFor(field)"
                     [name]="fieldId(field)"
                     [value]="option.value"
+                    [disabled]="!!field.disabled"
                   />
                   {{ option.label }}
                 </label>
@@ -35,10 +36,16 @@
               [id]="fieldId(field)"
               [formControl]="controlFor(field)"
               [placeholder]="field.placeholder ?? ''"
+              [disabled]="!!field.disabled"
             ></textarea>
           }
           @case ('select') {
-            <select class="fb-control" [id]="fieldId(field)" [formControl]="controlFor(field)">
+            <select
+              class="fb-control"
+              [id]="fieldId(field)"
+              [formControl]="controlFor(field)"
+              [disabled]="!!field.disabled"
+            >
               @for (option of optionsFor(field); track option.value) {
                 <option [ngValue]="option.value">{{ option.label }}</option>
               }
@@ -51,6 +58,7 @@
               [type]="field.type"
               [formControl]="controlFor(field)"
               [placeholder]="field.placeholder ?? ''"
+              [disabled]="!!field.disabled"
             />
           }
         }

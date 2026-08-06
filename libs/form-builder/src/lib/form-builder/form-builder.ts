@@ -158,7 +158,10 @@ export class FormBuilder<T> {
     const controls: Record<string, FormControl<unknown>> = {};
     for (const field of fields) {
       const initialValue = field.defaultValue ?? (field.type === 'checkbox' ? false : null);
-      controls[String(field.key)] = new FormControl<unknown>(initialValue, this.buildValidators(field));
+      controls[String(field.key)] = new FormControl<unknown>(
+        { value: initialValue, disabled: !!field.disabled },
+        this.buildValidators(field),
+      );
     }
     return new FormGroup(controls);
   }
@@ -259,7 +262,10 @@ export class FormBuilder<T> {
       return;
     }
 
-    const value = group.value as T;
+    // `.value` excludes disabled controls entirely — `getRawValue()` keeps
+    // them, so a disabled field with a `defaultValue` still comes through
+    // as a complete `T` instead of a hole in the emitted object.
+    const value = group.getRawValue() as T;
     const errors = this.runCrossFieldValidators(value);
     this.crossFieldErrors.set(errors);
 
