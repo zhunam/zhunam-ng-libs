@@ -17,6 +17,18 @@
 - Server-side pagination, multi-column sorting, per-column filters → v2,
   free/Pro not decided yet
 
+### Known issues / tech debt
+
+- Pagination UI text ("Anterior", "Siguiente", "Página X de Y" in
+  `data-grid.html`) is hardcoded in Spanish, inconsistent with the
+  library's English README/JSDoc and the rest of the portfolio site.
+  Found while building the form-builder demo (2026-08-05), which
+  originally copied the same convention ("Enviar") before it was
+  corrected to English there. Not fixed here yet since v1.0.1 is
+  already published to npm — plan a v1.1 that either translates these
+  strings to English or, better, exposes them as configurable
+  `input()`s so consumers can localize them.
+
 ### Tasks
 
 - [x] Generate library with tags + adjust peerDependencies

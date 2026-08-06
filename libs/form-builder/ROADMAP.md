@@ -25,6 +25,6 @@
 - [x] Estilos encapsulados con CSS custom properties
 - [x] JSDoc completo en API pública
 - [x] Unit tests
-- [ ] Demo consumiendo la librería en apps/portfolio-showcase
+- [x] Demo consumiendo la librería en apps/portfolio-showcase
 - [ ] README público
 - [ ] Verificar build de producción

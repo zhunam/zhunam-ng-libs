@@ -15,8 +15,15 @@ export const libraries: LibraryEntry[] = [
     route: '/data-grid',
     status: 'available',
   },
-  
+  {
+    name: 'Form Builder',
+    importPath: '@zhunam/form-builder',
+    description: 'Dynamic reactive forms from a declarative field configuration.',
+    route: '/form-builder',
+    status: 'available',
+  },
 ];
 
-/** The only library with a real demo today — referenced directly where a single entry is needed. */
+/** Referenced directly on the home page, where each library gets its own named card. */
 export const dataGridLibrary = libraries[0];
+export const formBuilderLibrary = libraries[1];

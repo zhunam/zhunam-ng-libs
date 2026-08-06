@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { ColumnConfig, DataGrid } from '@zhunam/data-grid';
 import { mockUsers, userColumns } from '../../shared/mock-users';
 import { libraries } from '../../shared/libraries';
+import { injectCurrentUrl, sidebarLinkClasses } from '../../shared/library-sidebar';
 
 // Once a user can freely rename a column's `key` through the JSON editor, the
 // row shape is no longer the fixed `User` interface — it's whatever set of
@@ -18,6 +19,8 @@ type Row = Record<string, unknown>;
 })
 export class DataGridDemo {
   protected readonly libraries = libraries;
+  protected readonly currentUrl = injectCurrentUrl();
+  protected readonly sidebarLinkClasses = sidebarLinkClasses;
   protected readonly selectedUser = signal<Row | null>(null);
 
   // Both editors below follow the same shape: an in-progress textarea value,
@@ -204,11 +207,5 @@ export class DataGridDemo {
 
     this.users.set(syncedRows);
     this.usersJsonText.set(JSON.stringify(syncedRows, null, 2));
-  }
-
-  protected sidebarLinkClasses(active: boolean): string {
-    return active
-      ? 'rounded-md bg-primary/10 px-3 py-2 text-sm font-medium text-primary'
-      : 'rounded-md px-3 py-2 text-sm font-medium text-slate-700 transition-colors duration-200 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary';
   }
 }
