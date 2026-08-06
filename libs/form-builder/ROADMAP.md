@@ -35,5 +35,5 @@
 - [x] serverErrors input con auto-limpieza por campo
 - [x] disabled por campo + formSubmit vía getRawValue()
 - [x] Atributos ARIA (aria-invalid, aria-describedby, radiogroup) por campo
-- [ ] README público
-- [ ] Verificar build de producción
+- [x] README público
+- [x] Verificar build de producción
