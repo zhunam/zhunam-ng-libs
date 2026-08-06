@@ -50,7 +50,13 @@ turn comes.
 Anything beyond the 7 above goes here first, unordered, until it's
 promoted into the numbered sequence above.
 
-- (none yet)
+- **i18n / customizable text in libs/*** — varias librerías tienen
+  strings hardcodeados en un idioma fijo (ej. paginación en español en
+  data-grid, botón "Submit" en inglés en form-builder). Evaluar un
+  patrón consistente de customización de texto (inputs opcionales para
+  labels de UI, o soporte de i18n real) antes de que la lista de
+  librerías crezca más y el problema se replique. Detectado en
+  libs/data-grid/ROADMAP.md durante el desarrollo de form-builder.
 
 ## Recurring maintenance notes
 
