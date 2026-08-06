@@ -26,16 +26,28 @@ export class FormBuilderDemo {
   protected readonly crossFieldValidators = [passwordsMatchValidator];
   protected readonly submittedValue = signal<RegistrationForm | null>(null);
 
+  // Simulates a backend rejection so the demo shows serverErrors doing
+  // something real: submit with this email to see it in action, then
+  // change the field to watch the message clear itself automatically.
+  protected readonly serverErrors = signal<Partial<Record<keyof RegistrationForm, string>>>({});
+
   protected readonly usageSnippet = `import { FormBuilder } from '@zhunam/form-builder';
 
 <lib-form-builder
   [fields]="fields"
   [columns]="2"
   [crossFieldValidators]="crossFieldValidators"
+  [serverErrors]="serverErrors()"
   (formSubmit)="onFormSubmit($event)"
 />`;
 
   protected onFormSubmit(value: RegistrationForm): void {
+    if (value.email === 'test@test.com') {
+      this.serverErrors.set({ email: 'This email is already registered.' });
+      return;
+    }
+
+    this.serverErrors.set({});
     this.submittedValue.set(value);
   }
 

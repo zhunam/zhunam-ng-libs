@@ -9,6 +9,12 @@
   maxLength, pattern, email)
 - Validación cruzada a nivel de formulario (ej. confirmar password)
 - formSubmit output con los valores tipados
+- serverErrors: errores del backend por campo, mostrados sin depender de
+  touched/submitted y con auto-limpieza al editar el campo
+- Campos disabled individuales (excluidos de la validación nativa,
+  incluidos igual en formSubmit vía getRawValue())
+- Atributos ARIA (aria-invalid, aria-describedby, radiogroup) sincronizados
+  con el mensaje de error activo de cada campo
 
 ### Out of scope
 - UI visual drag & drop para armar formularios → Pro (private repo) o v2
@@ -26,5 +32,8 @@
 - [x] JSDoc completo en API pública
 - [x] Unit tests
 - [x] Demo consumiendo la librería en apps/portfolio-showcase
+- [x] serverErrors input con auto-limpieza por campo
+- [x] disabled por campo + formSubmit vía getRawValue()
+- [x] Atributos ARIA (aria-invalid, aria-describedby, radiogroup) por campo
 - [ ] README público
 - [ ] Verificar build de producción
