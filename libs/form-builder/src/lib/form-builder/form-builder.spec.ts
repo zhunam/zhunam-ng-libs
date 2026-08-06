@@ -18,7 +18,11 @@ interface TestModel {
 
 function createFixture(
   fields: FieldConfig<TestModel>[],
-  options: { crossFieldValidators?: CrossFieldValidator<TestModel>[]; columns?: number } = {},
+  options: {
+    crossFieldValidators?: CrossFieldValidator<TestModel>[];
+    columns?: number;
+    serverErrors?: Partial<Record<keyof TestModel, string>>;
+  } = {},
 ): ComponentFixture<FormBuilder<TestModel>> {
   const fixture = TestBed.createComponent(FormBuilder<TestModel>);
   fixture.componentRef.setInput('fields', fields);
@@ -27,6 +31,9 @@ function createFixture(
   }
   if (options.columns !== undefined) {
     fixture.componentRef.setInput('columns', options.columns);
+  }
+  if (options.serverErrors) {
+    fixture.componentRef.setInput('serverErrors', options.serverErrors);
   }
   fixture.detectChanges();
   return fixture;
@@ -463,6 +470,41 @@ describe('FormBuilder', () => {
 
       expect(fieldEls[0].classList.contains('fb-field--span-2')).toBe(false);
       expect(fieldEls[1].classList.contains('fb-field--span-2')).toBe(true);
+    });
+  });
+
+  describe('serverErrors', () => {
+    it('shows the server error message for a field listed in serverErrors', () => {
+      const fixture = createFixture([{ key: 'email', label: 'Email', type: 'email' }], {
+        serverErrors: { email: 'This email is already registered.' },
+      });
+
+      expect(getErrorText(fixture)).toBe('This email is already registered.');
+    });
+
+    it('clears the server error once the user changes the field value', () => {
+      const fixture = createFixture([{ key: 'email', label: 'Email', type: 'email' }], {
+        serverErrors: { email: 'This email is already registered.' },
+      });
+      expect(getErrorText(fixture)).toBe('This email is already registered.');
+
+      setValue(getInput(fixture, 'email'), 'new@example.com', fixture);
+
+      expect(getErrorText(fixture)).toBeNull();
+    });
+
+    it('does not block submit while a server error is shown', () => {
+      const fixture = createFixture([{ key: 'email', label: 'Email', type: 'email' }], {
+        serverErrors: { email: 'This email is already registered.' },
+      });
+
+      expect(getSubmitButton(fixture).disabled).toBe(false);
+
+      const emitted: TestModel[] = [];
+      fixture.componentInstance.formSubmit.subscribe((value) => emitted.push(value));
+      submitForm(fixture);
+
+      expect(emitted.length).toBe(1);
     });
   });
 

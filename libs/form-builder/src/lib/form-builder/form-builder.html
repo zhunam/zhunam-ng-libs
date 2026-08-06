@@ -57,6 +57,8 @@
 
         @if (errorMessageFor(field); as message) {
           <p class="fb-error">{{ message }}</p>
+        } @else if (serverErrorFor(field); as serverMessage) {
+          <p class="fb-error">{{ serverMessage }}</p>
         } @else if (crossFieldErrorFor(field); as crossMessage) {
           <p class="fb-error">{{ crossMessage }}</p>
         }

@@ -5,6 +5,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   input,
   output,
   signal,
@@ -92,8 +93,39 @@ export class FormBuilder<T> {
    */
   formSubmit = output<T>();
 
+  /**
+   * Errors returned by the backend after a submit attempt (e.g. "email
+   * already registered"), keyed by field. Shown as soon as they're set,
+   * regardless of whether the field has been touched or the form
+   * submitted locally — receiving one implies a submit already
+   * happened. Each message clears itself automatically the moment the
+   * user edits that field again, so there's no need to clear this input
+   * back to `{}` manually after showing it once.
+   * @default {}
+   * @example
+   * // In the consumer's component:
+   * protected readonly serverErrors = signal<Partial<Record<keyof User, string>>>({});
+   *
+   * onFormSubmit(value: User) {
+   *   this.api.register(value).subscribe({
+   *     error: () => this.serverErrors.set({ email: 'This email is already registered.' }),
+   *   });
+   * }
+   * // Template:
+   * <lib-form-builder [fields]="fields" [serverErrors]="serverErrors()" (formSubmit)="onFormSubmit($event)" />
+   */
+  serverErrors = input<Partial<Record<keyof T, string>>>({});
+
   protected readonly submitted = signal(false);
   protected readonly crossFieldErrors = signal<Record<string, string>>({});
+
+  // Snapshot of each server-error field's value at the moment that error
+  // appeared. A server error is only ever about a rejected backend
+  // observation of the exact value the user submitted — the instant the
+  // control's live value no longer matches this snapshot, the message is
+  // stale and `serverErrorFor` stops showing it, without the consumer
+  // having to clear `serverErrors` themselves.
+  private readonly serverErrorSnapshot = signal<Partial<Record<keyof T, unknown>>>({});
 
   // `fields()` can change at runtime (e.g. a wizard swapping steps), so the
   // FormGroup is derived with `computed()` rather than built once in the
@@ -106,6 +138,21 @@ export class FormBuilder<T> {
 
   private static instanceCounter = 0;
   private readonly instanceId = ++FormBuilder.instanceCounter;
+
+  constructor() {
+    // Runs whenever a new `serverErrors()` value comes in and captures
+    // each mentioned field's current value — the baseline `serverErrorFor`
+    // compares against to decide whether that message is still relevant.
+    effect(() => {
+      const errors = this.serverErrors();
+      const group = this.formGroup();
+      const snapshot: Partial<Record<keyof T, unknown>> = {};
+      for (const key of Object.keys(errors) as (keyof T)[]) {
+        snapshot[key] = group.get(String(key))?.value;
+      }
+      this.serverErrorSnapshot.set(snapshot);
+    });
+  }
 
   private buildFormGroup(fields: FieldConfig<T>[]): FormGroup {
     const controls: Record<string, FormControl<unknown>> = {};
@@ -180,6 +227,17 @@ export class FormBuilder<T> {
     }
 
     return field.validators?.errorMessages?.[errorKey] ?? DEFAULT_ERROR_MESSAGES[errorKey];
+  }
+
+  protected serverErrorFor(field: FieldConfig<T>): string | null {
+    const message = this.serverErrors()[field.key];
+    if (!message) {
+      return null;
+    }
+
+    const currentValue = this.controlFor(field).value;
+    const snapshotValue = this.serverErrorSnapshot()[field.key];
+    return currentValue === snapshotValue ? message : null;
   }
 
   protected crossFieldErrorFor(field: FieldConfig<T>): string | null {
