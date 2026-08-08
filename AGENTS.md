@@ -406,6 +406,20 @@ styling setups, without friction.
   the portfolio and links to each library, it doesn't repeat each
   individual README's content.
 
+### Changelog discipline
+
+- Cada `libs/<name>/CHANGELOG.md` debe tener siempre una sección
+  `## [Unreleased]` activa mientras se desarrolla.
+- Al completar cualquier tarea del ROADMAP de la librería que agregue,
+  cambie, o corrija algo de la API pública o el comportamiento
+  observable (no cambios puramente internos como refactors sin efecto
+  visible), agregá una entrada correspondiente bajo `[Unreleased]`
+  antes de dar la tarea por terminada — no esperar al final del
+  desarrollo para reconstruir el historial de memoria.
+- Al publicar una versión, renombrá `[Unreleased]` a
+  `[X.Y.Z] - <fecha>` y dejá una nueva sección `[Unreleased]` vacía
+  arriba, lista para la próxima ronda de cambios.
+
 ### Independence between libraries
 
 - Minimize imports from one `libs/*` library into another. Every library
@@ -495,16 +509,24 @@ In this order, every time a new library is generated:
 1. Generate with tags: `nx g @nx/angular:library <name> --importPath=@zhunam/<name> --tags=scope:<name>,type:publishable`
 2. Edit `libs/<name>/package.json`: widen `peerDependencies` to the
    version range defined in "Angular versioning" (don't leave Nx's
-   default, which only pins the currently installed version).
+   default, which only pins the currently installed version). Also add
+   `"license": "MIT"` — every library under `libs/*` is public/free by
+   definition (see "Project purpose" above: any paid/Pro logic never
+   lives in this repo), so this is never optional. Nx's generator
+   doesn't add this field by default, and npm then shows the published
+   package as "License: none" instead of MIT — this exact bug already
+   happened with both `data-grid` and `form-builder`, caught only after
+   publishing.
 3. Create `libs/<name>/CLAUDE.md` with that library's specific purpose
    (template in the corresponding section).
-4. Create `libs/<name>/CLAUDE.md` with that library's specific purpose
-   (template in the corresponding section).
-5. Create `libs/<name>/ROADMAP.md` with the v1 scope (what's IN / what's
+4. Create `libs/<name>/ROADMAP.md` with the v1 scope (what's IN / what's
    OUT), the public API contract, and the list of 1-3h tasks — before
    writing the first component. The root `ROADMAP.md` only references
    which phase/library is the current focus, it doesn't repeat this
    detail.
+5. Create `libs/<name>/CHANGELOG.md` with an empty `## [Unreleased]`
+   section (Keep a Changelog format, same as the existing libraries) —
+   before writing the first component, not at the end.
 6. Only then, generate the first component with
    `nx g @nx/angular:component`.
 
