@@ -281,7 +281,7 @@ export class FormBuilder<T> {
     // `.value` excludes disabled controls entirely — `getRawValue()` keeps
     // them, so a disabled field with a `defaultValue` still comes through
     // as a complete `T` instead of a hole in the emitted object.
-    const value = group.getRawValue() as T;
+    const value = this.coerceNumberFields(group.getRawValue());
     const errors = this.runCrossFieldValidators(value);
     this.crossFieldErrors.set(errors);
 
@@ -290,6 +290,34 @@ export class FormBuilder<T> {
     }
 
     this.formSubmit.emit(value);
+  }
+
+  // Native `<input type="number">` always reports its value as a string
+  // through the DOM. Angular's NumberValueAccessor would normally parse it
+  // for us, but that accessor only activates for a *static* `type="number"`
+  // attribute in the template — this component binds `[type]="field.type"`
+  // dynamically, so it never matches, and DefaultValueAccessor (string in,
+  // string out) handles the control instead. Fixed up here, at the point
+  // the value leaves the component, rather than in how the FormControl
+  // stores it — Validators.min/max already parseFloat internally either
+  // way, so correcting the stored value would change nothing there but
+  // would still need this same conversion for the emitted object.
+  private coerceNumberFields(rawValue: unknown): T {
+    const value = { ...(rawValue as Record<string, unknown>) };
+    for (const field of this.fields()) {
+      if (field.type !== 'number') {
+        continue;
+      }
+
+      const key = String(field.key);
+      const current = value[key];
+      if (current === '' || current === null || current === undefined) {
+        value[key] = null;
+      } else if (typeof current === 'string') {
+        value[key] = Number(current);
+      }
+    }
+    return value as T;
   }
 
   private runCrossFieldValidators(value: T): Record<string, string> {
