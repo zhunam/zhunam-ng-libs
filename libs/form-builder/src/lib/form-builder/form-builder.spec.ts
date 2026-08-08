@@ -429,6 +429,21 @@ describe('FormBuilder', () => {
       expect(emitted).toEqual([{ name: 'Ada', age: 30 }]);
     });
 
+    it('does not convert an empty, optional number field to 0', () => {
+      const fixture = createFixture([
+        { key: 'name', label: 'Name', type: 'text', validators: { required: true } },
+        { key: 'age', label: 'Age', type: 'number' },
+      ]);
+      setValue(getInput(fixture, 'text'), 'Ada', fixture);
+      // `age` is left empty — it's optional, so the form is still valid.
+
+      const emitted: TestModel[] = [];
+      fixture.componentInstance.formSubmit.subscribe((value) => emitted.push(value));
+      submitForm(fixture);
+
+      expect(emitted).toEqual([{ name: 'Ada', age: null }]);
+    });
+
     it('disables the submit button while invalid and enables it once valid', () => {
       const fixture = createFixture([
         { key: 'name', label: 'Name', type: 'text', validators: { required: true } },
@@ -614,11 +629,18 @@ describe('FormBuilder', () => {
       ]);
       const rootEl = root(fixture);
 
+      // No real <script> element ever lands in the DOM.
       expect(rootEl.querySelector('script')).toBeNull();
-      expect(rootEl.textContent).toContain(malicious);
-      // Interpolation HTML-escapes the text on the way into the DOM — real
-      // markup would show up unescaped in innerHTML, entities prove it didn't.
-      expect(rootEl.innerHTML).not.toContain('<script>alert(1)</script>');
+      // The label renders the malicious string as literal, escaped text —
+      // this is the actual thing that matters for interpolation safety.
+      const labelEl = rootEl.querySelector('.fb-label') as HTMLElement;
+      expect(labelEl.textContent).toBe(malicious);
+      // `placeholder` is an HTML *attribute*, not markup — its content is
+      // never parsed as HTML/script regardless of what string it holds, so
+      // this only confirms the raw value made it through unmangled, not a
+      // security property (searching innerHTML for the raw substring here
+      // would be a false positive: it'd also match safely inside this
+      // attribute, which never executes).
       expect(getInput(fixture, 'text').getAttribute('placeholder')).toBe(malicious);
     });
   });
