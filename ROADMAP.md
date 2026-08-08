@@ -13,13 +13,13 @@ only reference it.
 
 ## Active phase
 
-**Phase 2 — Dynamic Form Builder** — starting. Scope definition session
-pending before any component is generated (per the "Checklist: when
-creating a new library" in AGENTS.md). Full detail will live in
-libs/form-builder/ROADMAP.md once scope is defined.
+**Phase 3 — Financial/crypto dashboard** — waiting to start (scope
+definition session pending, per the same process used for Phase 2). Full detail will
+live directly in this file once scope is defined (it's an apps/* piece,
+not a publishable lib, so it won't get its own libs/<name>/ROADMAP.md).
 
-Phase 1 (Data Grid) is done: `@zhunam/data-grid@1.0.1` is live on the
-public npm registry.
+Phase 2 (Dynamic Form Builder) is done: `@zhunam/form-builder@1.0.1` is
+live on the public npm registry, alongside `@zhunam/data-grid@1.0.1`.
 
 ## Phases — full sequence
 
@@ -32,7 +32,7 @@ turn comes.
 1. **Data Grid** — `libs/data-grid` — Freemium (core here, Pro in a
    separate private repo) — **DONE, published on npm as `@zhunam/data-grid@1.0.1`**
 2. **Dynamic Form Builder** — `libs/form-builder` — Freemium + SaaS (paid
-   persistence) — scope definition in progress.
+   persistence) — **DONE, published on npm as `@zhunam/form-builder@1.0.1`**
 3. **Financial/crypto dashboard** — `apps/` (portfolio piece, not a
    publishable lib) — 100% free, not monetizable as a product — not started
 4. **Modular auth system** — `libs/auth` (thin wrapper/starter around
