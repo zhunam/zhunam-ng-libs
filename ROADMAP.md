@@ -13,36 +13,40 @@ only reference it.
 
 ## Active phase
 
-**Phase 3 — Financial/crypto dashboard** — waiting to start (scope
-definition session pending, per the same process used for Phase 2). Full detail will
-live directly in this file once scope is defined (it's an apps/* piece,
-not a publishable lib, so it won't get its own libs/<name>/ROADMAP.md).
+**Phase 3 — Modular auth system** — waiting to start (scope definition
+session pending, per the same process used for previous phases).
 
 Phase 2 (Dynamic Form Builder) is done: `@zhunam/form-builder@1.0.1` is
 live on the public npm registry, alongside `@zhunam/data-grid@1.0.1`.
 
 ## Phases — full sequence
 
-Each phase corresponds to one library. Only the active phase has its
-detailed breakdown written out (in its own `libs/<name>/ROADMAP.md`) —
-writing full task lists for phases months away tends to go stale before
-they're even started, so those stay as a one-line scope stub until their
-turn comes.
+Each phase corresponds to one library (or, for the last phase, one
+app piece). Only the active phase has its detailed breakdown written
+out (in its own `libs/<name>/ROADMAP.md`) — writing full task lists for
+phases months away tends to go stale before they're even started, so
+those stay as a one-line scope stub until their turn comes.
+
+Reordered 2026-08-10: all publishable libraries now come before the
+Financial/crypto dashboard, so the dashboard can consume them (auth,
+data-grid, form-builder, pdf-generator) instead of standing alone.
 
 1. **Data Grid** — `libs/data-grid` — Freemium (core here, Pro in a
    separate private repo) — **DONE, published on npm as `@zhunam/data-grid@1.0.1`**
 2. **Dynamic Form Builder** — `libs/form-builder` — Freemium + SaaS (paid
    persistence) — **DONE, published on npm as `@zhunam/form-builder@1.0.1`**
-3. **Financial/crypto dashboard** — `apps/` (portfolio piece, not a
-   publishable lib) — 100% free, not monetizable as a product — not started
-4. **Modular auth system** — `libs/auth` (thin wrapper/starter around
+3. **Modular auth system** — `libs/auth` (thin wrapper/starter around
    Firebase/Supabase Auth) — 100% free — not started
-5. **Client-side document (PDF) generator** — `libs/pdf-generator` —
+4. **Client-side document (PDF) generator** — `libs/pdf-generator` —
    mostly free, possible template sales (Gumroad) — not started
-6. **Real-time chat / notifications** — `libs/chat-widget` (embeddable
+5. **Real-time chat / notifications** — `libs/chat-widget` (embeddable
    Web Component) — pure SaaS, main candidate for real revenue — not started
-7. **Calendar with Google Calendar integration** — `libs/calendar` —
+6. **Calendar with Google Calendar integration** — `libs/calendar` —
    freemium UI + SaaS sync — not started
+7. **Financial/crypto dashboard** — `apps/` (portfolio piece, not a
+   publishable lib) — 100% free, not monetizable as a product — meant to
+   showcase auth, data-grid, form-builder, and pdf-generator working
+   together in a real use case — not started
 
 
 ## Future ideas (not yet phased)
