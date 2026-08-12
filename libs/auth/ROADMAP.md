@@ -33,7 +33,7 @@
 - [x] Definir AuthUser, AuthState, y la interfaz base de AuthService
 - [ ] Entry point firebase/: implementación real sobre Firebase Auth
 - [ ] Entry point supabase/: implementación real sobre Supabase Auth
-- [ ] authGuard funcional
+- [x] authGuard funcional
 - [ ] Entry point form-ui/: login + registro con form-builder
 - [ ] Estilos encapsulados con CSS custom properties (form-ui)
 - [ ] JSDoc completo en API pública de cada entry point
