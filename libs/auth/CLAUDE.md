@@ -19,10 +19,22 @@ Ver ROADMAP.md en esta misma carpeta para el detalle completo.
   separado), más `signIn`, `signUp`, `signOut`, `resetPassword`,
   `getIdToken` — implementada por cada entry point de proveedor, el
   núcleo solo define el contrato.
+- `AUTH_SERVICE` — `InjectionToken<AuthService>` sin factory por defecto.
+  Cada entry point de proveedor registra su implementación bajo este
+  token; `authGuard` y cualquier consumidor lo inyectan igual sin
+  importar qué proveedor se eligió.
 - `authGuard` — Angular Route Guard funcional, redirige si no hay sesión.
+- `AUTH_LOGIN_PATH` — `InjectionToken<string>` configurable, ruta de login
+  a la que redirige `authGuard` (`/login` por default).
 
 ## Entry points secundarios
-- `@zhunam/auth/firebase` — implementación sobre Firebase Auth.
+- `@zhunam/auth/firebase` — implementación sobre Firebase Auth (SDK
+  modular `firebase`, no `@angular/fire`). Expone `provideFirebaseAuth(config)`
+  y `FirebaseAuthConfig`. El peerDependency `firebase` vive en la raíz de
+  `libs/auth/package.json` marcado `optional` vía `peerDependenciesMeta`
+  — ng-packagr publica un único `package.json` para todos los entry
+  points, no hay forma nativa de aislar un peerDependency a un solo
+  subpath (mismo patrón que usa `@angular/fire`).
 - `@zhunam/auth/supabase` — implementación sobre Supabase Auth.
 - `@zhunam/auth/form-ui` — login/registro prearmados, usa @zhunam/form-builder
   (peerDependency opcional, solo de este entry point).

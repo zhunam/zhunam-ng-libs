@@ -16,7 +16,8 @@
     "paths": {
       "@zhunam/data-grid": ["./libs/data-grid/src/index.ts"],
       "@zhunam/form-builder": ["./libs/form-builder/src/index.ts"],
-      "@zhunam/auth": ["./libs/auth/src/index.ts"]
+      "@zhunam/auth": ["./libs/auth/src/index.ts"],
+      "@zhunam/auth/firebase": ["./libs/auth/firebase/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

@@ -21,3 +21,10 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
   params.
 - `AUTH_LOGIN_PATH` injection token — configurable login route
   `authGuard` redirects to (`/login` by default).
+- `@zhunam/auth/firebase` secondary entry point: `provideFirebaseAuth(config)`
+  registers an `AuthService` backed by Firebase Auth's modular SDK
+  (`firebase`, not `@angular/fire`) under `AUTH_SERVICE`. Maps Firebase's
+  `User` to `AuthUser` with only the 4 public fields, propagates Firebase
+  errors unchanged, and keeps `currentUser`/`isAuthenticated` in sync via
+  `onAuthStateChanged`. `FirebaseAuthConfig` — minimal config shape
+  (`apiKey`, `authDomain`, `projectId`) for `initializeApp`.
