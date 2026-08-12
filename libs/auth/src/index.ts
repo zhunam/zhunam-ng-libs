@@ -1,2 +1,2 @@
-// AuthUser, AuthState y AuthService se agregan en la próxima tarea del ROADMAP.
-export {};
+export * from './lib/models/auth-user';
+export * from './lib/models/auth-service';

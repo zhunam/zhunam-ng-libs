@@ -11,11 +11,14 @@ elegido, no esta librería.
 Ver ROADMAP.md en esta misma carpeta para el detalle completo.
 
 ## Contrato de API pública (núcleo, libs/auth/src)
-- `AuthUser` — interfaz nativa (uid, email, emailVerified), sin exponer
-  tipos de Firebase/Supabase.
-- `AuthState` — signal/observable readonly con el usuario actual (o null).
-- `AuthService` (abstracta/interfaz) — signIn, signUp, signOut,
-  resetPassword — implementada por cada entry point de proveedor.
+- `AuthUser` — interfaz nativa (uid, email, emailVerified, displayName),
+  sin exponer tipos de Firebase/Supabase ni tokens/credenciales.
+- `AuthService` (interfaz) — el estado reactivo del usuario actual vive
+  acá directamente como `currentUser: Signal<AuthUser | null>` y
+  `isAuthenticated: Signal<boolean>` (no existe un tipo `AuthState`
+  separado), más `signIn`, `signUp`, `signOut`, `resetPassword`,
+  `getIdToken` — implementada por cada entry point de proveedor, el
+  núcleo solo define el contrato.
 - `authGuard` — Angular Route Guard funcional, redirige si no hay sesión.
 
 ## Entry points secundarios

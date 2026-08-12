@@ -29,8 +29,8 @@
   emailVerified expuesto
 
 ### Tasks
-- [ ] Generar librería con tags + ajustar peerDependencies
-- [ ] Definir AuthUser, AuthState, y la interfaz base de AuthService
+- [x] Generar librería con tags + ajustar peerDependencies
+- [x] Definir AuthUser, AuthState, y la interfaz base de AuthService
 - [ ] Entry point firebase/: implementación real sobre Firebase Auth
 - [ ] Entry point supabase/: implementación real sobre Supabase Auth
 - [ ] authGuard funcional
