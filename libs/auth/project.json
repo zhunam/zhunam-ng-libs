@@ -37,7 +37,7 @@
       "executor": "@nx/angular:unit-test",
       "options": {
         "watch": false,
-        "include": ["**/*.spec.ts", "../firebase/src/**/*.spec.ts"]
+        "include": ["**/*.spec.ts", "../firebase/src/**/*.spec.ts", "../supabase/src/**/*.spec.ts"]
       }
     },
     "lint": {

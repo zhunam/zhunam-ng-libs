@@ -35,6 +35,16 @@ Ver ROADMAP.md en esta misma carpeta para el detalle completo.
   — ng-packagr publica un único `package.json` para todos los entry
   points, no hay forma nativa de aislar un peerDependency a un solo
   subpath (mismo patrón que usa `@angular/fire`).
-- `@zhunam/auth/supabase` — implementación sobre Supabase Auth.
+- `@zhunam/auth/supabase` — implementación sobre Supabase Auth (`@supabase/supabase-js`).
+  Expone `provideSupabaseAuth(config)` y `SupabaseAuthConfig`. Mismo
+  patrón de peerDependency opcional en la raíz vía `peerDependenciesMeta`
+  que `firebase`. A diferencia de Firebase, Supabase no tiene un campo
+  `displayName` de primera clase: se lee de `user_metadata.full_name` o
+  `user_metadata.name` (lo que exista), cae a `null` si no hay ninguno —
+  ver el comentario en `toAuthUser()` del entry point. Los errores de
+  Supabase no se lanzan como excepción (vienen como `{ data, error }`);
+  la implementación los relanza (`throw error`) sin traducirlos, para
+  cumplir el contrato de `AuthService` (Promise que rechaza) sin alterar
+  el objeto de error real.
 - `@zhunam/auth/form-ui` — login/registro prearmados, usa @zhunam/form-builder
   (peerDependency opcional, solo de este entry point).

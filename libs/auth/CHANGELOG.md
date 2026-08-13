@@ -28,3 +28,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
   errors unchanged, and keeps `currentUser`/`isAuthenticated` in sync via
   `onAuthStateChanged`. `FirebaseAuthConfig` — minimal config shape
   (`apiKey`, `authDomain`, `projectId`) for `initializeApp`.
+- `@zhunam/auth/supabase` secondary entry point: `provideSupabaseAuth(config)`
+  registers an `AuthService` backed by Supabase Auth (`@supabase/supabase-js`)
+  under `AUTH_SERVICE`. Maps Supabase's `User` to `AuthUser` with only the
+  4 public fields (`displayName` read from `user_metadata.full_name` /
+  `.name`, falling back to `null`), re-throws Supabase's `{ data, error }`
+  errors unchanged, and keeps `currentUser`/`isAuthenticated` in sync via
+  `onAuthStateChange`. `SupabaseAuthConfig` — minimal config shape (`url`,
+  `anonKey`) for `createClient`.

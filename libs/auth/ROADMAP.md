@@ -32,7 +32,7 @@
 - [x] Generar librería con tags + ajustar peerDependencies
 - [x] Definir AuthUser, AuthState, y la interfaz base de AuthService
 - [x] Entry point firebase/: implementación real sobre Firebase Auth
-- [ ] Entry point supabase/: implementación real sobre Supabase Auth
+- [x] Entry point supabase/: implementación real sobre Supabase Auth
 - [x] authGuard funcional
 - [ ] Entry point form-ui/: login + registro con form-builder
 - [ ] Estilos encapsulados con CSS custom properties (form-ui)

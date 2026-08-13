@@ -7,11 +7,13 @@
     "inlineSources": true,
     "types": []
   },
-  "include": ["src/**/*.ts", "firebase/src/**/*.ts"],
+  "include": ["src/**/*.ts", "firebase/src/**/*.ts", "supabase/src/**/*.ts"],
   "exclude": [
     "src/**/*.spec.ts",
     "src/**/*.test.ts",
     "firebase/src/**/*.spec.ts",
-    "firebase/src/**/*.test.ts"
+    "firebase/src/**/*.test.ts",
+    "supabase/src/**/*.spec.ts",
+    "supabase/src/**/*.test.ts"
   ]
 }

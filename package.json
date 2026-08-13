@@ -31,6 +31,7 @@
     "@nx/workspace": "23.0.1",
     "@playwright/test": "^1.37.0",
     "@schematics/angular": "~21.2.0",
+    "@supabase/supabase-js": "^2.112.3",
     "@swc/helpers": "~0.5.18",
     "@tailwindcss/postcss": "^4.3.2",
     "@typescript-eslint/utils": "^8.40.0",
