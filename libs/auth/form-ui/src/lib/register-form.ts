@@ -44,6 +44,9 @@ export class RegisterForm {
 
   /**
    * Emitted with the newly created user right after a successful sign-up.
+   *
+   * @example
+   * <lib-register-form (registerSuccess)="onRegisterSuccess($event)" />
    */
   registerSuccess = output<AuthUser>();
 

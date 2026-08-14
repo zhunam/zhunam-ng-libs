@@ -34,6 +34,15 @@ function submitRegisterForm(
   fixture.detectChanges();
 }
 
+// Under zoneless testing, fixture.whenStable() only tracks Angular-aware
+// work — a plain promise chain from a mocked AuthService method isn't
+// registered with it and can still be pending when whenStable() resolves.
+// A macrotask boundary guarantees every already-queued microtask has
+// drained first, which whenStable() alone doesn't.
+function flushMicrotasks(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, 0));
+}
+
 describe('RegisterForm', () => {
   it('creates', () => {
     const fixture = createFixture(createAuthServiceMock());
@@ -50,6 +59,7 @@ describe('RegisterForm', () => {
 
     submitRegisterForm(fixture, { email: 'new@example.com', password: 'secret123', confirmPassword: 'secret123' });
     await fixture.whenStable();
+    await flushMicrotasks();
 
     expect(authService.signUp).toHaveBeenCalledWith('new@example.com', 'secret123');
     expect(emitted).toEqual([user]);
@@ -62,6 +72,7 @@ describe('RegisterForm', () => {
 
     submitRegisterForm(fixture, { email: 'new@example.com', password: 'secret123', confirmPassword: 'secret123' });
     await fixture.whenStable();
+    await flushMicrotasks();
     fixture.detectChanges();
 
     const errorEl = (fixture.nativeElement as HTMLElement).querySelector('.auth-error');
@@ -75,6 +86,7 @@ describe('RegisterForm', () => {
 
     submitRegisterForm(fixture, { email: 'new@example.com', password: 'secret123', confirmPassword: 'secret123' });
     await fixture.whenStable();
+    await flushMicrotasks();
     fixture.detectChanges();
 
     const errorEl = (fixture.nativeElement as HTMLElement).querySelector('.auth-error');

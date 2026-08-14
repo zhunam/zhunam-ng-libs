@@ -36,8 +36,8 @@
 - [x] authGuard funcional
 - [x] Entry point form-ui/: login + registro con form-builder
 - [x] Estilos encapsulados con CSS custom properties (form-ui)
-- [ ] JSDoc completo en API pública de cada entry point
-- [ ] Unit tests
+- [x] JSDoc completo en API pública de cada entry point
+- [x] Unit tests
 - [ ] Demo consumiendo la librería en apps/portfolio-showcase
 - [ ] README público (documentar claramente los 4 entry points y cuál
       instalar según el caso)

@@ -42,6 +42,9 @@ export class LoginForm {
 
   /**
    * Emitted with the signed-in user right after a successful login.
+   *
+   * @example
+   * <lib-login-form (loginSuccess)="onLoginSuccess($event)" />
    */
   loginSuccess = output<AuthUser>();
 

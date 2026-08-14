@@ -27,10 +27,20 @@ function createFixture(authService: AuthService): ComponentFixture<ResetPassword
   return fixture;
 }
 
+// Under zoneless testing, fixture.whenStable() only tracks Angular-aware
+// work — a plain promise chain from a mocked AuthService method isn't
+// registered with it and can still be pending when whenStable() resolves.
+// A macrotask boundary guarantees every already-queued microtask has
+// drained first, which whenStable() alone doesn't.
+function flushMicrotasks(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, 0));
+}
+
 async function submitResetForm(fixture: ComponentFixture<ResetPasswordForm>, email: string): Promise<void> {
   const formBuilderDebugEl = fixture.debugElement.query((de) => de.componentInstance instanceof FormBuilder);
   formBuilderDebugEl.triggerEventHandler('formSubmit', { email });
   await fixture.whenStable();
+  await flushMicrotasks();
   fixture.detectChanges();
 }
 
