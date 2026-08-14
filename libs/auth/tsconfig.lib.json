@@ -7,13 +7,15 @@
     "inlineSources": true,
     "types": []
   },
-  "include": ["src/**/*.ts", "firebase/src/**/*.ts", "supabase/src/**/*.ts"],
+  "include": ["src/**/*.ts", "firebase/src/**/*.ts", "supabase/src/**/*.ts", "form-ui/src/**/*.ts"],
   "exclude": [
     "src/**/*.spec.ts",
     "src/**/*.test.ts",
     "firebase/src/**/*.spec.ts",
     "firebase/src/**/*.test.ts",
     "supabase/src/**/*.spec.ts",
-    "supabase/src/**/*.test.ts"
+    "supabase/src/**/*.test.ts",
+    "form-ui/src/**/*.spec.ts",
+    "form-ui/src/**/*.test.ts"
   ]
 }

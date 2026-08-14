@@ -10,6 +10,8 @@
     "firebase/src/**/*.ts",
     "firebase/src/**/*.d.ts",
     "supabase/src/**/*.ts",
-    "supabase/src/**/*.d.ts"
+    "supabase/src/**/*.d.ts",
+    "form-ui/src/**/*.ts",
+    "form-ui/src/**/*.d.ts"
   ]
 }

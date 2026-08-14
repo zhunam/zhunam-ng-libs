@@ -34,8 +34,8 @@
 - [x] Entry point firebase/: implementación real sobre Firebase Auth
 - [x] Entry point supabase/: implementación real sobre Supabase Auth
 - [x] authGuard funcional
-- [ ] Entry point form-ui/: login + registro con form-builder
-- [ ] Estilos encapsulados con CSS custom properties (form-ui)
+- [x] Entry point form-ui/: login + registro con form-builder
+- [x] Estilos encapsulados con CSS custom properties (form-ui)
 - [ ] JSDoc completo en API pública de cada entry point
 - [ ] Unit tests
 - [ ] Demo consumiendo la librería en apps/portfolio-showcase

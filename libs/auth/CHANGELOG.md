@@ -36,3 +36,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
   errors unchanged, and keeps `currentUser`/`isAuthenticated` in sync via
   `onAuthStateChange`. `SupabaseAuthConfig` — minimal config shape (`url`,
   `anonKey`) for `createClient`.
+- `@zhunam/auth/form-ui` secondary entry point: `LoginForm` (email +
+  password, `loginSuccess` / `forgotPasswordClick` outputs),
+  `RegisterForm` (email + password + confirm-password with a
+  cross-field match validator, `registerSuccess` output), and
+  `ResetPasswordForm` (email only, always shows the same generic
+  success message regardless of whether the account exists, to avoid
+  leaking registered emails). All three wrap `<lib-form-builder>`
+  internally and inject `AUTH_SERVICE`; `@zhunam/form-builder` is an
+  optional peerDependency of this entry point only.

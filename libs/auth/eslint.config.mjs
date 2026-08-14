@@ -45,4 +45,29 @@ export default [
     // Override or add rules here
     rules: {},
   },
+  {
+    // form-ui/ is a deliberate exception to "type:publishable can only
+    // depend on type:shared" (see AGENTS.md "Independence between
+    // libraries"): it wraps @zhunam/form-builder's <lib-form-builder>,
+    // an independently published product this entry point chooses to
+    // build on top of, not internal shared code. Scoped to form-ui/ only
+    // so the generic root depConstraints stay untouched for every other
+    // file in this library and the rest of the repo.
+    files: ['**/form-ui/**/*.ts'],
+    rules: {
+      '@nx/enforce-module-boundaries': [
+        'error',
+        {
+          enforceBuildableLibDependency: true,
+          allow: ['^.*/eslint(\\.base)?\\.config\\.[cm]?[jt]s$'],
+          depConstraints: [
+            {
+              sourceTag: 'scope:auth',
+              onlyDependOnLibsWithTags: ['type:shared', 'scope:form-builder'],
+            },
+          ],
+        },
+      ],
+    },
+  },
 ];

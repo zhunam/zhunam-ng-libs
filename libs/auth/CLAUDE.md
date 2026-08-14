@@ -46,5 +46,28 @@ Ver ROADMAP.md en esta misma carpeta para el detalle completo.
   la implementación los relanza (`throw error`) sin traducirlos, para
   cumplir el contrato de `AuthService` (Promise que rechaza) sin alterar
   el objeto de error real.
-- `@zhunam/auth/form-ui` — login/registro prearmados, usa @zhunam/form-builder
-  (peerDependency opcional, solo de este entry point).
+- `@zhunam/auth/form-ui` — `LoginForm`, `RegisterForm`, `ResetPasswordForm`,
+  tres componentes standalone independientes que envuelven
+  `<lib-form-builder>` de `@zhunam/form-builder` internamente e inyectan
+  `AUTH_SERVICE`. `@zhunam/form-builder` es peerDependency opcional en la
+  raíz vía `peerDependenciesMeta`, mismo patrón que `firebase`/
+  `@supabase/supabase-js`.
+  - **Excepción de module boundaries**: `libs/auth` y `libs/form-builder`
+    están ambos taggeados `type:publishable`, y el `depConstraints`
+    genérico de la raíz prohíbe que `type:publishable` dependa de otro
+    `type:publishable`. `libs/auth/eslint.config.mjs` tiene un override
+    de `@nx/enforce-module-boundaries` acotado a `form-ui/**/*.ts` que
+    permite específicamente depender de `scope:form-builder` — la regla
+    genérica de la raíz queda intacta para el resto del repo. Documentado
+    también como comentario en ese mismo archivo.
+  - Estilos: `--auth-*` se reserva solo para elementos sin equivalente en
+    `--fb-*` (mensajes de error/éxito, el link "forgot password") —
+    los campos del formulario en sí ya son personalizables vía las
+    `--fb-*` que expone `<lib-form-builder>`, duplicar un token paralelo
+    ahí no agregaría valor.
+  - `ResetPasswordForm` siempre muestra el mismo mensaje de éxito
+    genérico, incluso si el proveedor rechaza con "usuario no
+    encontrado" (Firebase lo hace por default salvo que el proyecto
+    tenga "Email enumeration protection" activado; Supabase ya lo
+    suprime del lado del servidor) — ver el comentario de seguridad en
+    `onSubmit()` de ese componente antes de tocarlo.
