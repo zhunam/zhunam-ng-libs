@@ -62,6 +62,16 @@ promoted into the numbered sequence above.
   librerías crezca más y el problema se replique. Detectado en
   libs/data-grid/ROADMAP.md durante el desarrollo de form-builder.
 
+- **NgModule wrapper missing across all published libs** —
+  AGENTS.md's "Standalone vs NgModule" section requires every library to
+  expose an NgModule wrapper alongside its standalone components, for
+  consumers still on classic NgModule architecture. None of
+  data-grid, form-builder, or auth currently have one. Low risk, low
+  effort, additive-only change (no breaking change, no major version
+  bump needed) — do as one dedicated pass across all three libraries
+  once auth v1 ships. Detected in libs/auth/CLAUDE.md during the
+  development of auth's form-ui entry point.
+
 ## Recurring maintenance notes
 
 - Review each library's `peerDependencies` whenever Angular releases a
