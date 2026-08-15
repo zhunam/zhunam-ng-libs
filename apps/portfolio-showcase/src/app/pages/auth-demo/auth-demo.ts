@@ -55,7 +55,7 @@ export class AuthDemo {
   protected readonly resetPasswordSectionEl = viewChild.required<ElementRef<HTMLElement>>('resetPasswordSection');
   protected readonly resetPasswordHighlight = signal(false);
 
-  protected readonly headlessUsageSnippet = `// Any component or service in your own app — no form-ui import at all
+  protected readonly headlessUsageSnippet = `// Any component or service in your own app, no form-ui import at all
 import { Component, inject } from '@angular/core';
 import { AUTH_SERVICE } from '@zhunam/auth';
 
@@ -72,7 +72,7 @@ export class YourLoginComponent {
   }
 }`;
 
-  protected readonly authGuardSnippet = `// Illustrative only — this demo page has no real routing, but this is
+  protected readonly authGuardSnippet = `// Illustrative only, this demo page has no real routing, but this is
 // exactly how you'd protect a route in your own app:
 import { authGuard } from '@zhunam/auth';
 

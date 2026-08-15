@@ -11,25 +11,25 @@ const DEMO_USER: AuthUser = {
   displayName: 'Demo User',
 };
 
-/** What actually changed `currentUser` — shown next to the Current state badge so it's obvious which form caused it. */
+/** What actually changed `currentUser`, shown next to the Current state badge so it's obvious which form caused it. */
 export type AuthStateSource = 'login' | 'register' | 'signout';
 
-/** The literal outcome of one AuthService call, for the per-form result panels — same shape as what you'd console.log. */
+/** The literal outcome of one AuthService call, for the per-form result panels: same shape as what you'd console.log. */
 export type ActionResult<T> = { ok: true; value: T } | { ok: false; error: string };
 
 /**
- * In-memory `AuthService` for the live demo — no Firebase/Supabase SDK,
+ * In-memory `AuthService` for the live demo: no Firebase/Supabase SDK,
  * no network call, no real credential ever touches this. Only the fixed
  * demo account (see DEMO_EMAIL/DEMO_PASSWORD) can sign in; signUp()
  * accepts anything else and keeps it in memory for this session only.
  *
- * This class never ships to consumers — it exists purely so this page
+ * This class never ships to consumers: it exists purely so this page
  * can wire the real LoginForm/RegisterForm/ResetPasswordForm from
  * @zhunam/auth/form-ui against a working AUTH_SERVICE without a real
  * backend.
  *
  * Beyond the `AuthService` contract, it also exposes `lastStateSource`
- * and the three `*Result` signals below — demo-only extras the real
+ * and the three `*Result` signals below, demo-only extras the real
  * library doesn't have. None of the form-ui components read these; only
  * this page does, since neither LoginForm, RegisterForm, nor
  * ResetPasswordForm expose an error/result output, and this is the one
