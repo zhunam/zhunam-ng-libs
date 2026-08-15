@@ -99,6 +99,17 @@ Concrete implications of this goal (they motivate the rules below):
 - Don't add abstraction layers (generic interfaces, wrappers, factories)
   for a single use case that doesn't need them yet.
 
+### Punctuation in written text
+
+- Never use an em dash (—) in human-facing text: readable comments,
+  JSDoc, README.md, CHANGELOG.md (outside the Keep a Changelog format
+  itself), and UI copy in the demos. Use commas, periods, or restructure
+  the sentence instead — prioritize what reads naturally in the file's
+  language, never a mechanical one-to-one substitution.
+- This doesn't apply to functional code, nor to syntax where a dash
+  (hyphen or em dash) is part of an external convention (e.g. date
+  ranges in changelogs, hyphenated branch/commit names).
+
 ### File size: split into child components as they grow
 
 - If a `.component.ts` file exceeds roughly 150-200 lines, evaluate
