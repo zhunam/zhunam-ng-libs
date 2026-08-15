@@ -39,7 +39,7 @@
 - [x] JSDoc completo en API pública de cada entry point
 - [x] Unit tests
 - [x] Demo consumiendo la librería en apps/portfolio-showcase
-- [ ] README público (documentar claramente los 4 entry points y cuál
+- [x] README público (documentar claramente los 4 entry points y cuál
       instalar según el caso)
 - [ ] Verificar build de producción de cada entry point
-- [ ] CHANGELOG.md desde el inicio (según la nueva regla de AGENTS.md)
+- [x] CHANGELOG.md desde el inicio (según la nueva regla de AGENTS.md)
