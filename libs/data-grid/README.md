@@ -1,7 +1,7 @@
 # @zhunam/data-grid
 
 A lightweight Angular data table with client-side sorting, pagination, and
-row selection — no CSS framework dependency, no runtime dependencies beyond
+row selection. No CSS framework dependency, no runtime dependencies beyond
 Angular itself.
 
 ## Installation
@@ -31,16 +31,16 @@ const columns: ColumnConfig<User>[] = [{ key: 'name', label: 'Name', sortable: t
 | Name       | Type                                 | Default        | Description                                       |
 | ---------- | ------------------------------------ | -------------- | --------------------------------------------------- |
 | `data`     | `input<T[]>`                         | `[]`           | Data to render in the table.                       |
-| `columns`  | `input.required<ColumnConfig<T>[]>`  | — (required)   | Configuration of the columns to render, in display order. |
+| `columns`  | `input.required<ColumnConfig<T>[]>`  | Required       | Configuration of the columns to render, in display order. |
 | `pageSize` | `input<number>`                      | `10`           | Number of rows rendered per page.                  |
-| `rowClick` | `output<T>`                          | —              | Emitted when the user clicks a row.                |
+| `rowClick` | `output<T>`                          | N/A            | Emitted when the user clicks a row.                |
 
 ### `ColumnConfig<T>`
 
-| Property   | Type       | Default      | Description                                             |
-| ---------- | ---------- | ------------ | --------------------------------------------------------- |
-| `key`      | `keyof T`  | — (required) | Property of `T` this column reads its cell values from. |
-| `label`    | `string`   | — (required) | Text displayed in the column header.                     |
+| Property   | Type       | Default   | Description                                             |
+| ---------- | ---------- | --------- | --------------------------------------------------------- |
+| `key`      | `keyof T`  | Required  | Property of `T` this column reads its cell values from. |
+| `label`    | `string`   | Required  | Text displayed in the column header.                     |
 | `sortable` | `boolean`  | `false`      | Whether clicking the header sorts the grid by this column. |
 
 ## Compatibility
@@ -49,7 +49,7 @@ const columns: ColumnConfig<User>[] = [{ key: 'name', label: 'Name', sortable: t
 
 ## Why this one
 
-No Tailwind, Bootstrap, or utility-framework dependency — styling is plain
+No Tailwind, Bootstrap, or utility-framework dependency. Styling is plain
 SCSS behind CSS custom properties, so it drops into any Angular app
 regardless of its styling setup. Layout responds to its own container via
 Container Queries (`@container`), not the viewport. Accessible by default:
@@ -62,4 +62,4 @@ MIT
 
 ---
 
-Built by Ariana Mora — [LinkedIn](https://www.linkedin.com/in/ariana-andreina-mora) · [GitHub](https://github.com/zhunam)
+Built by Ariana Mora · [LinkedIn](https://www.linkedin.com/in/ariana-andreina-mora) · [GitHub](https://github.com/zhunam)
