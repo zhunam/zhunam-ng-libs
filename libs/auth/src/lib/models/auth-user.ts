@@ -1,7 +1,7 @@
 /**
  * Represents the currently authenticated user.
  *
- * Deliberately minimal — does NOT include any token, credential, or
+ * Deliberately minimal: does NOT include any token, credential, or
  * provider-specific metadata. Never add fields here without evaluating
  * whether exposing them increases attack surface. If a consumer needs an
  * auth token for an authenticated HTTP call, use AuthService.getIdToken()

@@ -22,7 +22,7 @@ function toAuthUser(user: User): AuthUser {
 /**
  * `AuthService` implementation backed by Firebase Auth's modular SDK.
  *
- * Instantiated internally by `provideFirebaseAuth` — not part of this
+ * Instantiated internally by `provideFirebaseAuth`, not part of this
  * entry point's public API. Consumers always interact with it through the
  * `AUTH_SERVICE` token, never by importing this class directly.
  */

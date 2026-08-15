@@ -10,7 +10,7 @@ import { FirebaseAuthService } from './firebase-auth.service';
  * the `AUTH_SERVICE` token, following the same "functional providers"
  * pattern as Angular's own `provideHttpClient`.
  *
- * Initializes the Firebase app and Auth instance internally — the
+ * Initializes the Firebase app and Auth instance internally: the
  * consumer never touches the Firebase SDK directly.
  *
  * @param config Minimal Firebase project config needed to initialize Auth.

@@ -6,12 +6,12 @@ import { AuthUser } from './auth-user';
  *
  * This is the interface each provider entry point (`@zhunam/auth/firebase`,
  * `@zhunam/auth/supabase`) must implement. The core (`@zhunam/auth`) ships
- * only this contract — no concrete implementation.
+ * only this contract, no concrete implementation.
  */
 export interface AuthService {
   /**
    * The currently authenticated user, or `null` if signed out.
-   * Read-only signal — updates reactively as auth state changes.
+   * Read-only signal that updates reactively as auth state changes.
    */
   readonly currentUser: Signal<AuthUser | null>;
 

@@ -17,7 +17,7 @@ const LOGIN_FIELDS: FieldConfig<LoginFormValue>[] = [
  * provided by whichever provider entry point the app registered
  * (`@zhunam/auth/firebase` or `@zhunam/auth/supabase`).
  *
- * Has no routing opinion — it emits `forgotPasswordClick` and leaves
+ * Has no routing opinion: it emits `forgotPasswordClick` and leaves
  * navigation entirely to the consumer.
  *
  * @example
@@ -50,7 +50,7 @@ export class LoginForm {
 
   /**
    * Emitted when the user clicks "Forgot your password?". This library
-   * has no routing opinion — the consumer decides how (or whether) to
+   * has no routing opinion: the consumer decides how (or whether) to
    * navigate to a reset-password screen.
    *
    * @example

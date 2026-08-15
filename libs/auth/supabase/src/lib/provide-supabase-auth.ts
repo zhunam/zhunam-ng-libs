@@ -9,7 +9,7 @@ import { SupabaseAuthService } from './supabase-auth.service';
  * the `AUTH_SERVICE` token, following the same "functional providers"
  * pattern as Angular's own `provideHttpClient`.
  *
- * Initializes the Supabase client internally — the consumer never touches
+ * Initializes the Supabase client internally: the consumer never touches
  * the Supabase SDK directly.
  *
  * @param config Minimal Supabase project config needed to initialize

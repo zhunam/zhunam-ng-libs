@@ -5,7 +5,7 @@
  * comes from your project's Row Level Security policies, not from hiding
  * this value. Still, it must come from `environment.ts` /
  * `environment.production.ts` in the consuming app, never hardcoded in
- * versioned source — same as any other build config.
+ * versioned source, same as any other build config.
  */
 export interface SupabaseAuthConfig {
   /** Supabase project URL, e.g. `https://your-project.supabase.co`. */

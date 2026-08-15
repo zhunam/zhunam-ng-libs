@@ -10,7 +10,7 @@ import { AuthService } from '../models/auth-service';
  * token, and consumers (including `authGuard`) inject it the same way
  * regardless of which provider was chosen.
  *
- * There's no default `factory` — a provider MUST be registered by the
+ * There's no default `factory`: a provider MUST be registered by the
  * consuming app. Injecting this token without a provider throws
  * `NullInjectorError`, which is the intended failure mode: fail fast
  * instead of silently falling back to a phantom no-op auth service.

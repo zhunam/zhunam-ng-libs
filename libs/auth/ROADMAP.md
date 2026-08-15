@@ -1,16 +1,16 @@
-# ROADMAP — Auth
+# ROADMAP: Auth
 
-## Phase 3 — v1 (in progress)
+## Phase 3: v1 (in progress)
 
 ### In scope
 - Email + contraseña como único método de autenticación (social login
   queda para v2)
-- AuthUser con emailVerified expuesto como dato — la librería NUNCA
+- AuthUser con emailVerified expuesto como dato: la librería NUNCA
   bloquea el login por email sin verificar, el consumidor decide qué
   hacer con ese campo
 - Dos entry points de proveedor: @zhunam/auth/firebase y
   @zhunam/auth/supabase, cada uno con su propio peerDependency del SDK
-  correspondiente (@angular/fire, @supabase/supabase-js) — el núcleo
+  correspondiente (@angular/fire, @supabase/supabase-js). El núcleo
   (@zhunam/auth) no depende de ninguno de los dos
 - Entry point opcional @zhunam/auth/form-ui con login/registro
   prearmados usando @zhunam/form-builder (peerDependency opcional de

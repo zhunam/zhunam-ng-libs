@@ -30,7 +30,7 @@ function isUserNotFoundError(error: unknown): boolean {
  * app registered (`@zhunam/auth/firebase` or `@zhunam/auth/supabase`).
  *
  * Always shows the same generic success message, whether the email is
- * registered or not — see the comment on `onSubmit` for why this isn't
+ * registered or not; see the comment on `onSubmit` for why this isn't
  * optional UI polish.
  *
  * @example

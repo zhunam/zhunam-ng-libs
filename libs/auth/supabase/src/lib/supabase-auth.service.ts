@@ -27,7 +27,7 @@ function readMetadataString(metadata: Record<string, unknown>, key: string): str
 /**
  * `AuthService` implementation backed by Supabase Auth.
  *
- * Instantiated internally by `provideSupabaseAuth` — not part of this
+ * Instantiated internally by `provideSupabaseAuth`, not part of this
  * entry point's public API. Consumers always interact with it through the
  * `AUTH_SERVICE` token, never by importing this class directly.
  */

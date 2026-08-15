@@ -6,27 +6,27 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
 ## [Unreleased]
 
 ### Added
-- `AuthUser` interface — minimal user shape (`uid`, `email`,
+- `AuthUser` interface: minimal user shape (`uid`, `email`,
   `emailVerified`, `displayName`), no tokens/credentials/provider
   metadata.
-- `AuthService` interface — base contract each provider entry point
+- `AuthService` interface: base contract each provider entry point
   (`firebase/`, `supabase/`) must implement: reactive `currentUser` /
   `isAuthenticated` signals, `signIn`, `signUp`, `signOut`,
   `resetPassword`, `getIdToken`.
-- `AUTH_SERVICE` injection token — each provider entry point registers
+- `AUTH_SERVICE` injection token: each provider entry point registers
   its `AuthService` implementation under this token; consumers and
   `authGuard` inject it the same way regardless of provider.
-- `authGuard` — `CanActivateFn` that redirects unauthenticated users to
+- `authGuard`: `CanActivateFn` that redirects unauthenticated users to
   `AUTH_LOGIN_PATH` with `reason=unauthenticated` and `returnUrl` query
   params.
-- `AUTH_LOGIN_PATH` injection token — configurable login route
+- `AUTH_LOGIN_PATH` injection token: configurable login route
   `authGuard` redirects to (`/login` by default).
 - `@zhunam/auth/firebase` secondary entry point: `provideFirebaseAuth(config)`
   registers an `AuthService` backed by Firebase Auth's modular SDK
   (`firebase`, not `@angular/fire`) under `AUTH_SERVICE`. Maps Firebase's
   `User` to `AuthUser` with only the 4 public fields, propagates Firebase
   errors unchanged, and keeps `currentUser`/`isAuthenticated` in sync via
-  `onAuthStateChanged`. `FirebaseAuthConfig` — minimal config shape
+  `onAuthStateChanged`. `FirebaseAuthConfig`: minimal config shape
   (`apiKey`, `authDomain`, `projectId`) for `initializeApp`.
 - `@zhunam/auth/supabase` secondary entry point: `provideSupabaseAuth(config)`
   registers an `AuthService` backed by Supabase Auth (`@supabase/supabase-js`)
@@ -34,7 +34,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
   4 public fields (`displayName` read from `user_metadata.full_name` /
   `.name`, falling back to `null`), re-throws Supabase's `{ data, error }`
   errors unchanged, and keeps `currentUser`/`isAuthenticated` in sync via
-  `onAuthStateChange`. `SupabaseAuthConfig` — minimal config shape (`url`,
+  `onAuthStateChange`. `SupabaseAuthConfig`: minimal config shape (`url`,
   `anonKey`) for `createClient`.
 - `@zhunam/auth/form-ui` secondary entry point: `LoginForm` (email +
   password, `loginSuccess` / `forgotPasswordClick` outputs),
