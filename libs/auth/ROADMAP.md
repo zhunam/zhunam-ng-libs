@@ -38,7 +38,7 @@
 - [x] Estilos encapsulados con CSS custom properties (form-ui)
 - [x] JSDoc completo en API pública de cada entry point
 - [x] Unit tests
-- [ ] Demo consumiendo la librería en apps/portfolio-showcase
+- [x] Demo consumiendo la librería en apps/portfolio-showcase
 - [ ] README público (documentar claramente los 4 entry points y cuál
       instalar según el caso)
 - [ ] Verificar build de producción de cada entry point
