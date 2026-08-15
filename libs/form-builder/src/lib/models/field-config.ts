@@ -58,10 +58,10 @@ export interface FieldValidatorConfig {
   maxLength?: number;
 
   /**
-   * Regex pattern as a string (never a RegExp object — keeps config
+   * Regex pattern as a string (never a RegExp object, keeps config
    * serializable). Validated internally against a length limit and a
    * catastrophic-backtracking heuristic before use; throws if rejected.
-   * This is a heuristic, not a mathematical guarantee — never accept
+   * This is a heuristic, not a mathematical guarantee. Never accept
    * `pattern` values from a fully untrusted source without your own
    * review.
    */
@@ -139,7 +139,7 @@ export interface FieldConfig<T> {
    * native validation, matching Angular's own disabled-control
    * semantics. Still included in the object `formSubmit` emits
    * (`FormBuilder` reads the raw form value, not the disabled-excluding
-   * one) — useful for a read-only field seeded via `defaultValue`.
+   * one); useful for a read-only field seeded via `defaultValue`.
    * @default false
    */
   disabled?: boolean;

@@ -61,7 +61,7 @@ export class FormBuilder<T> {
   /**
    * Number of grid columns fields are laid out in on desktop. Always
    * collapses to a single column below a mobile breakpoint, regardless
-   * of this value — mobile-first, like the rest of the library.
+   * of this value: mobile-first, like the rest of the library.
    * @default 1
    * @example
    * <lib-form-builder [fields]="fields" [columns]="2" />
@@ -97,7 +97,7 @@ export class FormBuilder<T> {
    * Errors returned by the backend after a submit attempt (e.g. "email
    * already registered"), keyed by field. Shown as soon as they're set,
    * regardless of whether the field has been touched or the form
-   * submitted locally — receiving one implies a submit already
+   * submitted locally; receiving one implies a submit already
    * happened. Each message clears itself automatically the moment the
    * user edits that field again, so there's no need to clear this input
    * back to `{}` manually after showing it once.

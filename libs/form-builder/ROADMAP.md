@@ -1,6 +1,6 @@
-# ROADMAP — Form Builder
+# ROADMAP: Form Builder
 
-## Phase 2 — v1 (in progress)
+## Phase 2: v1 (in progress)
 
 ### In scope
 - Campos: text, number, email, password, textarea, select, radio, checkbox, date
