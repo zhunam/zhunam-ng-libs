@@ -3,7 +3,7 @@
 This file gets updated often. AGENTS.md/CLAUDE.md don't duplicate it, they
 only reference it.
 
-## Phase 0 — Workspace setup (current)
+## Phase 0: Workspace setup (current)
 
 - [x] Create Nx monorepo (`create-nx-workspace`)
 - [x] Configure AI agents (`nx configure-ai-agents`)
@@ -13,17 +13,17 @@ only reference it.
 
 ## Active phase
 
-**Phase 3 — Modular auth system** — waiting to start (scope definition
+**Phase 3: Modular auth system**, waiting to start (scope definition
 session pending, per the same process used for previous phases).
 
 Phase 2 (Dynamic Form Builder) is done: `@zhunam/form-builder@1.0.1` is
 live on the public npm registry, alongside `@zhunam/data-grid@1.0.1`.
 
-## Phases — full sequence
+## Phases: full sequence
 
 Each phase corresponds to one library (or, for the last phase, one
 app piece). Only the active phase has its detailed breakdown written
-out (in its own `libs/<name>/ROADMAP.md`) — writing full task lists for
+out (in its own `libs/<name>/ROADMAP.md`). Writing full task lists for
 phases months away tends to go stale before they're even started, so
 those stay as a one-line scope stub until their turn comes.
 
@@ -31,22 +31,22 @@ Reordered 2026-08-10: all publishable libraries now come before the
 Financial/crypto dashboard, so the dashboard can consume them (auth,
 data-grid, form-builder, pdf-generator) instead of standing alone.
 
-1. **Data Grid** — `libs/data-grid` — Freemium (core here, Pro in a
-   separate private repo) — **DONE, published on npm as `@zhunam/data-grid@1.0.1`**
-2. **Dynamic Form Builder** — `libs/form-builder` — Freemium + SaaS (paid
-   persistence) — **DONE, published on npm as `@zhunam/form-builder@1.0.1`**
-3. **Modular auth system** — `libs/auth` (thin wrapper/starter around
-   Firebase/Supabase Auth) — 100% free — not started
-4. **Client-side document (PDF) generator** — `libs/pdf-generator` —
-   mostly free, possible template sales (Gumroad) — not started
-5. **Real-time chat / notifications** — `libs/chat-widget` (embeddable
-   Web Component) — pure SaaS, main candidate for real revenue — not started
-6. **Calendar with Google Calendar integration** — `libs/calendar` —
-   freemium UI + SaaS sync — not started
-7. **Financial/crypto dashboard** — `apps/` (portfolio piece, not a
-   publishable lib) — 100% free, not monetizable as a product — meant to
+1. **Data Grid** (`libs/data-grid`): Freemium (core here, Pro in a
+   separate private repo). **DONE, published on npm as `@zhunam/data-grid@1.0.1`**
+2. **Dynamic Form Builder** (`libs/form-builder`): Freemium + SaaS (paid
+   persistence). **DONE, published on npm as `@zhunam/form-builder@1.0.1`**
+3. **Modular auth system** (`libs/auth`, thin wrapper/starter around
+   Firebase/Supabase Auth): 100% free. Not started
+4. **Client-side document (PDF) generator** (`libs/pdf-generator`):
+   mostly free, possible template sales (Gumroad). Not started
+5. **Real-time chat / notifications** (`libs/chat-widget`, embeddable
+   Web Component): pure SaaS, main candidate for real revenue. Not started
+6. **Calendar with Google Calendar integration** (`libs/calendar`):
+   freemium UI + SaaS sync. Not started
+7. **Financial/crypto dashboard** (`apps/`, portfolio piece, not a
+   publishable lib): 100% free, not monetizable as a product. Meant to
    showcase auth, data-grid, form-builder, and pdf-generator working
-   together in a real use case — not started
+   together in a real use case. Not started
 
 
 ## Future ideas (not yet phased)
@@ -54,7 +54,7 @@ data-grid, form-builder, pdf-generator) instead of standing alone.
 Anything beyond the 7 above goes here first, unordered, until it's
 promoted into the numbered sequence above.
 
-- **i18n / customizable text in libs/*** — varias librerías tienen
+- **i18n / customizable text in libs/***: varias librerías tienen
   strings hardcodeados en un idioma fijo (ej. paginación en español en
   data-grid, botón "Submit" en inglés en form-builder). Evaluar un
   patrón consistente de customización de texto (inputs opcionales para
@@ -62,13 +62,13 @@ promoted into the numbered sequence above.
   librerías crezca más y el problema se replique. Detectado en
   libs/data-grid/ROADMAP.md durante el desarrollo de form-builder.
 
-- **NgModule wrapper missing across all published libs** —
+- **NgModule wrapper missing across all published libs**:
   AGENTS.md's "Standalone vs NgModule" section requires every library to
   expose an NgModule wrapper alongside its standalone components, for
   consumers still on classic NgModule architecture. None of
   data-grid, form-builder, or auth currently have one. Low risk, low
   effort, additive-only change (no breaking change, no major version
-  bump needed) — do as one dedicated pass across all three libraries
+  bump needed). Do as one dedicated pass across all three libraries
   once auth v1 ships. Detected in libs/auth/CLAUDE.md during the
   development of auth's form-ui entry point.
 

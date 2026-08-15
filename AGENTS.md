@@ -27,7 +27,7 @@
 This monorepo is an Angular frontend developer portfolio, with a different
 goal than a typical portfolio: every piece built under `libs/*` must be a
 real, reusable library that can be integrated into other projects (own or
-third-party) — not just a demo to showcase.
+third-party), not just a demo to showcase.
 
 **This repository is public.** GitHub does not allow partial privacy by
 folder, so no library with monetization intent (freemium Pro tier,
@@ -43,7 +43,7 @@ Concrete implications of this goal (they motivate the rules below):
   without friction, regardless of its styling setup or its Angular
   version within the supported range.
 - Some libraries have future monetization intent (freemium, license, or
-  SaaS with its own backend) — the code must stay organized so that
+  SaaS with its own backend): the code must stay organized so that
   splitting a "core" version from a "pro" version is viable without
   rewriting the architecture.
 - `apps/portfolio-showcase` is the only piece that is NOT published: it's
@@ -57,7 +57,7 @@ Concrete implications of this goal (they motivate the rules below):
   property, or function without being sure it exists in the declared
   peerDependency version. When in doubt, check the official docs or the
   installed package's types (`node_modules/@angular/core`) before using
-  it — don't assume based on similarity to another known API.
+  it. Don't assume based on similarity to another known API.
 - If, while writing code, there's uncertainty about whether an API exists
   exactly as it's about to be used, say so explicitly instead of writing
   it as if it were certain: "I'm not sure this method exists this way,
@@ -69,7 +69,7 @@ Concrete implications of this goal (they motivate the rules below):
   in the same conversation.
 - Before proposing it, explain: what problem it solves, why what's
   already installed or custom code isn't enough, the approximate bundle
-  size it adds, and — if it applies to `libs/*` — whether it drags in any
+  size it adds, and (if it applies to `libs/*`) whether it drags in any
   dependency that breaks the already-defined version compatibility.
 - Only install after explicit confirmation, not after silence or moving
   on to another topic in the conversation.
@@ -107,7 +107,7 @@ Concrete implications of this goal (they motivate the rules below):
   it's a signal to stop and evaluate, not a rule to satisfy by forcing a
   split if the file is still clear as is.
 - Prefer several small components with a clear responsibility over one
-  large one that does everything — it makes it easier for another
+  large one that does everything: it makes it easier for another
   contributor to understand a piece without reading the whole file.
 
 ## Role
@@ -238,11 +238,11 @@ libs/<name>/
   ]
 ```
 - This means a `type:publishable` library can never import directly from
-  another `type:publishable` library — only from a `type:shared` one. A
+  another `type:publishable` library, only from a `type:shared` one. A
   forbidden import fails lint automatically, it doesn't depend on someone
   remembering the "Independence between libraries" rule.
 - If a genuinely shared library is ever created (e.g. `libs/shared-ui`),
-  tag it `type:shared` instead of `type:publishable` — no changes to
+  tag it `type:shared` instead of `type:publishable`; no changes to
   `depConstraints` are needed for that either, the rule already covers it.
 
 ## Compatibility rules for libraries (libs/*)
@@ -276,7 +276,7 @@ styling setups, without friction.
   releases ago.
 - Always declare explicitly anything in Angular that is a "default that
   can change between versions" (e.g. `changeDetection:
-  ChangeDetectionStrategy.Eager` or `OnPush`, as appropriate) — never rely
+  ChangeDetectionStrategy.Eager` or `OnPush`, as appropriate): never rely
   on the framework's default value, because that default changes between
   major versions.
 
@@ -304,7 +304,7 @@ styling setups, without friction.
   without, instead of giving them an artificial default just to avoid a
   compile error.
 - Use `computed()` for any value derived from other signals (e.g. total
-  pages from `data` and `pageSize`), never a plain getter — a getter
+  pages from `data` and `pageSize`), never a plain getter: a getter
   recalculates on every change detection cycle even if nothing changed.
 - This is an internal decision: the template contract toward the consumer
   (`[data]="..."`, `(rowClick)="..."`) doesn't change at all, it looks the
@@ -348,7 +348,7 @@ styling setups, without friction.
     --dg-primary-color: #3b82f6;
   }
   ```
-- `apps/*` (the showcase, demos) can freely use Tailwind + DaisyUI — this
+- `apps/*` (the showcase, demos) can freely use Tailwind + DaisyUI; this
   restriction applies only to `libs/*`.
 
 ### Public API (Inputs/Outputs)
@@ -364,7 +364,7 @@ styling setups, without friction.
 - Every `input()`, `output()`, and public method of a library under
   `libs/*` gets full JSDoc: a one-line description, `@default` if
   applicable, `@example` if usage isn't obvious. This is for the external
-  consumer, not the author — it must read well as an IDE tooltip and in
+  consumer, not the author: it must read well as an IDE tooltip and in
   the documentation generated by Compodoc. Example:
   ```typescript
   export class DataGrid<T> {
@@ -386,7 +386,7 @@ styling setups, without friction.
   **why** of a non-obvious decision, never the what. If the code is
   already self-explanatory, don't add a comment.
 - Don't document code in `apps/*` (the showcase) at the same level of
-  detail — inline comments where a decision isn't obvious are enough;
+  detail: inline comments where a decision isn't obvious are enough;
   it's not a public API, nobody else consumes it.
 - When finishing any task on `libs/*`, verify that the JSDoc for what was
   touched is still accurate (not just that it exists).
@@ -394,7 +394,7 @@ styling setups, without friction.
 ### Public documentation (README)
 
 - Every library under `libs/*` must have its own `README.md` before being
-  published to npm — it's what's shown on the package page and on
+  published to npm: it's what's shown on the package page and on
   GitHub, aimed at whoever will consume it, not whoever maintains it.
 - Minimum content: installation, a usage example under 10 lines, a public
   API table (Inputs/Outputs/methods), the supported Angular compatibility
@@ -414,7 +414,7 @@ styling setups, without friction.
   cambie, o corrija algo de la API pública o el comportamiento
   observable (no cambios puramente internos como refactors sin efecto
   visible), agregá una entrada correspondiente bajo `[Unreleased]`
-  antes de dar la tarea por terminada — no esperar al final del
+  antes de dar la tarea por terminada, no esperar al final del
   desarrollo para reconstruir el historial de memoria.
 - Al publicar una versión, renombrá `[Unreleased]` a
   `[X.Y.Z] - <fecha>` y dejá una nueva sección `[Unreleased]` vacía
@@ -510,22 +510,22 @@ In this order, every time a new library is generated:
 2. Edit `libs/<name>/package.json`: widen `peerDependencies` to the
    version range defined in "Angular versioning" (don't leave Nx's
    default, which only pins the currently installed version). Also add
-   `"license": "MIT"` — every library under `libs/*` is public/free by
+   `"license": "MIT"`: every library under `libs/*` is public/free by
    definition (see "Project purpose" above: any paid/Pro logic never
    lives in this repo), so this is never optional. Nx's generator
    doesn't add this field by default, and npm then shows the published
-   package as "License: none" instead of MIT — this exact bug already
+   package as "License: none" instead of MIT. This exact bug already
    happened with both `data-grid` and `form-builder`, caught only after
    publishing.
 3. Create `libs/<name>/CLAUDE.md` with that library's specific purpose
    (template in the corresponding section).
 4. Create `libs/<name>/ROADMAP.md` with the v1 scope (what's IN / what's
-   OUT), the public API contract, and the list of 1-3h tasks — before
+   OUT), the public API contract, and the list of 1-3h tasks, before
    writing the first component. The root `ROADMAP.md` only references
    which phase/library is the current focus, it doesn't repeat this
    detail.
 5. Create `libs/<name>/CHANGELOG.md` with an empty `## [Unreleased]`
-   section (Keep a Changelog format, same as the existing libraries) —
+   section (Keep a Changelog format, same as the existing libraries),
    before writing the first component, not at the end.
 6. Only then, generate the first component with
    `nx g @nx/angular:component`.
@@ -539,11 +539,11 @@ In this order, every time a new library is generated:
   releases") is marked with `!` after the type (e.g. `feat!:`) plus a
   `BREAKING CHANGE:` footer explaining what changed and why.
 - The `/commit` command (commit-commands plugin) already generates
-  messages in this format by analyzing the diff — prefer it for routine
+  messages in this format by analyzing the diff; prefer it for routine
   commits, write the message by hand only when more specific wording or a
   breaking-change footer is needed.
 - Commit type prefixes and branch name prefixes serve different purposes
-  and are both used — one doesn't replace the other. Branch names organize
+  and are both used: one doesn't replace the other. Branch names organize
   work in progress and get deleted after merge (see `/clean_gone`); commit
   messages are permanent history and drive automatic changelog/SemVer
   tooling. Losing the type from commits to keep it only in branch names
@@ -561,7 +561,7 @@ In this order, every time a new library is generated:
 - When `/commit-push-pr` needs to create a branch, request this naming
   explicitly if it isn't inferred correctly from the change.
 - Default flow: short-lived feature/fix branches off `main`, merged back
-  and deleted (`/clean_gone`). No permanent `develop` branch — this is a
+  and deleted (`/clean_gone`). No permanent `develop` branch: this is a
   solo/small-team npm library project, not a large coordinated release
   train, so full Git Flow overhead isn't needed.
 - Exception: `release/<version>` or `hotfix/<version>` branches, cut from
@@ -573,8 +573,8 @@ In this order, every time a new library is generated:
 ## Commit & branch suggestions
 
 - After finishing any change that warrants a commit, suggest the commit
-  message to use — Conventional Commits format, type included (see
-  "Commit conventions" above) — plus a short description of the change
+  message to use (Conventional Commits format, type included, see
+  "Commit conventions" above), plus a short description of the change
   when it adds useful context.
 - If at any point a new branch should be created (new feature/fix not
   yet started on its own branch, or a `release`/`hotfix` branch per the
@@ -584,4 +584,4 @@ In this order, every time a new library is generated:
 ## Roadmap
 
 See `ROADMAP.md` for the full detail and the status of each phase. This
-file must not duplicate that content — only reference it.
+file must not duplicate that content, only reference it.
