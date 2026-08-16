@@ -37,6 +37,7 @@
       "executor": "@nx/angular:unit-test",
       "options": {
         "watch": false,
+        "runnerConfig": "libs/auth/vitest.config.ts",
         "include": [
           "**/*.spec.ts",
           "../firebase/src/**/*.spec.ts",
