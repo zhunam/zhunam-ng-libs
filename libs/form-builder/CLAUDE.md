@@ -19,3 +19,10 @@ Ver ROADMAP.md en esta misma carpeta para el detalle completo.
   backend por campo, se muestran sin depender de touched/submitted y se
   auto-limpian en cuanto el usuario edita el valor de ese campo
 - `formSubmit: output<T>`: emite los valores del formulario al enviar válido
+- `FormBuilderModule`: wrapper NgModule para consumidores con arquitectura
+  NgModule clásica (`imports: [FormBuilder]`, `exports: [FormBuilder]`).
+  El componente standalone sigue siendo la forma recomendada de consumo;
+  este módulo es solo compatibilidad hacia atrás. El genérico `T` se
+  sigue infiriendo correctamente por uso desde el binding `[fields]`,
+  igual que en consumo standalone, verificado con `strictTemplates`
+  (no hace falta ningún ajuste especial en el wrapper para preservarlo).

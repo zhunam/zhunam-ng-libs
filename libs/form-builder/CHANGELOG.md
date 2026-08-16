@@ -5,6 +5,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
 
 ## [Unreleased]
 
+### Added
+- `FormBuilderModule`: NgModule wrapper around the standalone
+  `FormBuilder<T>` component (`imports: [FormBuilder]`,
+  `exports: [FormBuilder]`), for consumers still on a classic NgModule
+  architecture. Additive, no breaking change to the existing standalone
+  contract; the generic `T` still infers correctly per usage from the
+  bound `[fields]` input, verified against `strictTemplates`.
+
 ## [1.0.1] - 2026-08-08
 
 ### Fixed

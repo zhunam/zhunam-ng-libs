@@ -37,3 +37,13 @@
 - [x] Atributos ARIA (aria-invalid, aria-describedby, radiogroup) por campo
 - [x] README público
 - [x] Verificar build de producción
+- [x] `FormBuilderModule` NgModule wrapper para consumidores NgModule
+      clásicos → `libs/form-builder/src/lib/form-builder/form-builder.module.ts`,
+      exportado desde `src/index.ts`. Cambio aditivo, sin breaking
+      change al contrato standalone existente; todavía necesita bump de
+      versión antes de republicar (nueva superficie pública). Se
+      verificó empíricamente (spec temporal con un binding de tipo
+      incorrecto, compilado con `strictTemplates`) que el genérico `T`
+      se sigue infiriendo correctamente a través del NgModule, sin
+      necesitar ningún ajuste especial. Resuelve la deuda técnica
+      anotada en el ROADMAP.md raíz bajo "Future ideas".
