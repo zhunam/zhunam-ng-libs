@@ -41,5 +41,14 @@
 - [x] Demo consumiendo la librería en apps/portfolio-showcase
 - [x] README público (documentar claramente los 4 entry points y cuál
       instalar según el caso)
-- [ ] Verificar build de producción de cada entry point
+- [x] Verificar build de producción de cada entry point
 - [x] CHANGELOG.md desde el inicio (según la nueva regla de AGENTS.md)
+- [x] `AuthFormsModule` NgModule wrapper para consumidores NgModule
+      clásicos → `libs/auth/form-ui/src/lib/auth-forms.module.ts`,
+      exportado desde `form-ui/src/index.ts`. Un solo módulo combinado
+      (no uno por componente) porque un flujo de auth típico necesita
+      login, registro, y reset password juntos, y el tree-shaking no se
+      ve afectado por agruparlos en un mismo NgModule. `core`, `firebase/`,
+      y `supabase/` no exponen componentes, así que no necesitan wrapper.
+      Cambio aditivo, sin breaking change. Resuelve la deuda técnica
+      anotada en el ROADMAP.md raíz bajo "Future ideas".

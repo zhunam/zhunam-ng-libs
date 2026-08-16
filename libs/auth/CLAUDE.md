@@ -71,3 +71,13 @@ Ver ROADMAP.md en esta misma carpeta para el detalle completo.
     tenga "Email enumeration protection" activado; Supabase ya lo
     suprime del lado del servidor). Ver el comentario de seguridad en
     `onSubmit()` de ese componente antes de tocarlo.
+  - `AuthFormsModule`: wrapper NgModule único que agrupa los 3
+    componentes (`imports`/`exports`: `LoginForm`, `RegisterForm`,
+    `ResetPasswordForm`), para consumidores con arquitectura NgModule
+    clásica. Un solo módulo combinado en vez de uno por componente
+    (`LoginModule`, `RegisterModule`, `ResetPasswordModule`): un flujo de
+    auth típico usa los tres juntos, y el tree-shaking de Angular ya
+    opera por componente standalone según lo que el template realmente
+    referencia, no según cómo un NgModule agrupa sus `exports`, así que
+    combinarlos no tiene costo real. Los componentes standalone siguen
+    siendo la forma recomendada de consumo.

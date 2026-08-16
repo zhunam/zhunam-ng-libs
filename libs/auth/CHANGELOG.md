@@ -45,3 +45,10 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
   leaking registered emails). All three wrap `<lib-form-builder>`
   internally and inject `AUTH_SERVICE`; `@zhunam/form-builder` is an
   optional peerDependency of this entry point only.
+- `AuthFormsModule`: NgModule wrapper around `LoginForm`, `RegisterForm`,
+  and `ResetPasswordForm` (`imports`/`exports` all three), for consumers
+  still on a classic NgModule architecture. A single combined module
+  rather than one per component, since a typical auth flow needs all
+  three together and Angular's tree-shaking works per standalone
+  component regardless of NgModule export grouping. Additive, no
+  breaking change to the existing standalone contract.
