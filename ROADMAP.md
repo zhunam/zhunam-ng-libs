@@ -13,11 +13,13 @@ only reference it.
 
 ## Active phase
 
-**Phase 3: Modular auth system**, waiting to start (scope definition
-session pending, per the same process used for previous phases).
+**Phase 4: Client-side document (PDF) generator**, waiting to start
+(scope definition session pending, per the same process used for
+previous phases).
 
-Phase 2 (Dynamic Form Builder) is done: `@zhunam/form-builder@1.0.1` is
-live on the public npm registry, alongside `@zhunam/data-grid@1.0.1`.
+Phase 3 (Modular auth system) code is complete: `@zhunam/auth` with
+firebase/, supabase/, and form-ui/ entry points, pending first npm
+publish.
 
 ## Phases: full sequence
 
@@ -36,7 +38,8 @@ data-grid, form-builder, pdf-generator) instead of standing alone.
 2. **Dynamic Form Builder** (`libs/form-builder`): Freemium + SaaS (paid
    persistence). **DONE, published on npm as `@zhunam/form-builder@1.0.1`**
 3. **Modular auth system** (`libs/auth`, thin wrapper/starter around
-   Firebase/Supabase Auth): 100% free. Not started
+   Firebase/Supabase Auth): 100% free. Code complete, pending first npm
+   publish
 4. **Client-side document (PDF) generator** (`libs/pdf-generator`):
    mostly free, possible template sales (Gumroad). Not started
 5. **Real-time chat / notifications** (`libs/chat-widget`, embeddable
@@ -61,16 +64,6 @@ promoted into the numbered sequence above.
   labels de UI, o soporte de i18n real) antes de que la lista de
   librerías crezca más y el problema se replique. Detectado en
   libs/data-grid/ROADMAP.md durante el desarrollo de form-builder.
-
-- **NgModule wrapper missing across all published libs**:
-  AGENTS.md's "Standalone vs NgModule" section requires every library to
-  expose an NgModule wrapper alongside its standalone components, for
-  consumers still on classic NgModule architecture. None of
-  data-grid, form-builder, or auth currently have one. Low risk, low
-  effort, additive-only change (no breaking change, no major version
-  bump needed). Do as one dedicated pass across all three libraries
-  once auth v1 ships. Detected in libs/auth/CLAUDE.md during the
-  development of auth's form-ui entry point.
 
 ## Recurring maintenance notes
 
