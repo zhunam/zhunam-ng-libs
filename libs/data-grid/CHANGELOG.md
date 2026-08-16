@@ -3,6 +3,14 @@
 All notable changes to `@zhunam/data-grid` are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/), versioning follows [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- `DataGridModule`: NgModule wrapper around the standalone `DataGrid`
+  component (`imports: [DataGrid]`, `exports: [DataGrid]`), for
+  consumers still on a classic NgModule architecture. Additive, no
+  breaking change to the existing standalone contract.
+
 ## [1.0.1] - 2026-07-14
 
 ### Fixed

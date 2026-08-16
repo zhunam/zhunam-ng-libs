@@ -14,3 +14,7 @@ qué NO incluye la versión actual.
 - `columns: input.required<ColumnConfig<T>[]>`: configuración de columnas
 - `pageSize: input<number>`: tamaño de página, default 10
 - `rowClick: output<T>`: emite el registro clickeado
+- `DataGridModule`: wrapper NgModule para consumidores con arquitectura
+  NgModule clásica (`imports: [DataGrid]`, `exports: [DataGrid]`). El
+  componente standalone sigue siendo la forma recomendada de consumo;
+  este módulo es solo compatibilidad hacia atrás.

@@ -66,3 +66,9 @@
       → `nx build data-grid --configuration=production`: confirmed clean
       after every task this phase touched (`data-grid.ts`, `.html`, `.scss`);
       no need to re-run once more just to close the checkbox.
+- [x] `DataGridModule` NgModule wrapper for classic NgModule consumers
+      → `libs/data-grid/src/lib/data-grid/data-grid.module.ts`, exported
+      from `src/index.ts`. Additive change, no breaking change to the
+      existing standalone `DataGrid` contract; still needs a version
+      bump before republishing (new public surface). Resolves the tech
+      debt logged in the root `ROADMAP.md` under "Future ideas".
