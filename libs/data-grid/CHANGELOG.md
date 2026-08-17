@@ -5,6 +5,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-08-17
+
 ### Added
 - `DataGridModule`: NgModule wrapper around the standalone `DataGrid`
   component (`imports: [DataGrid]`, `exports: [DataGrid]`), for

@@ -162,7 +162,6 @@ protected onLoginSuccess(user: AuthUser): void {
 | Peer dependency          | Range                                | Required for                        |
 | -------------------------- | -------------------------------------- | -------------------------------------- |
 | `@angular/core`             | `^20.0.0 \|\| ^21.0.0 \|\| ^22.0.0`     | Always                                 |
-| `@angular/common`           | `^20.0.0 \|\| ^21.0.0 \|\| ^22.0.0`     | Always                                 |
 | `@angular/router`           | `^20.0.0 \|\| ^21.0.0 \|\| ^22.0.0`     | Always (`authGuard`)                   |
 | `firebase`                  | `^10.0.0 \|\| ^11.0.0 \|\| ^12.0.0`     | Only if using `@zhunam/auth/firebase`  |
 | `@supabase/supabase-js`     | `^2.0.0`                               | Only if using `@zhunam/auth/supabase`  |

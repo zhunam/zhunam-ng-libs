@@ -5,6 +5,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-08-17
+
 ### Added
 - `FormBuilderModule`: NgModule wrapper around the standalone
   `FormBuilder<T>` component (`imports: [FormBuilder]`,

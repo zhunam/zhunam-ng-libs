@@ -5,6 +5,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-08-17
+
 ### Added
 - `AuthUser` interface: minimal user shape (`uid`, `email`,
   `emailVerified`, `displayName`), no tokens/credentials/provider
