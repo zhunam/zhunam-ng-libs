@@ -17,9 +17,12 @@ only reference it.
 (scope definition session pending, per the same process used for
 previous phases).
 
-Phase 3 (Modular auth system) code is complete: `@zhunam/auth` with
-firebase/, supabase/, and form-ui/ entry points, pending first npm
-publish.
+Phase 3 (Modular auth system) is done and published: `@zhunam/auth@1.0.0`
+is live on the public npm registry, alongside `@zhunam/data-grid@1.1.0`
+and `@zhunam/form-builder@1.1.0` (both bumped to 1.1.0 for the NgModule
+wrapper addition). All three published libraries were also manually
+verified against real Firebase and Supabase projects before this
+release, not just tested against mocks.
 
 ## Phases: full sequence
 
@@ -34,12 +37,12 @@ Financial/crypto dashboard, so the dashboard can consume them (auth,
 data-grid, form-builder, pdf-generator) instead of standing alone.
 
 1. **Data Grid** (`libs/data-grid`): Freemium (core here, Pro in a
-   separate private repo). **DONE, published on npm as `@zhunam/data-grid@1.0.1`**
+   separate private repo). **DONE, published on npm as `@zhunam/data-grid@1.1.0`**
 2. **Dynamic Form Builder** (`libs/form-builder`): Freemium + SaaS (paid
-   persistence). **DONE, published on npm as `@zhunam/form-builder@1.0.1`**
+   persistence). **DONE, published on npm as `@zhunam/form-builder@1.1.0`**
 3. **Modular auth system** (`libs/auth`, thin wrapper/starter around
-   Firebase/Supabase Auth): 100% free. Code complete, pending first npm
-   publish
+   Firebase/Supabase Auth): 100% free. **DONE, published on npm as
+   `@zhunam/auth@1.0.0`**
 4. **Client-side document (PDF) generator** (`libs/pdf-generator`):
    mostly free, possible template sales (Gumroad). Not started
 5. **Real-time chat / notifications** (`libs/chat-widget`, embeddable
