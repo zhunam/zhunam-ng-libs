@@ -1,0 +1,30 @@
+// These components wrap <lib-form-builder>, which already exposes its own
+// --fb-* custom properties for the actual form fields (colors, spacing,
+// fonts) — duplicating a parallel --auth-* token for every one of those
+// would just be two knobs controlling the same thing. --auth-* is reserved
+// for chrome that's unique to these auth forms and has no --fb-*
+// equivalent: the error banner and the "forgot password" link button.
+:host {
+  --auth-error-color: #dc2626;
+  --auth-link-color: #3b82f6;
+  --auth-spacing: 1rem;
+
+  display: block;
+}
+
+.auth-error {
+  margin-top: var(--auth-spacing);
+  color: var(--auth-error-color);
+  font-size: 0.875rem;
+}
+
+.auth-link-button {
+  margin-top: var(--auth-spacing);
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--auth-link-color);
+  font-size: 0.875rem;
+  cursor: pointer;
+  text-decoration: underline;
+}

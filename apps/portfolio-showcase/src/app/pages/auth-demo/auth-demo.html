@@ -1,0 +1,266 @@
+<div class="drawer gap-6 lg:drawer-open">
+  <input id="library-explorer-drawer" type="checkbox" class="drawer-toggle" />
+
+  <div class="drawer-content flex min-w-0 flex-col gap-8">
+    <label
+      for="library-explorer-drawer"
+      aria-label="Toggle library explorer"
+      class="drawer-tab btn btn-square fixed top-16 left-0 z-40 rounded-l-none border border-l-0 border-slate-200 bg-base-100 shadow-md transition-all duration-300 ease-out lg:hidden"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="h-5 w-5"
+        aria-hidden="true"
+      >
+        <path d="M4 6h16M4 12h16M4 18h16" />
+      </svg>
+    </label>
+
+    <nav aria-label="Breadcrumb" class="text-sm text-slate-500">
+      <a routerLink="/" class="hover:text-primary"><span translate="no">Home</span></a>
+      <span class="mx-1.5">/</span>
+      <span class="text-base-content" translate="no">Auth</span>
+    </nav>
+
+    <header class="flex flex-col gap-3">
+      <span class="text-primary font-bold w-fit font-mono text-2xl">&#64;zhunam/auth</span>
+      <h1 class="text-lg font-bold tracking-tight text-balance text-base-content">Live Demo</h1>
+      <p class="max-w-prose text-slate-600">
+        A thin, unified wrapper over Firebase Auth and Supabase Auth, reactive user state, a
+        route guard, and ready-made login/register/reset-password forms. This demo runs against
+        an in-memory mock, never a real Firebase or Supabase project.
+      </p>
+
+      <div class="flex flex-col gap-2">
+        <div class="join" role="group" aria-label="Select provider, behavior is identical either way">
+          <button
+            type="button"
+            class="btn btn-sm join-item"
+            [class.btn-primary]="selectedProvider() === 'firebase'"
+            (click)="selectedProvider.set('firebase')"
+          >
+            Firebase
+          </button>
+          <button
+            type="button"
+            class="btn btn-sm join-item"
+            [class.btn-primary]="selectedProvider() === 'supabase'"
+            (click)="selectedProvider.set('supabase')"
+          >
+            Supabase
+          </button>
+        </div>
+        <p class="max-w-prose text-sm text-slate-500">
+          Behavior is identical: switching providers doesn't require touching your application
+          code, only the entry point you import from and provide in
+          <span class="font-mono text-xs">app.config.ts</span> (see "Usage with form-ui" at the
+          bottom of this page).
+        </p>
+      </div>
+    </header>
+
+    <section
+      class="rounded-box border p-6 transition-colors duration-500"
+      [class.border-slate-200]="!stateChanged()"
+      [class.border-primary]="stateChanged()"
+    >
+      <h2 class="mb-3 text-sm font-semibold text-base-content">Current state</h2>
+      @if (authService.currentUser(); as user) {
+        <div class="flex flex-col gap-3" translate="no">
+          <div class="flex items-center gap-3">
+            <div class="avatar avatar-placeholder">
+              <div class="w-10 rounded-full bg-primary text-primary-content">
+                <span>{{ initial(user) }}</span>
+              </div>
+            </div>
+            <div class="flex flex-col">
+              <span class="font-medium text-base-content">{{ user.displayName ?? 'No display name' }}</span>
+              <span class="text-sm text-slate-600">{{ user.email }}</span>
+            </div>
+            <button type="button" class="btn btn-outline btn-sm ml-auto" (click)="signOut()">Sign out</button>
+          </div>
+
+          <!-- Secondary row: facts about the session, not the person — smaller and
+               muted so the name/email above stays the one thing read first. -->
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="badge badge-primary">Signed in</span>
+            <span
+              class="badge"
+              [class.badge-primary]="user.emailVerified"
+              [class.badge-outline]="!user.emailVerified"
+            >
+              {{ user.emailVerified ? 'Email verified' : 'Email unverified' }}
+            </span>
+            <span class="font-mono text-xs text-slate-400">uid: {{ user.uid }}</span>
+            @if (mockAuthService.lastStateSource(); as source) {
+              <span class="text-xs text-slate-400">{{ stateSourceLabel(source) }}</span>
+            }
+          </div>
+        </div>
+      } @else {
+        <span class="badge badge-outline">Signed out</span>
+      }
+    </section>
+
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
+      <section class="rounded-box border border-slate-200 p-6">
+        <h2 class="mb-1 text-sm font-semibold text-base-content">Login</h2>
+        <p class=" text-sm text-slate-500">
+          Demo email: <span class="font-mono text-xs" translate="no">{{ demoEmail }}</span>
+        </p>
+        <p class="mb-4 text-sm text-slate-500">
+          Demo password: <span class="font-mono text-xs" translate="no">{{ demoPassword }}</span>
+        </p>
+
+        <lib-login-form (loginSuccess)="onLoginSuccess($event)" (forgotPasswordClick)="onForgotPasswordClick()" />
+      </section>
+
+      <section class="rounded-box border border-slate-200 p-6">
+        <h2 class="mb-3 text-sm font-semibold text-base-content">Result</h2>
+        @if (mockAuthService.loginResult(); as result) {
+          @if (result.ok) {
+            <pre
+              class="overflow-x-auto rounded-md bg-base-content p-3 text-xs leading-relaxed text-slate-100"
+            ><code class="font-mono" translate="no">{{ jsonOf(result.value) }}</code></pre>
+          } @else {
+            <p class="text-sm text-red-600">{{ result.error }}</p>
+          }
+        } @else {
+          <p class="text-sm text-slate-500">Submit the login form to see the raw result here.</p>
+        }
+      </section>
+    </div>
+
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
+      <section class="rounded-box border border-slate-200 p-6">
+        <h2 class="mb-1 text-sm font-semibold text-base-content">Register</h2>
+        <p class="mb-4 text-sm text-slate-500">
+          Creates an in-memory user for this session only, nothing is persisted, and reloading
+          the page resets it. Tip: try registering with
+          <span class="font-mono text-xs" translate="no"> {{ demoEmail }} </span> to see the
+          "already in use" error path.
+        </p>
+        <lib-register-form (registerSuccess)="onRegisterSuccess($event)" />
+      </section>
+
+      <section class="rounded-box border border-slate-200 p-6">
+        <h2 class="mb-3 text-sm font-semibold text-base-content">Result</h2>
+        @if (mockAuthService.registerResult(); as result) {
+          @if (result.ok) {
+            <pre
+              class="overflow-x-auto rounded-md bg-base-content p-3 text-xs leading-relaxed text-slate-100"
+            ><code class="font-mono" translate="no">{{ jsonOf(result.value) }}</code></pre>
+          } @else {
+            <p class="text-sm text-red-600">{{ result.error }}</p>
+          }
+        } @else {
+          <p class="text-sm text-slate-500">Submit the register form to see the raw result here.</p>
+        }
+      </section>
+    </div>
+
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
+      <section
+        #resetPasswordSection
+        class="rounded-box border p-6 transition-colors duration-500"
+        [class.border-slate-200]="!resetPasswordHighlight()"
+        [class.border-primary]="resetPasswordHighlight()"
+      >
+        <h2 class="mb-1 text-sm font-semibold text-base-content">Reset password</h2>
+        <p class="mb-4 max-w-prose text-sm text-slate-500">
+          Tip: submit with the demo email above, then submit again with a completely made-up
+          address like <span class="font-mono text-xs" translate="no"> anyone@random.com </span>.
+          The form's message stays identical either way, that's the anti-user-enumeration
+          protection, not a bug. The Result panel on the right shows what's really happening
+          underneath: a made-up email actually rejects with
+          <span class="font-mono text-xs" translate="no">auth/user-not-found</span>, the form just
+          never lets that difference reach the screen.
+        </p>
+        <div class="max-w-md">
+          <lib-reset-password-form />
+        </div>
+      </section>
+
+      <!-- Dashed border + "Internal only" badge, distinct from every other
+           Result panel on this page: this one is meant to read as "here's
+           how it works under the hood," never as "something broke." -->
+      <section class="rounded-box border border-dashed border-slate-300 p-6">
+        <div class="mb-3 flex items-center justify-between gap-2">
+          <h2 class="text-sm font-semibold text-base-content">Result</h2>
+          <span class="badge badge-outline">Internal only</span>
+        </div>
+        <p class="mb-4 text-sm text-slate-600">
+          What <span class="font-mono text-xs">AuthService.resetPassword()</span> actually
+          returned. Real users never see this, only the identical message on the left.
+        </p>
+        @if (mockAuthService.resetPasswordResult(); as result) {
+          @if (result.ok) {
+            <pre
+              class="overflow-x-auto rounded-md bg-base-content p-3 text-xs leading-relaxed text-slate-100"
+            ><code class="font-mono" translate="no">{{ jsonOf(result) }}</code></pre>
+          } @else {
+            <p class="font-mono text-sm text-slate-600">{{ result.error }}</p>
+          }
+        } @else {
+          <p class="text-sm text-slate-500">Submit the reset form to see the raw result here.</p>
+        }
+      </section>
+    </div>
+
+    <section class="rounded-box border border-slate-200 p-6">
+      <h2 class="mb-1 text-sm font-semibold text-base-content">Headless usage (no form-ui)</h2>
+      <p class="mb-3 text-sm text-slate-500">
+        Injecting <span class="font-mono text-xs">AUTH_SERVICE</span> directly and calling it by
+        hand, for when you want your own UI.
+      </p>
+      <pre
+        class="overflow-x-auto rounded-md bg-base-content p-4 text-xs leading-relaxed text-slate-100"
+      ><code class="font-mono" translate="no">{{ headlessUsageSnippet }}</code></pre>
+    </section>
+
+    <section class="rounded-box border border-slate-200 p-6">
+      <h2 class="mb-1 text-sm font-semibold text-base-content">Usage with form-ui</h2>
+      <p class="mb-3 text-sm text-slate-500">
+        The ready-made forms above, wired up exactly like this in a real app.
+      </p>
+      <pre
+        class="overflow-x-auto rounded-md bg-base-content p-4 text-xs leading-relaxed text-slate-100"
+      ><code class="font-mono" translate="no">{{ formUiUsageSnippet() }}</code></pre>
+    </section>
+
+    <section class="rounded-box border border-slate-200 p-6">
+      <h2 class="mb-3 text-sm font-semibold text-base-content">Protecting a route with authGuard</h2>
+      <pre
+        class="overflow-x-auto rounded-md bg-base-content p-4 text-xs leading-relaxed text-slate-100"
+      ><code class="font-mono" translate="no">{{ authGuardSnippet }}</code></pre>
+    </section>
+  </div>
+
+  <div class="drawer-side">
+    <label for="library-explorer-drawer" aria-label="Close library explorer" class="drawer-overlay"></label>
+    <aside
+      class="h-fit w-72 bg-base-100 border-0 shadow-none p-4 max-lg:border-r max-lg:border-slate-200 lg:sticky lg:top-6 lg:w-55 lg:rounded-box lg:border lg:border-slate-200"
+    >
+      <h2 class="mb-3 text-sm font-semibold text-base-content">Library Explorer</h2>
+      <nav class="flex flex-col gap-1">
+        @for (lib of libraries; track lib.name) {
+          @if (lib.route) {
+            <a [routerLink]="lib.route" [class]="sidebarLinkClasses(lib.route === currentUrl())"
+              ><span translate="no">{{ lib.name }}</span></a
+            >
+          } @else {
+            <span class="flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium text-slate-400">
+              <span translate="no">{{ lib.name }}</span>
+              <span class="text-xs font-normal">Coming Soon</span>
+            </span>
+          }
+        }
+      </nav>
+    </aside>
+  </div>
+</div>

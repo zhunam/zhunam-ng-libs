@@ -117,7 +117,7 @@ export class DataGridDemo {
 
       const unknownKey = Object.keys(item).find((key) => !allowedKeys.has(key));
       if (unknownKey) {
-        return `Column ${index + 1}: unexpected property "${unknownKey}" — only "key", "label", and "sortable" are allowed.`;
+        return `Column ${index + 1}: unexpected property "${unknownKey}"; only "key", "label", and "sortable" are allowed.`;
       }
 
       const row = item as Row;
@@ -149,7 +149,7 @@ export class DataGridDemo {
       const keys = Object.keys(item);
       const unknownKey = keys.find((key) => !expected.has(key));
       if (unknownKey) {
-        return `Row ${index + 1}: unexpected property "${unknownKey}" — column keys are ${expectedKeys.join(', ')}.`;
+        return `Row ${index + 1}: unexpected property "${unknownKey}"; column keys are ${expectedKeys.join(', ')}.`;
       }
 
       const missingKey = expectedKeys.find((key) => !keys.includes(key));

@@ -3,6 +3,14 @@
 All notable changes to `@zhunam/data-grid` are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/), versioning follows [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- `DataGridModule`: NgModule wrapper around the standalone `DataGrid`
+  component (`imports: [DataGrid]`, `exports: [DataGrid]`), for
+  consumers still on a classic NgModule architecture. Additive, no
+  breaking change to the existing standalone contract.
+
 ## [1.0.1] - 2026-07-14
 
 ### Fixed
@@ -23,4 +31,4 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
 - `@angular/core` / `@angular/common` compatibility: `^20.0.0 || ^21.0.0 || ^22.0.0`.
 
 ### Testing
-- `data-grid.spec.ts` — 21 unit tests covering sorting, pagination, keyboard activation (Enter/Space on sortable headers and rows), row selection, and stable-sort tie-breaking. Runs clean in CI (GitHub Actions, `ubuntu-latest`) with coverage above 80% on statements, branches, functions, and lines. (The `nx test` failure previously noted here was specific to one contributor's local Windows environment, not a real dependency or workspace issue — see `libs/data-grid/ROADMAP.md`.)
+- `data-grid.spec.ts`: 21 unit tests covering sorting, pagination, keyboard activation (Enter/Space on sortable headers and rows), row selection, and stable-sort tie-breaking. Runs clean in CI (GitHub Actions, `ubuntu-latest`) with coverage above 80% on statements, branches, functions, and lines. (The `nx test` failure previously noted here was specific to one contributor's local Windows environment, not a real dependency or workspace issue; see `libs/data-grid/ROADMAP.md`.)

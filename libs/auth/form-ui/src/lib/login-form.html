@@ -1,0 +1,9 @@
+<lib-form-builder [fields]="fields" (formSubmit)="onSubmit($event)" />
+
+@if (errorMessage(); as message) {
+  <p class="auth-error" role="alert">{{ message }}</p>
+}
+
+<button type="button" class="auth-link-button" (click)="forgotPasswordClick.emit()">
+  Forgot your password?
+</button>

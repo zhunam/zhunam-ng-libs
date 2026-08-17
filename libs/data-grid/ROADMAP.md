@@ -1,6 +1,6 @@
-# ROADMAP — Data Grid
+# ROADMAP: Data Grid
 
-## Phase 1 — v1 (done)
+## Phase 1: v1 (done)
 
 ### In scope
 
@@ -25,7 +25,7 @@
   Found while building the form-builder demo (2026-08-05), which
   originally copied the same convention ("Enviar") before it was
   corrected to English there. Not fixed here yet since v1.0.1 is
-  already published to npm — plan a v1.1 that either translates these
+  already published to npm. Plan a v1.1 that either translates these
   strings to English or, better, exposes them as configurable
   `input()`s so consumers can localize them.
 
@@ -50,7 +50,7 @@
 - [x] Full JSDoc on the public API (`data`, `columns`, `pageSize`, `rowClick`)
       → `data-grid.ts`
 - [x] Unit tests for sorting, pagination, keyboard activation, and row selection
-      → `data-grid.spec.ts` — 21 tests (14 from the original suite + 7 added
+      → `data-grid.spec.ts`: 21 tests (14 from the original suite + 7 added
       for keyboard activation, row selection, and stable-sort tie-breaking).
       The earlier "Vitest 4.x / `@angular/build` 21.2.18 fails at
       `angular:test-bed-init`" failure was specific to the local agent's
@@ -63,6 +63,12 @@
 - [x] Public README (install, usage example, API table)
       → `libs/data-grid/README.md`
 - [x] Verify production build
-      → `nx build data-grid --configuration=production` — confirmed clean
+      → `nx build data-grid --configuration=production`: confirmed clean
       after every task this phase touched (`data-grid.ts`, `.html`, `.scss`);
       no need to re-run once more just to close the checkbox.
+- [x] `DataGridModule` NgModule wrapper for classic NgModule consumers
+      → `libs/data-grid/src/lib/data-grid/data-grid.module.ts`, exported
+      from `src/index.ts`. Additive change, no breaking change to the
+      existing standalone `DataGrid` contract; still needs a version
+      bump before republishing (new public surface). Resolves the tech
+      debt logged in the root `ROADMAP.md` under "Future ideas".

@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { dataGridLibrary, formBuilderLibrary } from '../../shared/libraries';
+import { authLibrary, dataGridLibrary, formBuilderLibrary } from '../../shared/libraries';
 
 @Component({
   selector: 'app-home',
@@ -12,4 +12,5 @@ import { dataGridLibrary, formBuilderLibrary } from '../../shared/libraries';
 export class Home {
   protected readonly dataGridLibrary = dataGridLibrary;
   protected readonly formBuilderLibrary = formBuilderLibrary;
+  protected readonly authLibrary = authLibrary;
 }

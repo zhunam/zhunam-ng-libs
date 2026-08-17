@@ -17,6 +17,7 @@ on:
     paths:
       - "libs/data-grid/**"
       - "libs/form-builder/**"
+      - "libs/auth/**"
 
 jobs:
   test:
@@ -24,7 +25,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        project: [data-grid, form-builder]
+        project: [data-grid, form-builder, auth]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
