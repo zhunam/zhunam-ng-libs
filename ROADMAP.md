@@ -68,6 +68,28 @@ promoted into the numbered sequence above.
   librerías crezca más y el problema se replique. Detectado en
   libs/data-grid/ROADMAP.md durante el desarrollo de form-builder.
 
+## Lecciones de infraestructura
+
+- **Vitest no aísla specs que mockean el mismo SDK externo** (`test.isolate`
+  default `false` en `@nx/angular:unit-test`): causa real de una falla en
+  CI (Linux) en `form-builder` el 2026-08-16. Varios specs llamando
+  `vi.mock()`/`vi.hoisted()` sobre el mismo módulo externo compartían un
+  registro de módulos, y solo el mock de un archivo tomaba efecto.
+  Resuelto agregando un `vitest.config.ts` propio por librería con
+  `test: { isolate: true }` (ver `libs/auth/vitest.config.ts`,
+  `libs/pdf-generator/vitest.config.ts`). Aplicado proactivamente en
+  `pdf-generator` desde el primer spec, sin esperar a que se repita.
+
+- **Vitest no encuentra el runner en Windows nativo (Nx +
+  `@nx/angular:unit-test`)**: confirmado que no es un problema de versión
+  de Node (falla igual con Node 22.23.2 en Windows, la misma versión
+  exacta que corre bien en WSL), ni de config del repo. Es específico de
+  cómo el executor de Nx bootstrapea el proceso worker de Vitest en
+  Windows. Mientras no se investigue más a fondo (o se resuelva upstream
+  en `@nx/angular`), WSL es el entorno de verificación de tests local,
+  igual que CI. Cualquier `nx test` corrido nativo en Windows no es
+  confiable como resultado, ni positivo ni negativo.
+
 ## Recurring maintenance notes
 
 - Review each library's `peerDependencies` whenever Angular releases a
