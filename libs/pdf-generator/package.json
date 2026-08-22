@@ -1,0 +1,13 @@
+{
+  "name": "@zhunam/pdf-generator",
+  "version": "0.0.1",
+  "license": "MIT",
+  "peerDependencies": {
+    "@angular/common": "^20.0.0 || ^21.0.0 || ^22.0.0",
+    "@angular/core": "^20.0.0 || ^21.0.0 || ^22.0.0"
+  },
+  "dependencies": {
+    "pdfmake": "^0.3.11"
+  },
+  "sideEffects": false
+}
