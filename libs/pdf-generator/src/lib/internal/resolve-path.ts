@@ -1,3 +1,5 @@
+import { PdfTemplateSecurityError } from '../errors/pdf-template-security-error';
+
 /**
  * Path segments rejected by `resolvePath()` because reading (or, on a
  * write path, assigning) them can reach `Object.prototype` and pollute
@@ -13,22 +15,6 @@ const FORBIDDEN_SEGMENTS = new Set(['__proto__', 'constructor', 'prototype']);
  * this pattern has no catastrophic-backtracking shape.
  */
 const PLACEHOLDER_PATTERN = /\{\{([^{}]+?)\}\}/g;
-
-/**
- * Thrown by `resolvePath()` (and, through it, `resolveTemplateString()`)
- * when a template path contains a segment that could reach
- * `Object.prototype`. Exported so a consumer rendering a template
- * sourced from a third party can catch it specifically, instead of a
- * generic `Error`.
- */
-export class PdfTemplateSecurityError extends Error {
-  constructor(segment: string) {
-    super(
-      `Blocked path segment "${segment}": it could reach Object.prototype and is never a legitimate template path.`,
-    );
-    this.name = 'PdfTemplateSecurityError';
-  }
-}
 
 /**
  * Reads a dot-separated `path` out of `data` by walking one key at a

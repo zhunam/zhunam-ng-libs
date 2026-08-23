@@ -1,4 +1,5 @@
-import { PdfTemplateSecurityError, resolvePath, resolveTemplateString } from './resolve-path';
+import { PdfTemplateSecurityError } from '../errors/pdf-template-security-error';
+import { resolvePath, resolveTemplateString } from './resolve-path';
 
 describe('resolvePath', () => {
   it('resolves a simple nested path', () => {

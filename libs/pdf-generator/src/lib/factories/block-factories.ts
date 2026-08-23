@@ -6,6 +6,8 @@ import type {
   PdfPageBreakBlock,
   PdfRowBlock,
   PdfSpacerBlock,
+  PdfTableBlock,
+  PdfTableColumn,
   PdfTextBlock,
   PdfTextOptions,
 } from '../models/pdf-block';
@@ -78,6 +80,24 @@ export function pdfColumn(children: PdfBlock[], opts?: PdfLayoutOptions): PdfCol
  */
 export function pdfRow(children: PdfBlock[], opts?: PdfLayoutOptions): PdfRowBlock {
   return { type: 'row', children, options: opts };
+}
+
+/**
+ * Builds a table block. Construction only, no resolution happens here:
+ * `rowsPath` and each column's `path` are just stored as given, they're
+ * only resolved against real data later, inside `generatePdf()`, this
+ * factory has no `data` to resolve them against yet.
+ *
+ * @example
+ * pdfTable('items', {
+ *   columns: [
+ *     { header: 'Product', path: 'name' },
+ *     { header: 'Qty', path: 'quantity' },
+ *   ],
+ * });
+ */
+export function pdfTable(rowsPath: string, opts: { columns: PdfTableColumn[] }): PdfTableBlock {
+  return { type: 'table', rowsPath, columns: opts.columns };
 }
 
 /**

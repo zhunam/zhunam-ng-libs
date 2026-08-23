@@ -97,13 +97,17 @@ export interface PdfResult {
 
 ## Tareas (1-3h cada una, en orden)
 
-- [ ] Tipos base (`PdfBlock` union, `PdfTemplate<T>`, `PdfMargins`,
-      `PdfTableColumn`) — solo tipos, sin lógica.
-- [ ] Resolver de placeholders seguro + tests (denylist prototype
+- [x] Tipos base (`PdfBlock` union, `PdfTemplate`, `PdfMargins`,
+      `PdfTableColumn`) — solo tipos, sin lógica. Nota: `PdfTemplate`
+      quedó sin genérico en v1 (ver decisión registrada en el propio
+      JSDoc del tipo); esta línea todavía dice `PdfTemplate<T>` porque
+      esa corrección de wording sigue pendiente, señalada de nuevo en
+      el reporte de esta tarea.
+- [x] Resolver de placeholders seguro + tests (denylist prototype
       pollution, texto literal, dot-path).
-- [ ] Funciones factory (`pdfText`, `pdfHeading`, `pdfColumn`, `pdfRow`,
+- [x] Funciones factory (`pdfText`, `pdfHeading`, `pdfColumn`, `pdfRow`,
       `pdfSpacer`, `pdfPageBreak`).
-- [ ] Factory + compilador de `pdfTable` (rowsPath → filas de pddfmake).
+- [x] Factory + compilador de `pdfTable` (rowsPath → filas de pddfmake).
 - [ ] Factory + compilador de `pdfImage` con enforcement de
       `allowRemote: false` por defecto.
 - [ ] Compilador principal: `PdfTemplate<T>` + `data` → `docDefinition`
@@ -113,7 +117,11 @@ export interface PdfResult {
 - [ ] `PdfPreviewComponent` standalone (iframe + blob + sanitizer
       interno + revoke en destroy/regeneración, reactivo a signals).
 - [ ] `NgModule` wrapper de `PdfPreviewComponent`.
-- [ ] `vitest.config.ts` con `isolate: true` + specs de mocks de pdfmake.
+- [x] `vitest.config.ts` con `isolate: true`.
+- [ ] Specs de mocks de pdfmake en `vitest.config.ts` (separado de la
+      línea anterior: `isolate: true` ya está, los specs recién tienen
+      sentido cuando el compilador principal empiece a importar
+      `pdfmake`).
 - [ ] Tests de seguridad: prototype pollution, texto literal ante
       marcado, imagen remota denegada por defecto.
 - [ ] README.md (instalación, ejemplo <10 líneas, tabla de API,
