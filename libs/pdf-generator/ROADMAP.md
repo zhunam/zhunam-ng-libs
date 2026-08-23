@@ -114,13 +114,26 @@ export interface PdfResult {
 - [x] Factory de `pdfImage` (`srcPath`, `width` opcional). El
       enforcement de `allowedRemoteHosts` no es responsabilidad de esta
       factory ni de `PdfImageBlock`: se resuelve en `PdfGenerateOptions`
-      / `generatePdf()`, ver la tarea del compilador principal.
-- [ ] Compilador principal: `PdfTemplate` + `data` → `docDefinition` de
-      pdfmake (bloques de texto/columna/fila/spacer/pageBreak), incluye
-      definir `PdfGenerateOptions` por primera vez, con
-      `allowedRemoteHosts` adentro, y aplicar el enforcement real de
-      imágenes remotas ahí.
-- [ ] `generatePdf<T>()` + `PdfResult` (download/open/getBlob/toBase64).
+      / `generatePdf()`, cuando se compile de verdad el bloque de
+      imagen (todavía pendiente, ver más abajo).
+- [x] Compilador principal: `PdfTemplate` + `data` → `docDefinition` de
+      pdfmake, para todo tipo de bloque EXCEPTO imagen (texto, columna,
+      fila, tabla, spacer, pageBreak). Un `PdfImageBlock` en el body
+      todavía lanza `PdfTemplateValidationError` como placeholder
+      explícito (`'Image blocks are not yet supported by
+      compileTemplate.'`), compilar imágenes de verdad no está hecho.
+      Incluye la carga perezosa del motor y las fuentes de pdfmake
+      (`internal/load-pdf-engine.ts`), memoizada, `import()` dinámico
+      nunca top-level. `PdfGenerateOptions` (`allowedRemoteHosts`) está
+      definido (`models/pdf-generate-options.ts`) pero todavía sin
+      aplicar, ese enforcement real es parte de la tarea de imagen, no
+      de esta.
+- [x] `generatePdf<T>()` + `PdfResult` (download/open/getBlob/toBase64).
+- [ ] Compilar `PdfImageBlock` de verdad, reemplazando el placeholder
+      `PdfTemplateValidationError` actual: resolver `srcPath`, aplicar
+      el enforcement real de `PdfGenerateOptions.allowedRemoteHosts`
+      (data URI siempre permitida, host remoto solo si está en la
+      lista), mapear a `{ image: ... }` de pdfmake.
 - [ ] Ciclo de vida de blob URLs (creación/revocación) centralizado.
 - [ ] `PdfPreviewComponent` standalone (iframe + blob + sanitizer
       interno + revoke en destroy/regeneración, reactivo a signals).

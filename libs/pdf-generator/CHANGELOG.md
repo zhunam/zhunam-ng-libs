@@ -23,3 +23,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `PdfTemplateSecurityError`.
 - `pdfTable`: factory function that builds a `PdfTableBlock` from a
   `rowsPath` and a list of `PdfTableColumn`s.
+- `pdfImage`: factory function that builds a `PdfImageBlock` from a
+  `srcPath` and an optional `width`.
+- `generatePdf<T>()`, `PdfResult`, and `PdfGenerateOptions`: compiles a
+  `PdfTemplate` against a data object into a real PDF, for every block
+  type except image (a `PdfImageBlock` anywhere in the template
+  currently rejects with `PdfTemplateValidationError`, image
+  compilation isn't implemented yet). `PdfResult` exposes `download()`,
+  `open()`, `getBlob()`, and `toBase64()`. `PdfGenerateOptions.allowedRemoteHosts`
+  is defined but not yet enforced, that lands together with image
+  compilation.
