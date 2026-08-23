@@ -49,6 +49,31 @@ coincide con el runtime real). Cualquier tarea futura que toque
   derivados estructuralmente a partir de las firmas reales de
   `createPdf`/`addVirtualFileSystem` en `internal/pdfmake-types.ts`,
   no importados por nombre.
+- **Una URL remota puesta directo en `image: '...'` (inline) nunca se
+  fetchea.** pdfmake la trata como una clave de búsqueda en el vfs, no
+  la encuentra, y falla con `File '...' not found in virtual file
+  system`, sin siquiera intentar una petición de red. `@types/pdfmake`
+  documenta "A remote URL via http:// or https://" como valor directo
+  válido para `image`, y eso es lo que un tutorial o el propio tipo
+  sugieren hacer, pero no funciona así en la práctica. El único camino
+  que sí dispara un fetch real es referenciar la imagen por nombre:
+  `{ images: { miImagen: url }, content: [{ image: 'miImagen' }] }`.
+  Por eso `compile-template.ts` arma un diccionario `images`
+  (`img_0`, `img_1`...) para toda URL remota, y solo inlinea directo
+  cuando el valor ya es un `data:` URI (eso sí funciona inline, sin
+  diccionario).
+- `pdfMake.setUrlAccessPolicy()` (Node-only según su propio JSDoc en
+  `@types/pdfmake`) no interviene para nada en el bundle de navegador:
+  confirmado corriendo una imagen remota con la política configurada
+  para rechazar todo (`() => false`) y viendo que igual falla con el
+  mismo error de vfs de siempre, la política nunca llega a evaluarse.
+  Y, sin configurar ninguna política, el fetch de una imagen remota
+  referenciada por nombre ya sucede por defecto (probado con una URL
+  que devuelve HTML en vez de una imagen: el error fue "Unknown image
+  format", prueba de que el fetch sí ocurrió, no un rechazo de
+  política). Esta librería no llama `setUrlAccessPolicy()` en ningún
+  lado: el enforcement real es `resolveImageSource()`, por-llamada,
+  antes de que pdfmake reciba la URL.
 
 ## Independencia
 

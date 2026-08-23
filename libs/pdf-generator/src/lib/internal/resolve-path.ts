@@ -34,7 +34,9 @@ export function resolvePath(path: string, data: unknown): unknown {
 
   for (const segment of path.split('.')) {
     if (FORBIDDEN_SEGMENTS.has(segment)) {
-      throw new PdfTemplateSecurityError(segment);
+      throw new PdfTemplateSecurityError(
+        `Blocked path segment "${segment}": it could reach Object.prototype and is never a legitimate template path.`,
+      );
     }
 
     if (current === null || typeof current !== 'object') {

@@ -1,6 +1,6 @@
-import { PdfTemplateValidationError } from '../errors/pdf-template-validation-error';
 import type { PdfBlock, PdfTemplate } from '../models/pdf-block';
 import { resolveTemplateString } from './resolve-path';
+import { resolveImageSource } from './resolve-image-source';
 import type { Column, Content, TDocumentDefinitions } from './pdfmake-types';
 import { resolveTableRows } from './resolve-table-rows';
 
@@ -27,8 +27,8 @@ function getBlockWidth(block: PdfBlock): number | undefined {
 /**
  * Compiles a single `PdfBlock` into pdfmake `Content`, resolving any
  * `{{path}}` placeholder against `data` along the way (via
- * `resolveTemplateString()`/`resolveTableRows()`, reused as-is, their
- * security behavior is not reimplemented here).
+ * `resolveTemplateString()`/`resolveTableRows()`/`resolveImageSource()`,
+ * reused as-is, their security behavior is not reimplemented here).
  *
  * `PdfLayoutOptions.gap` (on `PdfColumnBlock`/`PdfRowBlock`) is not
  * consumed here yet: pdfmake has no native per-item vertical gap for a
@@ -36,11 +36,25 @@ function getBlockWidth(block: PdfBlock): number | undefined {
  * child but the last) is a real design decision on its own, deferred
  * rather than guessed at in this pass.
  *
- * @throws {PdfTemplateValidationError} If `block` is a `PdfImageBlock`;
- * image compilation is a separate task, not implemented here yet. This
- * is a deliberate, explicit placeholder, not a silent no-op.
+ * @param allowedRemoteHosts Forwarded to `resolveImageSource()` for any
+ * `PdfImageBlock` encountered, directly or nested inside a column/row.
+ * @param images Mutated in place: a remote-URL image contributes a
+ * `img_N` entry here instead of being inlined directly. Confirmed
+ * empirically that pdfmake's browser bundle only actually fetches a
+ * remote URL when it's referenced this way, through
+ * `TDocumentDefinitions.images` plus a named `image` reference; passing
+ * the raw URL straight as `image` (what a first pass at this looked
+ * like) never triggers a fetch at all, pdfmake treats it as a vfs
+ * lookup key instead and fails with "not found in virtual file system".
+ * A `data:` URI is never added here, it's always inlined directly, data
+ * URIs work as a direct `image` value with no indirection needed.
  */
-function compileBlock(block: PdfBlock, data: unknown): Content {
+function compileBlock(
+  block: PdfBlock,
+  data: unknown,
+  allowedRemoteHosts: string[],
+  images: Record<string, string>,
+): Content {
   switch (block.type) {
     case 'text': {
       const { bold, italic, fontSize, color, alignment } = block.options ?? {};
@@ -55,7 +69,9 @@ function compileBlock(block: PdfBlock, data: unknown): Content {
     }
 
     case 'column':
-      return { stack: block.children.map((child) => compileBlock(child, data)) };
+      return {
+        stack: block.children.map((child) => compileBlock(child, data, allowedRemoteHosts, images)),
+      };
 
     case 'row':
       return {
@@ -70,7 +86,12 @@ function compileBlock(block: PdfBlock, data: unknown): Content {
         // cast is a deliberate, narrow escape hatch for that specific type
         // modeling gap, not a workaround for a real bug.
         columns: block.children.map((child) => {
-          const compiled = compileBlock(child, data) as unknown as Record<string, unknown>;
+          const compiled = compileBlock(
+            child,
+            data,
+            allowedRemoteHosts,
+            images,
+          ) as unknown as Record<string, unknown>;
           return { ...compiled, width: getBlockWidth(child) } as unknown as Column;
         }),
       };
@@ -86,8 +107,17 @@ function compileBlock(block: PdfBlock, data: unknown): Content {
     case 'pageBreak':
       return { text: '', pageBreak: 'after' };
 
-    case 'image':
-      throw new PdfTemplateValidationError('Image blocks are not yet supported by compileTemplate.');
+    case 'image': {
+      const resolvedSrc = resolveImageSource(block.srcPath, data, allowedRemoteHosts);
+
+      if (resolvedSrc.startsWith('data:')) {
+        return { image: resolvedSrc, width: block.width };
+      }
+
+      const key = `img_${Object.keys(images).length}`;
+      images[key] = resolvedSrc;
+      return { image: key, width: block.width };
+    }
   }
 }
 
@@ -106,6 +136,8 @@ function compileBlock(block: PdfBlock, data: unknown): Content {
 function compileHeaderFooter(
   block: PdfBlock | undefined,
   data: unknown,
+  allowedRemoteHosts: string[],
+  images: Record<string, string>,
 ): ((currentPage: number, pageCount: number) => Content) | undefined {
   if (!block) {
     return undefined;
@@ -113,16 +145,30 @@ function compileHeaderFooter(
 
   return (currentPage, pageCount) => {
     const context = { ...(data as Record<string, unknown>), pageNumber: currentPage, pageCount };
-    return compileBlock(block, context);
+    return compileBlock(block, context, allowedRemoteHosts, images);
   };
 }
 
 /**
  * Compiles a `PdfTemplate` and a data object into a pdfmake
  * `TDocumentDefinitions`, ready to pass to `createPdf()`.
+ *
+ * @param allowedRemoteHosts Forwarded to `resolveImageSource()` for
+ * every `PdfImageBlock` in the template (body, header, and footer
+ * alike). Defaults to `[]`, matching `PdfGenerateOptions`'s own
+ * default of denying every remote image.
  */
-export function compileTemplate(template: PdfTemplate, data: unknown): TDocumentDefinitions {
+export function compileTemplate(
+  template: PdfTemplate,
+  data: unknown,
+  allowedRemoteHosts: string[] = [],
+): TDocumentDefinitions {
   const { pageSize = 'A4', margins, header, footer, body } = template;
+  const images: Record<string, string> = {};
+
+  const content = body.map((block) => compileBlock(block, data, allowedRemoteHosts, images));
+  const compiledHeader = compileHeaderFooter(header, data, allowedRemoteHosts, images);
+  const compiledFooter = compileHeaderFooter(footer, data, allowedRemoteHosts, images);
 
   return {
     pageSize,
@@ -134,9 +180,20 @@ export function compileTemplate(template: PdfTemplate, data: unknown): TDocument
           margins.bottom ?? DEFAULT_PAGE_MARGIN,
         ]
       : undefined,
-    header: compileHeaderFooter(header, data),
-    footer: compileHeaderFooter(footer, data),
-    content: body.map((block) => compileBlock(block, data)),
+    header: compiledHeader,
+    footer: compiledFooter,
+    content,
+    // Always the same `images` object reference, never conditionally
+    // `undefined` based on whether it already has entries: header/footer
+    // are functions pdfmake calls later, during actual page rendering,
+    // not synchronously here, so a remote image referenced only inside a
+    // header/footer wouldn't have been added yet at this point. Since
+    // this is the same object by reference, a later mutation from inside
+    // a header/footer call is still visible when pdfmake reads
+    // `docDefinition.images` to resolve it. An empty `{}` for a template
+    // with no images at all is harmless, functionally identical to
+    // `undefined` for pdfmake's own resolution.
+    images,
     defaultStyle: { font: 'Roboto' },
   };
 }

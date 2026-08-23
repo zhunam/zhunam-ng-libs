@@ -9,9 +9,9 @@ import type { PdfTemplate } from './lib/models/pdf-block';
  * document, loading pdfmake's engine on first use.
  *
  * @param options Remote-image host allowlist and other generation-time
- * settings, separate from the template itself. Not yet enforced by this
- * function, `PdfImageBlock` compilation (where `allowedRemoteHosts`
- * actually gets checked) is a separate task.
+ * settings, separate from the template itself. `allowedRemoteHosts`
+ * defaults to `[]`, denying every remote image; a `data:` URI is always
+ * allowed regardless.
  * @example
  * const result = await generatePdf(template, { cliente: { nombre: 'Ada' } });
  * result.download('invoice.pdf');
@@ -19,14 +19,10 @@ import type { PdfTemplate } from './lib/models/pdf-block';
 export async function generatePdf<T>(
   template: PdfTemplate,
   data: T,
-  // `options` is part of the public signature ahead of the task that
-  // enforces `allowedRemoteHosts` during PdfImageBlock compilation; kept
-  // unused here rather than added later as a breaking signature change.
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   options: PdfGenerateOptions = {},
 ): Promise<PdfResult> {
   const engine = await loadPdfEngine();
-  const docDefinition = compileTemplate(template, data);
+  const docDefinition = compileTemplate(template, data, options.allowedRemoteHosts ?? []);
   const createdPdf = engine.createPdf(docDefinition);
 
   return {

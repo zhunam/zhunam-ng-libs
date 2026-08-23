@@ -112,28 +112,35 @@ export interface PdfResult {
       `pdfSpacer`, `pdfPageBreak`).
 - [x] Factory + compilador de `pdfTable` (rowsPath → filas de pddfmake).
 - [x] Factory de `pdfImage` (`srcPath`, `width` opcional). El
-      enforcement de `allowedRemoteHosts` no es responsabilidad de esta
-      factory ni de `PdfImageBlock`: se resuelve en `PdfGenerateOptions`
-      / `generatePdf()`, cuando se compile de verdad el bloque de
-      imagen (todavía pendiente, ver más abajo).
+      enforcement de `allowedRemoteHosts` se resuelve en
+      `PdfGenerateOptions`/`generatePdf()`, no acá, ver más abajo (ya
+      implementado).
 - [x] Compilador principal: `PdfTemplate` + `data` → `docDefinition` de
-      pdfmake, para todo tipo de bloque EXCEPTO imagen (texto, columna,
-      fila, tabla, spacer, pageBreak). Un `PdfImageBlock` en el body
-      todavía lanza `PdfTemplateValidationError` como placeholder
-      explícito (`'Image blocks are not yet supported by
-      compileTemplate.'`), compilar imágenes de verdad no está hecho.
-      Incluye la carga perezosa del motor y las fuentes de pdfmake
-      (`internal/load-pdf-engine.ts`), memoizada, `import()` dinámico
-      nunca top-level. `PdfGenerateOptions` (`allowedRemoteHosts`) está
-      definido (`models/pdf-generate-options.ts`) pero todavía sin
-      aplicar, ese enforcement real es parte de la tarea de imagen, no
-      de esta.
+      pdfmake, para todo tipo de bloque incluida imagen (texto, columna,
+      fila, tabla, spacer, pageBreak, imagen). Incluye la carga perezosa
+      del motor y las fuentes de pdfmake (`internal/load-pdf-engine.ts`),
+      memoizada, `import()` dinámico nunca top-level.
 - [x] `generatePdf<T>()` + `PdfResult` (download/open/getBlob/toBase64).
-- [ ] Compilar `PdfImageBlock` de verdad, reemplazando el placeholder
-      `PdfTemplateValidationError` actual: resolver `srcPath`, aplicar
-      el enforcement real de `PdfGenerateOptions.allowedRemoteHosts`
-      (data URI siempre permitida, host remoto solo si está en la
-      lista), mapear a `{ image: ... }` de pdfmake.
+- [x] Compilar `PdfImageBlock` de verdad
+      (`internal/resolve-image-source.ts`): `srcPath` resuelto vía
+      `resolveTemplateString` (hereda la protección de paths), un
+      `data:` URI se inlinea directo en `{ image: ... }`, una URL
+      remota se enforcea contra `PdfGenerateOptions.allowedRemoteHosts`
+      (`[]` por defecto deniega todo) y, si está permitida, no se
+      inlinea: pdfmake solo llega a hacer el fetch real cuando la
+      imagen se referencia por nombre vía `TDocumentDefinitions.images`,
+      no cuando la URL va directo en `image:` (confirmado
+      empíricamente, ver `libs/pdf-generator/CLAUDE.md`), así que el
+      compilador arma un diccionario `images` compartido
+      (`img_0`, `img_1`...) propagado por toda la cadena de
+      `compileBlock`/`compileHeaderFooter`/`compileTemplate`, incluidas
+      imágenes referenciadas solo en header/footer (el diccionario se
+      pasa por referencia y se lee en vivo cuando pdfmake recién
+      invoca esos callbacks, no antes). `pdfMake.setUrlAccessPolicy()`
+      no se configura: confirmado que el default ya permite el fetch
+      sin tocar nada, y no sería el punto real de enforcement de todos
+      modos (eso es `resolveImageSource`, por-llamada, antes de que
+      pdfmake se entere de que la URL existe).
 - [ ] Ciclo de vida de blob URLs (creación/revocación) centralizado.
 - [ ] `PdfPreviewComponent` standalone (iframe + blob + sanitizer
       interno + revoke en destroy/regeneración, reactivo a signals).

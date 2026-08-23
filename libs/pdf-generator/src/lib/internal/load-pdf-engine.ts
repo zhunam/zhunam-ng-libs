@@ -56,6 +56,19 @@ export function loadPdfEngine(): Promise<PdfMakeEngine> {
     // library should rely on staying stable across pdfmake versions.
     engine.addVirtualFileSystem(vfs);
 
+    // `pdfMake.setUrlAccessPolicy()` is intentionally never called here.
+    // Confirmed empirically: pdfmake's browser bundle already fetches a
+    // remote image URL referenced via `TDocumentDefinitions.images` by
+    // default, with no policy configured at all (tested with a URL that
+    // returns non-image content, `Unknown image format` proves the fetch
+    // happened; a policy blocking it would have failed before ever
+    // reaching that point). This library's own security boundary is
+    // `resolveImageSource()`'s `allowedRemoteHosts` check, called once
+    // per image before pdfmake ever sees the URL, not this policy hook.
+    // Configuring a permissive policy here would be redundant at best,
+    // and misleading at worst, it would look like a security control
+    // when the actual one lives entirely in `resolveImageSource()`.
+
     return engine;
   })();
 

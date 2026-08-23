@@ -27,9 +27,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `srcPath` and an optional `width`.
 - `generatePdf<T>()`, `PdfResult`, and `PdfGenerateOptions`: compiles a
   `PdfTemplate` against a data object into a real PDF, for every block
-  type except image (a `PdfImageBlock` anywhere in the template
-  currently rejects with `PdfTemplateValidationError`, image
-  compilation isn't implemented yet). `PdfResult` exposes `download()`,
-  `open()`, `getBlob()`, and `toBase64()`. `PdfGenerateOptions.allowedRemoteHosts`
-  is defined but not yet enforced, that lands together with image
-  compilation.
+  type, including image. `PdfResult` exposes `download()`, `open()`,
+  `getBlob()`, and `toBase64()`.
+- Full image support in `generatePdf()`: a `PdfImageBlock.srcPath`
+  resolving to a `data:` URI is always allowed and inlined directly; one
+  resolving to an `http(s)://` URL is only allowed when its host is
+  listed in `PdfGenerateOptions.allowedRemoteHosts` (`[]` by default,
+  every remote image denied), otherwise `generatePdf()` rejects with
+  `PdfTemplateSecurityError` before any PDF is produced, never a partial
+  one.

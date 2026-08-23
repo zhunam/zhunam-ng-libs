@@ -1,6 +1,9 @@
-import { pdfPageBreak, pdfSpacer, pdfTable, pdfText } from '../factories/block-factories';
+import { pdfImage, pdfPageBreak, pdfSpacer, pdfTable, pdfText } from '../factories/block-factories';
+import { PdfTemplateSecurityError } from '../errors/pdf-template-security-error';
 import type { PdfTemplate } from '../models/pdf-block';
 import { compileTemplate } from './compile-template';
+
+const PNG_1X1 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0=';
 
 type DynamicHeaderFooter = (currentPage: number, pageCount: number) => Record<string, unknown>;
 
@@ -83,5 +86,90 @@ describe('compileTemplate header/footer', () => {
 
     expect(doc.header).toBeUndefined();
     expect(doc.footer).toBeUndefined();
+  });
+});
+
+describe('compileTemplate image blocks', () => {
+  it('inlines a data URI directly, without adding it to docDefinition.images', () => {
+    const template: PdfTemplate = { body: [pdfImage(PNG_1X1, { width: 50 })] };
+
+    const doc = compileTemplate(template, {});
+
+    expect(doc.content).toEqual([{ image: PNG_1X1, width: 50 }]);
+    expect(doc.images).toEqual({});
+  });
+
+  it('replaces an allowed remote URL with a named key, and registers it under docDefinition.images', () => {
+    const url = 'https://cdn.example.com/photo.png';
+    const template: PdfTemplate = { body: [pdfImage(url, { width: 80 })] };
+
+    const doc = compileTemplate(template, {}, ['cdn.example.com']);
+
+    expect(doc.content).toEqual([{ image: 'img_0', width: 80 }]);
+    expect(doc.images).toEqual({ img_0: url });
+  });
+
+  it('assigns a unique, incrementing key to each remote image in the same template', () => {
+    const template: PdfTemplate = {
+      body: [
+        pdfImage('https://cdn.example.com/a.png'),
+        pdfImage('https://cdn.example.com/b.png'),
+      ],
+    };
+
+    const doc = compileTemplate(template, {}, ['cdn.example.com']);
+
+    expect(doc.content).toEqual([
+      { image: 'img_0', width: undefined },
+      { image: 'img_1', width: undefined },
+    ]);
+    expect(doc.images).toEqual({
+      img_0: 'https://cdn.example.com/a.png',
+      img_1: 'https://cdn.example.com/b.png',
+    });
+  });
+
+  it('assigns distinct keys to two remote images from two different allowed hosts, neither overwriting the other', () => {
+    const template: PdfTemplate = {
+      body: [
+        pdfImage('https://cdn-a.example.com/photo.png'),
+        pdfImage('https://cdn-b.example.com/photo.png'),
+      ],
+    };
+
+    const doc = compileTemplate(template, {}, ['cdn-a.example.com', 'cdn-b.example.com']);
+
+    expect(doc.content).toEqual([
+      { image: 'img_0', width: undefined },
+      { image: 'img_1', width: undefined },
+    ]);
+    expect(doc.images).toEqual({
+      img_0: 'https://cdn-a.example.com/photo.png',
+      img_1: 'https://cdn-b.example.com/photo.png',
+    });
+  });
+
+  it('throws PdfTemplateSecurityError for a remote image host not in allowedRemoteHosts', () => {
+    const template: PdfTemplate = { body: [pdfImage('https://cdn.example.com/photo.png')] };
+
+    expect(() => compileTemplate(template, {}, [])).toThrow(PdfTemplateSecurityError);
+  });
+
+  it('registers a footer-only remote image into the same docDefinition.images object once the footer runs', () => {
+    const url = 'https://cdn.example.com/logo.png';
+    const template: PdfTemplate = { body: [], footer: pdfImage(url, { width: 30 }) };
+
+    const doc = compileTemplate(template, {}, ['cdn.example.com']);
+    const footer = doc.footer as unknown as (
+      currentPage: number,
+      pageCount: number,
+    ) => Record<string, unknown>;
+
+    expect(doc.images).toEqual({});
+
+    const compiled = footer(1, 1);
+
+    expect(compiled).toEqual({ image: 'img_0', width: 30 });
+    expect(doc.images).toEqual({ img_0: url });
   });
 });
