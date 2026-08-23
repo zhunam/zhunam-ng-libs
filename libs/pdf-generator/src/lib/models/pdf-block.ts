@@ -188,16 +188,6 @@ export interface PdfImageBlock {
    * when omitted.
    */
   width?: number;
-
-  /**
-   * Whether this block may reference a remote (`http`/`https`) image
-   * URL. Always `false` in v1: remote images are a fixed security
-   * decision (see `libs/pdf-generator/ROADMAP.md`), not yet
-   * configurable per block. A future domain allowlist, if ever added,
-   * would live in `PdfGenerateOptions`, not here.
-   * @default false
-   */
-  allowRemote?: false;
 }
 
 /**

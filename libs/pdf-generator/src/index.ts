@@ -5,6 +5,7 @@ export { PdfTemplateValidationError } from './lib/errors/pdf-template-validation
 export {
   pdfColumn,
   pdfHeading,
+  pdfImage,
   pdfPageBreak,
   pdfRow,
   pdfSpacer,

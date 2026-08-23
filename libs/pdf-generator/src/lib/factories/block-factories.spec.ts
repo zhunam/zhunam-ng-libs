@@ -2,6 +2,7 @@ import { PdfTemplateValidationError } from '../errors/pdf-template-validation-er
 import {
   pdfColumn,
   pdfHeading,
+  pdfImage,
   pdfPageBreak,
   pdfRow,
   pdfSpacer,
@@ -85,6 +86,28 @@ describe('pdfRow', () => {
     const opts = { width: 200, gap: 8 };
 
     expect(pdfRow(children, opts)).toEqual({ type: 'row', children, options: opts });
+  });
+});
+
+describe('pdfImage', () => {
+  it('builds an image block with the given srcPath and no options', () => {
+    expect(pdfImage('photo')).toEqual({ type: 'image', srcPath: 'photo', width: undefined });
+  });
+
+  it('builds an image block with the given width', () => {
+    expect(pdfImage('photo', { width: 200 })).toEqual({
+      type: 'image',
+      srcPath: 'photo',
+      width: 200,
+    });
+  });
+
+  it('throws PdfTemplateValidationError for a width of 0', () => {
+    expect(() => pdfImage('photo', { width: 0 })).toThrow(PdfTemplateValidationError);
+  });
+
+  it('throws PdfTemplateValidationError for a negative width', () => {
+    expect(() => pdfImage('photo', { width: -50 })).toThrow(PdfTemplateValidationError);
   });
 });
 

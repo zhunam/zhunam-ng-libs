@@ -2,6 +2,7 @@ import { PdfTemplateValidationError } from '../errors/pdf-template-validation-er
 import type {
   PdfBlock,
   PdfColumnBlock,
+  PdfImageBlock,
   PdfLayoutOptions,
   PdfPageBreakBlock,
   PdfRowBlock,
@@ -98,6 +99,33 @@ export function pdfRow(children: PdfBlock[], opts?: PdfLayoutOptions): PdfRowBlo
  */
 export function pdfTable(rowsPath: string, opts: { columns: PdfTableColumn[] }): PdfTableBlock {
   return { type: 'table', rowsPath, columns: opts.columns };
+}
+
+/**
+ * Builds an image block. Construction only, no resolution happens
+ * here: `srcPath` is just stored as given, resolved against real data
+ * only later, inside `generatePdf()`.
+ *
+ * Whether a remote (`http`/`https`) `srcPath` is allowed at all is not
+ * a concern of this factory, or of the block it builds. That allowlist
+ * lives in `PdfGenerateOptions`, controlled by whoever calls
+ * `generatePdf()` (the consuming app), never in the template itself:
+ * if it lived here, a malicious template could grant itself its own
+ * exception and defeat the protection entirely.
+ *
+ * @throws {PdfTemplateValidationError} If `opts.width` is given and is
+ * zero or negative.
+ * @example
+ * pdfImage('photo', { width: 200 });
+ */
+export function pdfImage(srcPath: string, opts?: { width?: number }): PdfImageBlock {
+  if (opts?.width !== undefined && opts.width <= 0) {
+    throw new PdfTemplateValidationError(
+      `pdfImage() requires a positive width, received ${opts.width}.`,
+    );
+  }
+
+  return { type: 'image', srcPath, width: opts?.width };
 }
 
 /**

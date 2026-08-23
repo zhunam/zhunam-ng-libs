@@ -26,7 +26,7 @@
 ## Contrato de API pública
 
 ```ts
-export interface PdfTemplate<T> {
+export interface PdfTemplate {
   pageSize?: 'A4' | 'LETTER';
   margins?: PdfMargins;
   header?: PdfBlock;
@@ -43,12 +43,12 @@ export function pdfHeading(content: string, level?: 1 | 2 | 3): PdfTextBlock;
 export function pdfColumn(children: PdfBlock[], opts?: PdfLayoutOptions): PdfColumnBlock;
 export function pdfRow(children: PdfBlock[], opts?: PdfLayoutOptions): PdfRowBlock;
 export function pdfTable(rowsPath: string, opts: { columns: PdfTableColumn[] }): PdfTableBlock;
-export function pdfImage(srcPath: string, opts?: { width?: number; allowRemote?: false }): PdfImageBlock;
+export function pdfImage(srcPath: string, opts?: { width?: number }): PdfImageBlock;
 export function pdfSpacer(height: number): PdfSpacerBlock;
 export function pdfPageBreak(): PdfPageBreakBlock;
 
 export function generatePdf<T>(
-  template: PdfTemplate<T>,
+  template: PdfTemplate,
   data: T,
   options?: PdfGenerateOptions
 ): Promise<PdfResult>;
@@ -72,10 +72,17 @@ export interface PdfResult {
    CWE-1321). Test dedicado que intenta contaminar `Object.prototype`.
 3. El valor resuelto se inserta siempre como texto literal, nunca se
    re-parsea como sintaxis del template.
-4. Imágenes remotas denegadas por defecto (`allowRemote: false` es el
-   default real, no solo el tipo); el consumidor debe habilitar un
-   allowlist de dominios explícito. Motivado por CVE-2026-26801 real de
-   pdfmake sobre fetch de URLs sin restricción.
+4. Imágenes remotas denegadas por defecto: `allowedRemoteHosts` vacío o
+   ausente (el default real, no solo el tipo) significa que ninguna
+   imagen remota está permitida. `allowedRemoteHosts` vive en
+   `PdfGenerateOptions` (lo controla quien llama a `generatePdf()`, la
+   app consumidora), nunca en `PdfImageBlock` (parte del template, no
+   confiable): si la lista blanca fuera parte del template, un template
+   malicioso podría declararse a sí mismo su propia excepción y anular
+   la protección por completo. Un `srcPath` resuelto a data URI (base64)
+   nunca pasa por esta validación, es local/seguro por naturaleza.
+   Motivado por CVE-2026-26801 real de pdfmake sobre fetch de URLs sin
+   restricción.
 5. El preview usa el visor nativo del navegador vía iframe + blob URL,
    nunca una librería de renderizado de PDF embebida. El bypass del
    sanitizador de Angular (`bypassSecurityTrustResourceUrl`) se aplica
@@ -98,20 +105,21 @@ export interface PdfResult {
 ## Tareas (1-3h cada una, en orden)
 
 - [x] Tipos base (`PdfBlock` union, `PdfTemplate`, `PdfMargins`,
-      `PdfTableColumn`) — solo tipos, sin lógica. Nota: `PdfTemplate`
-      quedó sin genérico en v1 (ver decisión registrada en el propio
-      JSDoc del tipo); esta línea todavía dice `PdfTemplate<T>` porque
-      esa corrección de wording sigue pendiente, señalada de nuevo en
-      el reporte de esta tarea.
+      `PdfTableColumn`) — solo tipos, sin lógica.
 - [x] Resolver de placeholders seguro + tests (denylist prototype
       pollution, texto literal, dot-path).
 - [x] Funciones factory (`pdfText`, `pdfHeading`, `pdfColumn`, `pdfRow`,
       `pdfSpacer`, `pdfPageBreak`).
 - [x] Factory + compilador de `pdfTable` (rowsPath → filas de pddfmake).
-- [ ] Factory + compilador de `pdfImage` con enforcement de
-      `allowRemote: false` por defecto.
-- [ ] Compilador principal: `PdfTemplate<T>` + `data` → `docDefinition`
-      de pdfmake (bloques de texto/columna/fila/spacer/pageBreak).
+- [x] Factory de `pdfImage` (`srcPath`, `width` opcional). El
+      enforcement de `allowedRemoteHosts` no es responsabilidad de esta
+      factory ni de `PdfImageBlock`: se resuelve en `PdfGenerateOptions`
+      / `generatePdf()`, ver la tarea del compilador principal.
+- [ ] Compilador principal: `PdfTemplate` + `data` → `docDefinition` de
+      pdfmake (bloques de texto/columna/fila/spacer/pageBreak), incluye
+      definir `PdfGenerateOptions` por primera vez, con
+      `allowedRemoteHosts` adentro, y aplicar el enforcement real de
+      imágenes remotas ahí.
 - [ ] `generatePdf<T>()` + `PdfResult` (download/open/getBlob/toBase64).
 - [ ] Ciclo de vida de blob URLs (creación/revocación) centralizado.
 - [ ] `PdfPreviewComponent` standalone (iframe + blob + sanitizer
