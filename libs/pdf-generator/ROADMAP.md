@@ -56,7 +56,7 @@ export function generatePdf<T>(
 export interface PdfResult {
   download(filename: string): void;
   open(): void;
-  getBlob(): Blob;
+  getBlob(): Promise<Blob>;
   toBase64(): Promise<string>;
 }
 ```
@@ -96,13 +96,17 @@ export interface PdfResult {
   como firebase/supabase en auth): el consumidor nunca lo instala ni lo
   ve, es un detalle interno reemplazable.
 - No importar `vfs_fonts` de forma eager en ningún archivo de nivel
-  superior: solo se carga si el consumidor pide fuentes custom
-  (evita que el peso de fuentes se pague aunque no se use).
+  superior: se carga vía `import()` dinámico dentro de `generatePdf()`,
+  nunca al importar la librería. Es necesario siempre (no solo para
+  fuentes custom), porque pdfmake no puede calcular anchos de texto
+  para Roboto, la fuente default, sin él. La ganancia de peso sigue
+  siendo real: nadie paga este costo hasta que efectivamente se
+  genera un PDF, no en la carga inicial de la app.
 - El componente de preview debe ser standalone y lazy-load-friendly (sin
   efectos secundarios al importar el módulo), documentar en README que
   se recomienda cargarlo detrás de una ruta lazy.
 
-## Tareas (1-3h cada una, en orden)
+## Tareas 
 
 - [x] Tipos base (`PdfBlock` union, `PdfTemplate`, `PdfMargins`,
       `PdfTableColumn`) — solo tipos, sin lógica.
@@ -141,16 +145,33 @@ export interface PdfResult {
       sin tocar nada, y no sería el punto real de enforcement de todos
       modos (eso es `resolveImageSource`, por-llamada, antes de que
       pdfmake se entere de que la URL existe).
-- [ ] Ciclo de vida de blob URLs (creación/revocación) centralizado.
+- [x] Ciclo de vida de blob URLs (creación/revocación) centralizado:
+      `internal/blob-url-lifecycle.ts`, `BlobUrlLifecycle` (`set()`
+      revoca la URL anterior antes de crear la nueva, `revoke()` es
+      no-op seguro si no hay ninguna activa). jsdom no implementa
+      `URL.createObjectURL`/`revokeObjectURL` (confirmado, son
+      `undefined` en el entorno de test real de este workspace),
+      mockeadas vía `vi.stubGlobal('URL', ...)` en el spec.
 - [ ] `PdfPreviewComponent` standalone (iframe + blob + sanitizer
       interno + revoke en destroy/regeneración, reactivo a signals).
 - [ ] `NgModule` wrapper de `PdfPreviewComponent`.
 - [x] `vitest.config.ts` con `isolate: true`.
-- [ ] Specs de mocks de pdfmake en `vitest.config.ts` (separado de la
-      línea anterior: `isolate: true` ya está, los specs recién tienen
-      sentido cuando el compilador principal empiece a importar
-      `pdfmake`).
+- [x] Estrategia de test de pdfmake: integración real (PDFs
+      generados de verdad, sin mockear pdfmake en sí) para la mayoría
+      de los casos, con fetch mockeado puntualmente solo en los tests
+      de imágenes remotas. `isolate: true` en `vitest.config.ts` sigue
+      vigente por la razón original (specs que tocan el mismo recurso
+      externo sin aislar entre archivos).
 - [ ] Tests de seguridad: prototype pollution, texto literal ante
       marcado, imagen remota denegada por defecto.
+- [ ] Demo consuming the library
+      → apps/portfolio-showcase/src/app/pages/pdf-generator-demo/
+      Misma estructura de shell que las demás demos (header, sidebar
+      de DESIGN.md), sin layout propio ni distinto. La entrada de
+      pdf-generator en el sidebar pasa de "Coming Soon" (<span> no
+      interactivo) a un <a> real apuntando a esta página, siguiendo
+      el mismo patrón que data-grid, no una excepción.
 - [ ] README.md (instalación, ejemplo <10 líneas, tabla de API,
       compatibilidad Angular, licencia).
+- [ ] Verify production build
+      → nx build pdf-generator --configuration=production

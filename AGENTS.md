@@ -540,6 +540,20 @@ In this order, every time a new library is generated:
    before writing the first component, not at the end.
 6. Only then, generate the first component with
    `nx g @nx/angular:component`.
+7. Antes de dar la librería v1 por terminada: crear su página de demo
+   en `apps/portfolio-showcase/src/app/pages/<name>-demo/` (ver
+   DESIGN.md, patrón "Package Identifier Label"), con verificación
+   manual de que la interacción real funciona en el navegador, no solo
+   que los tests pasan. Ya es la práctica seguida en `data-grid`; esto
+   la deja escrita como paso del checklist, no algo que cada librería
+   tiene que redescubrir. La demo usa el mismo shell (header, sidebar)
+   que todas las demás, nunca un layout propio, y la entrada de esa
+   librería en el sidebar pasa de "Coming Soon" (`<span>` no
+   interactivo, per DESIGN.md) a un `<a>` real: ninguna librería queda
+   como caso especial de navegación una vez que su demo existe.
+   Verificar el build de producción (`nx build <name>
+   --configuration=production`) como parte del mismo cierre, en vez de
+   asumir que sigue limpio desde la última vez que se corrió.
 
 ## Commit conventions
  
