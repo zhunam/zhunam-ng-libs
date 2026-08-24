@@ -36,3 +36,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   every remote image denied), otherwise `generatePdf()` rejects with
   `PdfTemplateSecurityError` before any PDF is produced, never a partial
   one.
+- `PdfPreview` and `PdfPreviewModule`: standalone component that calls
+  `generatePdf()` and previews the result in an `<iframe>` via a
+  sanitized blob URL, reactive to its `template`/`data`/`options`
+  signal inputs. Re-generates on any input change, cancelling a
+  still-in-flight older generation so it can never overwrite a newer
+  one's result, and always revokes its previous blob URL before
+  creating the next one (and on destroy). Exposes `status`
+  (`'idle' | 'generating' | 'ready' | 'error'`), `error`, and `safeUrl`
+  as readonly signals, plus a `generationError` output emitted once per
+  failed attempt. `@angular/platform-browser` is now a peerDependency
+  (`DomSanitizer`).

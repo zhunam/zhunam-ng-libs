@@ -15,3 +15,5 @@ export {
 export * from './lib/models/pdf-generate-options';
 export * from './lib/models/pdf-result';
 export * from './generate-pdf';
+export * from './lib/pdf-preview/pdf-preview';
+export * from './lib/pdf-preview/pdf-preview.module';

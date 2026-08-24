@@ -152,9 +152,28 @@ export interface PdfResult {
       `URL.createObjectURL`/`revokeObjectURL` (confirmado, son
       `undefined` en el entorno de test real de este workspace),
       mockeadas vía `vi.stubGlobal('URL', ...)` en el spec.
-- [ ] `PdfPreviewComponent` standalone (iframe + blob + sanitizer
-      interno + revoke en destroy/regeneración, reactivo a signals).
-- [ ] `NgModule` wrapper de `PdfPreviewComponent`.
+- [x] `PdfPreview` standalone (`lib/pdf-preview/`), iframe + blob +
+      sanitizer interno + revoke en destroy/regeneración, reactivo a
+      signals. `effect()` lee `template()`/`data()`/`options()`
+      sincrónicamente antes de cualquier `await` y usa `onCleanup` para
+      cancelar resultados obsoletos, verificado con un test específico
+      de condición de carrera (la generación más nueva gana aunque la
+      más vieja resuelva después). `@angular/platform-browser` es
+      peerDependency nueva (`DomSanitizer`); `@angular/common` se sacó
+      de peerDependencies, el componente no terminó usando nada de ahí
+      (`@if` es sintaxis nativa del compilador, no un import). Este
+      workspace no tiene `zone.js` instalado (zoneless): el trabajo
+      async del `effect()` se registra con `PendingTasks.add()`
+      (`@angular/core`, estable) para que tanto la app real
+      (SSR/estabilidad zoneless) como `fixture.whenStable()` en tests
+      sepan que sigue en curso, confirmado directamente (sin esto,
+      `whenStable()` no esperaba nada). `generatePdf()` se llama detrás
+      de un `InjectionToken` interno (`GENERATE_PDF`, no exportado del
+      barril): el test runner de este workspace rechaza `vi.mock()`
+      sobre imports relativos ("Please use Angular TestBed for mocking
+      dependencies"), así que el spec sobreescribe el token vía
+      provider de TestBed en lugar de mockear el módulo.
+- [x] `NgModule` wrapper de `PdfPreview` (`PdfPreviewModule`).
 - [x] `vitest.config.ts` con `isolate: true`.
 - [x] Estrategia de test de pdfmake: integración real (PDFs
       generados de verdad, sin mockear pdfmake en sí) para la mayoría

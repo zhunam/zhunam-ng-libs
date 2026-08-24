@@ -1,0 +1,27 @@
+:host {
+  // Re-theme any of these from the consumer app — nothing here is brand-specific.
+  --pdf-preview-height: 600px;
+  --pdf-preview-border-color: #d1d5db;
+  --pdf-preview-border-radius: 0.5rem;
+  --pdf-preview-text-color: #374151;
+  --pdf-preview-error-color: #dc2626;
+  --pdf-preview-font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  display: block;
+  font-family: var(--pdf-preview-font-family);
+}
+
+.pdf-preview__frame {
+  width: 100%;
+  height: var(--pdf-preview-height);
+  border: 1px solid var(--pdf-preview-border-color);
+  border-radius: var(--pdf-preview-border-radius);
+}
+
+.pdf-preview__status {
+  color: var(--pdf-preview-text-color);
+}
+
+.pdf-preview__status--error {
+  color: var(--pdf-preview-error-color);
+}

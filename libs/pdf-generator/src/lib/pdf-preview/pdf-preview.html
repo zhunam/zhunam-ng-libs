@@ -1,0 +1,7 @@
+@if (status() === 'generating') {
+  <p class="pdf-preview__status">Generating PDF…</p>
+} @else if (status() === 'ready') {
+  <iframe class="pdf-preview__frame" [src]="safeUrl()" title="PDF preview"></iframe>
+} @else if (status() === 'error') {
+  <p class="pdf-preview__status pdf-preview__status--error">{{ error()?.message }}</p>
+}
