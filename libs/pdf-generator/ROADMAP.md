@@ -233,7 +233,21 @@ export interface PdfResult {
       pdf-generator en el sidebar pasa de "Coming Soon" (<span> no
       interactivo) a un <a> real apuntando a esta página, siguiendo
       el mismo patrón que data-grid, no una excepción.
-- [ ] README.md (instalación, ejemplo <10 líneas, tabla de API,
-      compatibilidad Angular, licencia).
+- [x] README.md (instalación, ejemplo <10 líneas, tabla de API,
+      compatibilidad Angular, licencia). Mismo patrón que
+      data-grid/form-builder/auth: título + párrafo, Installation,
+      Usage, API, Compatibility, Why this one, License, footer. El
+      ejemplo de uso se verificó de verdad, no de memoria: `tsc`
+      contra los tipos reales de `dist/libs/pdf-generator` (ya
+      buildeado), no contra los fuentes de `src/`. Compatibility usa
+      el formato de una línea de data-grid/form-builder (mayoría 2/3),
+      no la tabla de auth, porque acá hay solo un entry point con dos
+      peerDependencies siempre requeridas, no varias opcionales según
+      qué se importe. Se agregó una sección "Content Security Policy"
+      (no presente en ninguna de las otras 3 READMEs) por la regla de
+      seguridad #5 de este mismo ROADMAP, análoga en posición a la
+      sección "Security" propia de auth: contenido específico de esta
+      librería, insertado en el mismo lugar del patrón común donde
+      auth también se desvía para agregar contenido propio.
 - [ ] Verify production build
       → nx build pdf-generator --configuration=production
