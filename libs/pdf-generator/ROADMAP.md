@@ -181,8 +181,51 @@ export interface PdfResult {
       de imágenes remotas. `isolate: true` en `vitest.config.ts` sigue
       vigente por la razón original (specs que tocan el mismo recurso
       externo sin aislar entre archivos).
-- [ ] Tests de seguridad: prototype pollution, texto literal ante
-      marcado, imagen remota denegada por defecto.
+- [x] Tests de seguridad end-to-end contra `generatePdf()` real
+      (`src/generate-pdf-security.spec.ts`, no contra piezas internas
+      aisladas, esas ya tenían su propia cobertura): prototype
+      pollution en cada punto de la API pública donde hay un path
+      (texto de body, `PdfTableColumn.path`, `PdfTableBlock.rowsPath`,
+      `PdfImageBlock.srcPath`, y dentro de header/footer), un
+      "kitchen sink" con varios vectores combinados, sin motor de
+      expresiones (`{{1 + 1}}`, `{{require('fs')}}` se tratan como
+      clave literal, no como código), dato del consumidor que contiene
+      literalmente `"{{__proto__.algo}}"` se inserta como texto plano
+      sin re-resolverse ni disparar el error de seguridad (es dato, no
+      ataque al template), imagen remota denegada por defecto de punta
+      a punta confirmando que `fetch` nunca se invoca, control positivo
+      con host permitido, y distinción de `PdfTemplateValidationError`
+      vs `PdfTemplateSecurityError` preservada a través de la función
+      pública completa. Hallazgo real distinto de lo esperado: el
+      header/footer se compila de forma perezosa (pdfmake solo invoca
+      ese callback recién al renderizar, no durante `compileTemplate()`
+      /`generatePdf()`), así que originalmente un placeholder malicioso
+      ahí NO hacía que `generatePdf()` rechazara, sino recién
+      `result.getBlob()`. Corregido después (ver la tarea de eager
+      render más abajo): `generatePdf()` ahora fuerza ese render antes
+      de devolver nada, así que este caso quedó igual que cualquier
+      otro, `generatePdf()` mismo rechaza.
+- [x] Eager render en `generatePdf()`: fuerza un `getBlob()` completo
+      sobre el `TCreatedPdf` de pdfmake antes de devolver el
+      `PdfResult`, en vez de dejar que la primera llamada del
+      consumidor a `getBlob()`/`toBase64()` dispare el primer render
+      real de forma perezosa. Motivado por el hallazgo de la tarea
+      anterior: con render perezoso, un error de renderizado
+      (incluido uno de un header/footer malicioso) no rechazaba
+      `generatePdf()` sino recién el primer método de `PdfResult` que
+      lo disparara, inconsistente con todos los demás errores de la
+      librería. Confirmado empíricamente contra pdfmake real antes de
+      implementar (no asumido): `TCreatedPdf` cachea su render
+      internamente en la misma instancia (una segunda llamada a
+      `getBuffer()` devuelve el mismo objeto de buffer, y `download()`
+      llamado después de un `getBuffer()` no vuelve a invocar el
+      callback de header/footer), así que no hizo falta reimplementar
+      `download()`/`open()` a mano desde un `Blob` cacheado, siguen
+      delegando directo a pdfmake y reusan ese mismo render sin costo
+      extra. `getBlob()`/`toBase64()` del `PdfResult` devuelto quedan
+      respaldados por ese único `Blob` cacheado (mismo objeto en cada
+      llamada, verificado con test dedicado), nunca vuelven a pedirle
+      nada a pdfmake.
 - [ ] Demo consuming the library
       → apps/portfolio-showcase/src/app/pages/pdf-generator-demo/
       Misma estructura de shell que las demás demos (header, sidebar

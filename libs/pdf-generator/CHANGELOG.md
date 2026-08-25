@@ -47,3 +47,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   as readonly signals, plus a `generationError` output emitted once per
   failed attempt. `@angular/platform-browser` is now a peerDependency
   (`DomSanitizer`).
+
+### Changed
+- `generatePdf()` now renders the document fully before resolving,
+  instead of deferring the first real render to whichever `PdfResult`
+  method the consumer happened to call first. This means any rendering
+  error, including one raised from inside a malicious `header`/`footer`
+  placeholder, now rejects `generatePdf()` itself, the same as every
+  other error case in this library. Previously such an error only
+  surfaced later, from `result.getBlob()`/`result.toBase64()`. Once
+  `generatePdf()` resolves, `getBlob()`, `toBase64()`, `download()`,
+  and `open()` can no longer fail: they all reuse that single render,
+  they never ask pdfmake to render again.
