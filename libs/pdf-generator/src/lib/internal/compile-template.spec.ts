@@ -173,3 +173,70 @@ describe('compileTemplate image blocks', () => {
     expect(doc.images).toEqual({ img_0: url });
   });
 });
+
+describe('compileTemplate table widths', () => {
+  it('never adds a widths key when no column defines width, an explicit regression check, not just "still passes"', () => {
+    const template: PdfTemplate = {
+      body: [
+        pdfTable('items', {
+          columns: [
+            { header: 'Name', path: 'name' },
+            { header: 'Qty', path: 'qty' },
+          ],
+        }),
+      ],
+    };
+
+    const doc = compileTemplate(template, { items: [{ name: 'Widget', qty: 3 }] });
+
+    expect(doc.content).toEqual([
+      { table: { body: [['Name', 'Qty'], ['Widget', '3']] } },
+    ]);
+    const [compiled] = doc.content as unknown as Array<{ table: Record<string, unknown> }>;
+    expect('widths' in compiled.table).toBe(false);
+  });
+
+  it('builds a widths array of plain numbers, in column order, when every column defines width', () => {
+    const template: PdfTemplate = {
+      body: [
+        pdfTable('items', {
+          columns: [
+            { header: 'Name', path: 'name', width: 100 },
+            { header: 'Qty', path: 'qty', width: 40 },
+          ],
+        }),
+      ],
+    };
+
+    const doc = compileTemplate(template, { items: [{ name: 'Widget', qty: 3 }] });
+
+    expect(doc.content).toEqual([
+      { table: { body: [['Name', 'Qty'], ['Widget', '3']], widths: [100, 40] } },
+    ]);
+  });
+
+  it('fills a column with no width of its own with "auto", interleaved in column order with the ones that do', () => {
+    const template: PdfTemplate = {
+      body: [
+        pdfTable('items', {
+          columns: [
+            { header: 'Name', path: 'name' },
+            { header: 'Qty', path: 'qty', width: 40 },
+            { header: 'Price', path: 'price', width: 60 },
+          ],
+        }),
+      ],
+    };
+
+    const doc = compileTemplate(template, { items: [{ name: 'Widget', qty: 3, price: 9 }] });
+
+    expect(doc.content).toEqual([
+      {
+        table: {
+          body: [['Name', 'Qty', 'Price'], ['Widget', '3', '9']],
+          widths: ['auto', 40, 60],
+        },
+      },
+    ]);
+  });
+});

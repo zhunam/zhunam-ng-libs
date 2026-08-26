@@ -1,4 +1,4 @@
-import type { PdfBlock, PdfTemplate } from '../models/pdf-block';
+import type { PdfBlock, PdfTableColumn, PdfTemplate } from '../models/pdf-block';
 import { resolveTemplateString } from './resolve-path';
 import { resolveImageSource } from './resolve-image-source';
 import type { Column, Content, TDocumentDefinitions } from './pdfmake-types';
@@ -22,6 +22,27 @@ const DEFAULT_PAGE_MARGIN = 40;
  */
 function getBlockWidth(block: PdfBlock): number | undefined {
   return block.type === 'column' || block.type === 'row' ? block.options?.width : undefined;
+}
+
+/**
+ * Derives pdfmake's `Table.widths` array from `columns`, or `undefined`
+ * when no column sets its own `width` at all.
+ *
+ * `undefined` here means the `widths` key is never added to the
+ * compiled table at all, not that it's added with an all-`'auto'`
+ * array: confirmed empirically against the real pdfmake engine that an
+ * explicit `widths: ['auto', 'auto', ...]` array renders identically to
+ * omitting the key outright (pdfmake's own default, per
+ * `@types/pdfmake`'s docs, is already `'auto'`), so this preserves
+ * exactly what every table rendered before this function existed: no
+ * column ever set a fixed width, so `widths` was never added.
+ */
+function resolveTableWidths(columns: PdfTableColumn[]): Array<number | 'auto'> | undefined {
+  if (columns.every((column) => column.width === undefined)) {
+    return undefined;
+  }
+
+  return columns.map((column) => column.width ?? 'auto');
 }
 
 /**
@@ -98,7 +119,10 @@ function compileBlock(
 
     case 'table': {
       const { headers, rows } = resolveTableRows(block, data);
-      return { table: { body: [headers, ...rows] } };
+      const widths = resolveTableWidths(block.columns);
+      return widths
+        ? { table: { body: [headers, ...rows], widths } }
+        : { table: { body: [headers, ...rows] } };
     }
 
     case 'spacer':

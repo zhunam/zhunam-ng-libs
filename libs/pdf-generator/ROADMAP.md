@@ -124,6 +124,13 @@ export interface PdfResult {
 - [x] Funciones factory (`pdfText`, `pdfHeading`, `pdfColumn`, `pdfRow`,
       `pdfSpacer`, `pdfPageBreak`).
 - [x] Factory + compilador de `pdfTable` (rowsPath → filas de pddfmake).
+      `PdfTableColumn.width` estuvo muerto desde que aterrizó esta
+      tarea: declarado en el tipo, aceptado por `pdfTable()`, pero
+      nunca leído por `resolveTableRows`/`compileBlock`, así que
+      `pdfmake` siempre recibía la tabla sin `widths` (auto-sizing por
+      contenido) sin importar qué `width` se declarara por columna.
+      Detectado durante la tarea de la demo de facturas y corregido
+      después: ver la entrada de `resolveTableWidths()` más abajo.
 - [x] Factory de `pdfImage` (`srcPath`, `width` opcional). El
       enforcement de `allowedRemoteHosts` se resuelve en
       `PdfGenerateOptions`/`generatePdf()`, no acá, ver más abajo (ya
@@ -282,6 +289,24 @@ export interface PdfResult {
       sección "Security" propia de auth: contenido específico de esta
       librería, insertado en el mismo lugar del patrón común donde
       auth también se desvía para agregar contenido propio.
+- [x] `resolveTableWidths()` en `compile-template.ts`: corrige el campo
+      muerto `PdfTableColumn.width` (ver la entrada de "Factory +
+      compilador de `pdfTable`" más arriba). Verificado contra pdfmake
+      real antes de tocar código: `Table.widths` acepta `number | 'auto'
+      | '*' | string` por columna, y por defecto (`widths` ausente) ya
+      es `'auto'`, no un split parejo; confirmado además que un array
+      explícito `['auto', 'auto', ...]` renderiza con las mismas
+      posiciones de texto que omitir la clave por completo. Por eso,
+      cuando ninguna columna define `width`, la clave `widths` se sigue
+      omitiendo del todo (no se agrega un array de puros `'auto'`),
+      preservando el `docDefinition` exacto de antes; solo se agrega el
+      array cuando al menos una columna define `width`, con `'auto'`
+      para las que no. Confirmado con el mismo método de extracción de
+      posiciones `Tm` que en la demo de facturas: la tabla existente en
+      `mock-invoice-template.ts` (Qty/Unit price/Total con `width`,
+      Description sin) queda muy por debajo del margen derecho de la
+      página una vez que los anchos se aplican de verdad, sin necesidad
+      de ajustar ningún valor.
 - [x] Verify production build
       → nx build pdf-generator --configuration=production
       Limpio: `nx run pdf-generator:build:production` sin warnings ni

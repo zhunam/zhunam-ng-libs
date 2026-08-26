@@ -71,3 +71,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `bypassSecurityTrustResourceUrl()` carries the fragment; the blob URL
   `BlobUrlLifecycle` creates and revokes internally is unaffected. Not
   configurable yet.
+
+### Fixed
+- `PdfTableColumn.width` is now actually applied to the compiled table
+  (pdfmake's `Table.widths`). It was silently ignored since `pdfTable`
+  first shipped: declared on the type, accepted by the factory, never
+  read anywhere in the compiler. A column with no `width` compiles to
+  `'auto'` (pdfmake's own default for a table column), and if no column
+  in a table sets `width` at all, the `widths` key is omitted entirely,
+  exactly as before this fix, not an all-`'auto'` array.
