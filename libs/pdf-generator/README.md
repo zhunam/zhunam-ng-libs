@@ -73,6 +73,19 @@ whenever `template`/`data`/`options` change.
 | `options`          | `input<PdfGenerateOptions>`       | None     | Generation options, forwarded to `generatePdf()` as-is.   |
 | `generationError`  | `output<Error>`                   | N/A      | Emitted once per failed generation attempt.               |
 
+`PdfPreview` also exposes a readonly `result` signal, not an input or
+output: `Signal<PdfResult | null>`, `null` until the first generation
+succeeds. It's the exact `PdfResult` behind whatever is currently shown
+in the iframe, so a consumer can wire its own actions, a download
+button, "open in new tab", without triggering a second full generation:
+
+```html
+<lib-pdf-preview #preview [template]="template" [data]="data()" />
+<button [disabled]="!preview.result()" (click)="preview.result()?.download('invoice.pdf')">
+  Download
+</button>
+```
+
 `PdfPreviewModule`: `NgModule` wrapper for consumers still on a classic
 NgModule architecture (`imports: [PdfPreviewModule]`). The standalone
 component is still the recommended way to consume it.
