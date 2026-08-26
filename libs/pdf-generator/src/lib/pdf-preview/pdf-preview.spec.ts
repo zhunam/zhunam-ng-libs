@@ -85,7 +85,7 @@ describe('PdfPreview', () => {
     expect(fixture.componentInstance.error()).toBeNull();
   });
 
-  it('calls bypassSecurityTrustResourceUrl with exactly the URL BlobUrlLifecycle.set() produced, nothing else', async () => {
+  it('calls bypassSecurityTrustResourceUrl with the URL BlobUrlLifecycle.set() produced plus "#navpanes=0", nothing else appended', async () => {
     const sanitizer = TestBed.inject(DomSanitizer);
     const sanitizeSpy = vi.spyOn(sanitizer, 'bypassSecurityTrustResourceUrl');
     const blob = new Blob(['pdf bytes'], { type: 'application/pdf' });
@@ -97,7 +97,7 @@ describe('PdfPreview', () => {
 
     expect(createObjectURL).toHaveBeenCalledTimes(1);
     const producedUrl = createObjectURL.mock.results[0]?.value;
-    expect(sanitizeSpy).toHaveBeenCalledExactlyOnceWith(producedUrl);
+    expect(sanitizeSpy).toHaveBeenCalledExactlyOnceWith(`${producedUrl}#navpanes=0`);
   });
 
   it('reflects a failed generation: status "error", the real Error, and generationError emitted once with it', async () => {
@@ -162,7 +162,7 @@ describe('PdfPreview', () => {
     expect(fixture.componentInstance.safeUrl()).not.toBeNull();
   });
 
-  it('calls BlobUrlLifecycle.revoke() (via the real URL.revokeObjectURL) on ngOnDestroy', async () => {
+  it('calls BlobUrlLifecycle.revoke() (via the real URL.revokeObjectURL) on ngOnDestroy, with the bare URL, never the "#navpanes=0" one handed to the sanitizer', async () => {
     const blob = new Blob(['pdf bytes'], { type: 'application/pdf' });
     mockedGeneratePdf.mockResolvedValue(fakePdfResult(blob));
 
@@ -175,6 +175,9 @@ describe('PdfPreview', () => {
 
     fixture.destroy();
 
+    // Not `${producedUrl}#navpanes=0`: BlobUrlLifecycle only ever sees the
+    // bare URL it created itself, the fragment is added later, purely for
+    // display, and never fed back into it.
     expect(revokeObjectURL).toHaveBeenCalledExactlyOnceWith(producedUrl);
   });
 

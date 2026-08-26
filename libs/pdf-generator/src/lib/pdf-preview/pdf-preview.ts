@@ -36,6 +36,13 @@ export const GENERATE_PDF = new InjectionToken<typeof generatePdf>('GENERATE_PDF
  * Generates a PDF from a `PdfTemplate` and a data object, and previews
  * it in an `<iframe>` using the browser's native PDF viewer.
  *
+ * Sizes itself via CSS custom properties, re-themeable from the
+ * consuming app: `--pdf-preview-height` (default `600px`) controls the
+ * host's, and therefore the iframe's, height; width always fills the
+ * host's container at 100%. The component draws no border or radius of
+ * its own, wrap it in whatever bounded-panel styling the consumer's own
+ * design system already uses.
+ *
  * Security invariant (ROADMAP.md, "Seguridad" #5): `safeUrl` is set in
  * exactly one place in this class, the success branch of the `effect()`
  * below, and only ever wraps a blob URL that `BlobUrlLifecycle.set()`
@@ -44,6 +51,16 @@ export const GENERATE_PDF = new InjectionToken<typeof generatePdf>('GENERATE_PDF
  * `bypassSecurityTrustResourceUrl()` never sees a public, externally
  * supplied URL, this isn't a promise layered on top of the code, it's
  * the only path that exists.
+ *
+ * `safeUrl` appends `#navpanes=0` to the blob URL, a fragment several
+ * browsers' built-in PDF viewer reads to hide its own thumbnail/outline
+ * side panel, so this component's iframe defaults to just the document,
+ * not the viewer's chrome competing for space with it. The fragment is
+ * only ever added to the string handed to `bypassSecurityTrustResourceUrl()`,
+ * never to the URL `BlobUrlLifecycle` itself creates or revokes: that
+ * class always works with the bare blob URL, exactly as before. There's
+ * no way to opt out of `#navpanes=0` in v1; revisit if a consumer
+ * actually asks for the panel back.
  */
 @Component({
   selector: 'lib-pdf-preview',
@@ -142,7 +159,9 @@ export class PdfPreview implements OnDestroy {
           }
 
           const url = this.blobUrlLifecycle.set(blob);
-          this.safeUrlSignal.set(this.sanitizer.bypassSecurityTrustResourceUrl(url));
+          this.safeUrlSignal.set(
+            this.sanitizer.bypassSecurityTrustResourceUrl(`${url}#navpanes=0`),
+          );
           this.statusSignal.set('ready');
         })
         .catch((reason: unknown) => {

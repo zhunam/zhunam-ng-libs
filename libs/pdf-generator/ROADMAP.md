@@ -103,8 +103,17 @@ export interface PdfResult {
   siendo real: nadie paga este costo hasta que efectivamente se
   genera un PDF, no en la carga inicial de la app.
 - El componente de preview debe ser standalone y lazy-load-friendly (sin
-  efectos secundarios al importar el módulo), documentar en README que
-  se recomienda cargarlo detrás de una ruta lazy.
+  efectos secundarios al importar el módulo): el peso real de pdfmake se
+  difiere vía el `import()` dinámico dentro de `generatePdf()`
+  (`internal/load-pdf-engine.ts`), independiente de si la ruta que aloja
+  el componente es lazy o eager. Nadie paga ese costo hasta que
+  efectivamente se genera un PDF, sea cual sea la estrategia de ruteo de
+  la app consumidora; no hace falta lazy-load a nivel de ruta para lograr
+  el objetivo de bundle size, así que no es un requisito documentado en
+  el README. La demo de `portfolio-showcase` usa una ruta eager
+  (`component:`, no `loadComponent:`), consistente con las otras tres
+  demos existentes, y es la decisión correcta ahí: nada distinto que
+  justifique una excepción al patrón de ruteo del resto de la app.
 
 ## Tareas 
 
@@ -226,13 +235,37 @@ export interface PdfResult {
       respaldados por ese único `Blob` cacheado (mismo objeto en cada
       llamada, verificado con test dedicado), nunca vuelven a pedirle
       nada a pdfmake.
-- [ ] Demo consuming the library
+- [x] Demo consuming the library
       → apps/portfolio-showcase/src/app/pages/pdf-generator-demo/
-      Misma estructura de shell que las demás demos (header, sidebar
-      de DESIGN.md), sin layout propio ni distinto. La entrada de
-      pdf-generator en el sidebar pasa de "Coming Soon" (<span> no
-      interactivo) a un <a> real apuntando a esta página, siguiendo
-      el mismo patrón que data-grid, no una excepción.
+      Relevamiento previo confirmó que pdf-generator no tenía ninguna
+      entrada en shared/libraries.ts todavía, ni siquiera "Coming
+      Soon" (el supuesto original de esta tarea era incorrecto): se
+      agregó desde cero (`status: 'available'`, `route:
+      '/pdf-generator'`), junto con la cuarta tarjeta en home.ts/html
+      y la corrección del texto del FAQ ("Three so far" → "Four so
+      far"). Misma estructura de shell (drawer/sidebar) copiada a mano
+      de auth-demo.html/.scss, consistente con que data-grid/
+      form-builder/auth ya la triplican así, sin extraer nada
+      compartido (ver Future ideas del ROADMAP raíz). Formulario
+      editable (cliente + ítems) con signals puros, sin reactive
+      forms; `<lib-pdf-preview>` consume el data object computado
+      directo, sin botón "generar"; estado `generating`/`error`
+      visible en la página vía una referencia de plantilla al
+      componente (`#preview`), no solo el caso feliz. Dato mock nuevo
+      en `shared/mock-invoice-template.ts` (`PdfTemplate` de factura +
+      `DemoInvoiceData`), con un logo inline como `data:` URI para no
+      requerir `allowedRemoteHosts` en la demo. Verificado con
+      Playwright real (Chromium ya instalado para
+      `portfolio-showcase-e2e`, script descartable, no un spec nuevo
+      permanente): el `<iframe>` obtiene una URL `blob:` real al
+      cargar y otra distinta al editar el formulario, cero errores de
+      consola. `nx build portfolio-showcase --configuration=production`
+      y `nx lint portfolio-showcase` limpios. `nx test
+      portfolio-showcase` tiene una falla preexistente no relacionada
+      (`NG0201: No provider found for ActivatedRoute` en varios specs
+      con `RouterLink`, confirmado con `git stash` que ya fallaba
+      antes de esta tarea, documentado como lección de infraestructura
+      en el ROADMAP raíz, fuera de alcance arreglarlo acá).
 - [x] README.md (instalación, ejemplo <10 líneas, tabla de API,
       compatibilidad Angular, licencia). Mismo patrón que
       data-grid/form-builder/auth: título + párrafo, Installation,
@@ -249,5 +282,17 @@ export interface PdfResult {
       sección "Security" propia de auth: contenido específico de esta
       librería, insertado en el mismo lugar del patrón común donde
       auth también se desvía para agregar contenido propio.
-- [ ] Verify production build
+- [x] Verify production build
       → nx build pdf-generator --configuration=production
+      Limpio: `nx run pdf-generator:build:production` sin warnings ni
+      errores (`ng-packagr`, compilación AOT en modo de compilación
+      parcial, FESM + DTS + manifest escritos sin diferencias respecto
+      al build en modo default). Confirmado que "modo default" y
+      "modo production" son el mismo build para esta librería:
+      `project.json` tiene `defaultConfiguration: "production"` en el
+      target `build`, así que cada `nx build pdf-generator` corrido a
+      lo largo de esta librería (sin flag explícito) ya usaba
+      `tsconfig.lib.prod.json`, la única diferencia real entre
+      configuraciones (`development` no sobreescribe nada). Re-corrido
+      sin caché (`--skip-nx-cache`) para confirmar un log fresco, no
+      solo un hit de caché de una corrida anterior.

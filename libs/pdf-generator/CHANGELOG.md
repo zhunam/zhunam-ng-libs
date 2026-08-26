@@ -47,6 +47,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   as readonly signals, plus a `generationError` output emitted once per
   failed attempt. `@angular/platform-browser` is now a peerDependency
   (`DomSanitizer`).
+- `--pdf-preview-height` CSS custom property on `PdfPreview` (default
+  `600px`): controls the component's, and therefore its `<iframe>`'s,
+  height directly from the consumer's own stylesheet. Width always
+  fills the container at 100%. The `<iframe>` itself draws no border or
+  radius of its own; wrap `<lib-pdf-preview>` in whatever bounded-panel
+  styling the consuming app already uses.
 
 ### Changed
 - `generatePdf()` now renders the document fully before resolving,
@@ -59,3 +65,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `generatePdf()` resolves, `getBlob()`, `toBase64()`, `download()`,
   and `open()` can no longer fail: they all reuse that single render,
   they never ask pdfmake to render again.
+- `PdfPreview`'s `safeUrl` now appends `#navpanes=0` to the blob URL it
+  wraps, so the iframe defaults to hiding the browser's native PDF
+  viewer's own thumbnail/outline side panel. Only the URL handed to
+  `bypassSecurityTrustResourceUrl()` carries the fragment; the blob URL
+  `BlobUrlLifecycle` creates and revokes internally is unaffected. Not
+  configurable yet.

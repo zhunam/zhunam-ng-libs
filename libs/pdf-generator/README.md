@@ -77,6 +77,19 @@ whenever `template`/`data`/`options` change.
 NgModule architecture (`imports: [PdfPreviewModule]`). The standalone
 component is still the recommended way to consume it.
 
+`PdfPreview` sizes and themes itself via CSS custom properties, set from
+the consuming app's own stylesheet:
+
+| Custom property | Default | Description |
+| ------------------------- | -------- | -------------------------------------------------- |
+| `--pdf-preview-height`    | `600px`  | Height of the component and its `<iframe>`. Width always fills the container at 100%. |
+| `--pdf-preview-text-color` | `#374151` | Color of the "Generating PDF…" status text. |
+| `--pdf-preview-error-color` | `#dc2626` | Color of the error message text. |
+| `--pdf-preview-font-family` | `system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif` | Font used for status/error text. |
+
+The `<iframe>` itself has no border or radius: wrap `<lib-pdf-preview>`
+in whatever bounded-panel styling your own app already uses.
+
 ### Errors
 
 | Error | Thrown when |
