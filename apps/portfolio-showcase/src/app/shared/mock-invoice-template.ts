@@ -25,16 +25,21 @@ export const initialInvoiceData: DemoInvoiceData = {
   ],
 };
 
-// Minimal 1x1 PNG, the same one already exercised against the real
-// pdfmake engine in generate-pdf-security.spec.ts's remote-image tests,
-// reused here as a known-good placeholder rather than a real logo asset.
-// It's inlined as a literal data: URI directly in the template (never
-// resolved from editable data), so the demo works against
+// A 32x32 document/invoice pictogram (folded-corner page + text lines),
+// hand-built pixel by pixel and PNG-encoded, not a single stretched
+// pixel: pdfmake only accepts a raster data: URI for `image` content,
+// confirmed empirically that an SVG data: URI is rejected outright
+// ("Unknown image format"), so a small vector mark wasn't an option
+// here. Colored with the app's own Signal Teal / Signal-Teal-on-dark
+// tokens (see apps/portfolio-showcase/DESIGN.md), white background to
+// match the PDF page so it reads as sitting directly on it, no visible
+// bounding box. Inlined as a literal data: URI directly in the template
+// (never resolved from editable data), so the demo works against
 // generatePdf()'s default allowedRemoteHosts ([], every remote image
 // denied) without teaching visitors to widen that allowlist just to see
 // a logo render.
 const LOGO_DATA_URI =
-  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAQ0lEQVR4nGP4T2PAMGoB2RboxMeShEYtGLVgWFuASwGRygaBBUM/DkYjmaDOoR8HAxPJQ8qCoR8HtLKAWmDUgoG3AADFI2bGLNaPeQAAAABJRU5ErkJggg==';
 
 /**
  * Invoice `PdfTemplate` for the pdf-generator demo. `items` rows already
