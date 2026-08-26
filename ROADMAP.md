@@ -68,6 +68,63 @@ promoted into the numbered sequence above.
   librerías crezca más y el problema se replique. Detectado en
   libs/data-grid/ROADMAP.md durante el desarrollo de form-builder.
 
+- **Extraer el shell de drawer/sidebar de las páginas de demo**: hoy
+  triplicado byte a byte entre `data-grid-demo.html`/`.scss`,
+  `form-builder-demo.html`/`.scss` y `auth-demo.html`/`.scss` (mismo
+  markup del drawer daisyUI, mismo breadcrumb, mismo `@for` de
+  "Library Explorer", mismo override de `.drawer-side` en el SCSS).
+  Extraerlo a un componente compartido antes de que pdf-generator lo
+  copie por cuarta vez y calendar/chat-widget lo hagan crecer más.
+  Detectado durante el relevamiento previo a la demo de pdf-generator.
+
+- **`home.ts`/`home.html` no iteran las tarjetas de librería**: cada
+  tarjeta (Data Grid, Form Builder, Auth) es una propiedad separada
+  (`dataGridLibrary`, `formBuilderLibrary`, `authLibrary`) y un bloque
+  de HTML repetido a mano, en vez de un `@for` sobre
+  `shared/libraries.ts`, pese a que ese archivo ya existe como catálogo
+  real y ya se usa así en el sidebar de cada demo. Detectado durante el
+  mismo relevamiento.
+
+## Lecciones de infraestructura
+
+- **Vitest no aísla specs que mockean el mismo SDK externo** (`test.isolate`
+  default `false` en `@nx/angular:unit-test`): causa real de una falla en
+  CI (Linux) en `form-builder` el 2026-08-16. Varios specs llamando
+  `vi.mock()`/`vi.hoisted()` sobre el mismo módulo externo compartían un
+  registro de módulos, y solo el mock de un archivo tomaba efecto.
+  Resuelto agregando un `vitest.config.ts` propio por librería con
+  `test: { isolate: true }` (ver `libs/auth/vitest.config.ts`,
+  `libs/pdf-generator/vitest.config.ts`). Aplicado proactivamente en
+  `pdf-generator` desde el primer spec, sin esperar a que se repita.
+
+- **Vitest no encuentra el runner en Windows nativo (Nx +
+  `@nx/angular:unit-test`)**: confirmado que no es un problema de versión
+  de Node (falla igual con Node 22.23.2 en Windows, la misma versión
+  exacta que corre bien en WSL), ni de config del repo. Es específico de
+  cómo el executor de Nx bootstrapea el proceso worker de Vitest en
+  Windows. Mientras no se investigue más a fondo (o se resuelva upstream
+  en `@nx/angular`), WSL es el entorno de verificación de tests local,
+  igual que CI. Cualquier `nx test` corrido nativo en Windows no es
+  confiable como resultado, ni positivo ni negativo.
+
+- **`nx test portfolio-showcase` falla hoy en 5 de 6 archivos** (confirmado
+  en WSL 2026-08-25, no es un problema del entorno): `app.spec.ts`,
+  `home.spec.ts`, `data-grid-demo.spec.ts`, `form-builder-demo.spec.ts`, y
+  el nuevo `pdf-generator-demo.spec.ts`, todos con
+  `NG0201: No provider found for ActivatedRoute`. Causa: cualquier
+  componente que usa `RouterLink` (`app.ts`, y cada página de demo vía su
+  sidebar/breadcrumb) inyecta `ActivatedRoute` en su constructor, y
+  ninguno de estos specs (el boilerplate que deja
+  `nx g @nx/angular:component`, nunca editado a mano después) provee
+  `provideRouter([])`/`ActivatedRoute` en su `TestBed`. Confirmado que es
+  preexistente, no algo introducido al agregar pdf-generator-demo:
+  reproducido con `git stash` sobre el estado ya commiteado del branch,
+  falla igual sin ninguno de los cambios de esta tarea. `auth-demo.spec.ts`
+  es la única que pasa, sin proveer nada especial de router tampoco; no
+  investigado por qué ese caso puntual no dispara el mismo error. Pendiente
+  de arreglo real (agregar `provideRouter([])` a los `TestBed` afectados),
+  fuera del alcance de la tarea que lo detectó.
+
 ## Recurring maintenance notes
 
 - Review each library's `peerDependencies` whenever Angular releases a
