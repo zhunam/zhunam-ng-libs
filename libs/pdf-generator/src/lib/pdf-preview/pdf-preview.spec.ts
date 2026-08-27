@@ -181,6 +181,79 @@ describe('PdfPreview', () => {
     expect(revokeObjectURL).toHaveBeenCalledExactlyOnceWith(producedUrl);
   });
 
+  describe('result()', () => {
+    it('is null before the first successful generation', () => {
+      const { promise } = deferred<PdfResult>();
+      mockedGeneratePdf.mockReturnValue(promise);
+
+      const fixture = createFixture();
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.result()).toBeNull();
+    });
+
+    it('is the exact PdfResult generatePdf() resolved with, its methods real and invokable, not a second/new object', async () => {
+      const blob = new Blob(['pdf bytes'], { type: 'application/pdf' });
+      const fakeResult = fakePdfResult(blob);
+      mockedGeneratePdf.mockResolvedValue(fakeResult);
+
+      const fixture = createFixture();
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(fixture.componentInstance.result()).toBe(fakeResult);
+      await expect(fixture.componentInstance.result()?.getBlob()).resolves.toBe(blob);
+
+      fixture.componentInstance.result()?.download('invoice.pdf');
+      expect(fakeResult.download).toHaveBeenCalledExactlyOnceWith('invoice.pdf');
+    });
+
+    it('race condition: the second (newer) generation\'s result wins even when the first (older) one resolves later', async () => {
+      const first = deferred<PdfResult>();
+      const second = deferred<PdfResult>();
+      mockedGeneratePdf.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
+
+      const fixture = createFixture({ v: 1 });
+      fixture.detectChanges();
+
+      fixture.componentRef.setInput('data', { v: 2 });
+      fixture.detectChanges();
+
+      const secondResult = fakePdfResult(new Blob(['b'], { type: 'application/pdf' }));
+      const firstResult = fakePdfResult(new Blob(['a'], { type: 'application/pdf' }));
+      // Same "resolve older after newer" ordering as the safeUrl/status
+      // race-condition test above: the first (older) call's success
+      // branch never runs at all once cancelled, so its result can't
+      // overwrite the second's afterwards, this isn't a last-write-wins
+      // race that just happens to work out.
+      second.resolve(secondResult);
+      first.resolve(firstResult);
+      await fixture.whenStable();
+
+      expect(fixture.componentInstance.result()).toBe(secondResult);
+    });
+
+    it('keeps the first successful PdfResult when a later attempt fails, even though error() gets populated', async () => {
+      const firstResult = fakePdfResult(new Blob(['a'], { type: 'application/pdf' }));
+      mockedGeneratePdf.mockResolvedValueOnce(firstResult);
+
+      const fixture = createFixture({ v: 1 });
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(fixture.componentInstance.result()).toBe(firstResult);
+
+      const failure = new Error('second attempt blew up');
+      mockedGeneratePdf.mockRejectedValueOnce(failure);
+      fixture.componentRef.setInput('data', { v: 2 });
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(fixture.componentInstance.error()).toBe(failure);
+      expect(fixture.componentInstance.result()).toBe(firstResult);
+    });
+  });
+
   describe('with the real default GENERATE_PDF provider (no TestBed override)', () => {
     beforeEach(() => {
       // Drops the GENERATE_PDF override the outer beforeEach configured

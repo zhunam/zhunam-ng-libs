@@ -123,7 +123,17 @@
       </section>
 
       <section class="flex flex-col gap-3 rounded-box border border-slate-200 bg-base-100 p-6">
-        <h2 class="text-sm font-semibold text-base-content">Preview</h2>
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-semibold text-base-content">Preview</h2>
+          <button
+            type="button"
+            [disabled]="!preview.result()"
+            (click)="preview.result()?.download('invoice.pdf')"
+            class="btn btn-outline btn-xs transition-transform duration-200 ease-out hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          >
+            Download
+          </button>
+        </div>
 
         @if (preview.status() === 'generating') {
           <p class="text-xs text-slate-500">Generating PDF…</p>

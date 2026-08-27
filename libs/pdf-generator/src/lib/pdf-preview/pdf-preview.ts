@@ -15,6 +15,7 @@ import { generatePdf } from '../../generate-pdf';
 import { BlobUrlLifecycle } from '../internal/blob-url-lifecycle';
 import type { PdfGenerateOptions } from '../models/pdf-generate-options';
 import type { PdfTemplate } from '../models/pdf-block';
+import type { PdfResult } from '../models/pdf-result';
 
 /**
  * Injection seam over `generatePdf()`, internal only, not part of this
@@ -61,6 +62,15 @@ export const GENERATE_PDF = new InjectionToken<typeof generatePdf>('GENERATE_PDF
  * class always works with the bare blob URL, exactly as before. There's
  * no way to opt out of `#navpanes=0` in v1; revisit if a consumer
  * actually asks for the panel back.
+ *
+ * `result` is the exact `PdfResult` `generatePdf()` resolved with for
+ * whatever is currently visible in the iframe, the same object `safeUrl`
+ * was itself derived from, not a second one. Exposed so a consumer can
+ * wire its own actions, download button, "open in new tab", attach to
+ * an email, without triggering a second full generation: no re-fetch of
+ * an allowed remote image, no re-running the template's resolver, and a
+ * guarantee that whatever gets downloaded is exactly what's on screen,
+ * not a fresh render that could differ if `data()` changed since.
  */
 @Component({
   selector: 'lib-pdf-preview',
@@ -101,6 +111,7 @@ export class PdfPreview implements OnDestroy {
   private readonly statusSignal = signal<'idle' | 'generating' | 'ready' | 'error'>('idle');
   private readonly errorSignal = signal<Error | null>(null);
   private readonly safeUrlSignal = signal<SafeResourceUrl | null>(null);
+  private readonly resultSignal = signal<PdfResult | null>(null);
 
   /**
    * Current generation status.
@@ -118,6 +129,20 @@ export class PdfPreview implements OnDestroy {
    * generation succeeds.
    */
   readonly safeUrl = this.safeUrlSignal.asReadonly();
+
+  /**
+   * The `PdfResult` behind the PDF currently shown in the iframe, `null`
+   * until the first generation succeeds. Lets a consumer call
+   * `download()`/`open()`/`getBlob()`/`toBase64()` on the exact same
+   * result already rendered, without triggering another `generatePdf()`
+   * call.
+   * @example
+   * <lib-pdf-preview #preview [template]="template" [data]="data()" />
+   * <button [disabled]="!preview.result()" (click)="preview.result()?.download('invoice.pdf')">
+   *   Download
+   * </button>
+   */
+  readonly result = this.resultSignal.asReadonly();
 
   constructor() {
     effect((onCleanup) => {
@@ -152,8 +177,8 @@ export class PdfPreview implements OnDestroy {
       const removePendingTask = this.pendingTasks.add();
 
       this.generatePdfFn(template, data, options)
-        .then((result) => result.getBlob())
-        .then((blob) => {
+        .then(async (result) => ({ result, blob: await result.getBlob() }))
+        .then(({ result, blob }) => {
           if (cancelled) {
             return;
           }
@@ -162,6 +187,7 @@ export class PdfPreview implements OnDestroy {
           this.safeUrlSignal.set(
             this.sanitizer.bypassSecurityTrustResourceUrl(`${url}#navpanes=0`),
           );
+          this.resultSignal.set(result);
           this.statusSignal.set('ready');
         })
         .catch((reason: unknown) => {
