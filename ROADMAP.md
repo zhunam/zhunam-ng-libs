@@ -13,16 +13,18 @@ only reference it.
 
 ## Active phase
 
-**Phase 4: Client-side document (PDF) generator**, waiting to start
-(scope definition session pending, per the same process used for
-previous phases).
+**Phase 5: Real-time chat / notifications**, waiting to start (scope
+definition session pending, per the same process used for previous
+phases).
 
-Phase 3 (Modular auth system) is done and published: `@zhunam/auth@1.0.0`
-is live on the public npm registry, alongside `@zhunam/data-grid@1.1.0`
-and `@zhunam/form-builder@1.1.0` (both bumped to 1.1.0 for the NgModule
-wrapper addition). All three published libraries were also manually
-verified against real Firebase and Supabase projects before this
-release, not just tested against mocks.
+Phase 4 (Client-side document (PDF) generator) is done and published:
+`@zhunam/pdf-generator@1.1.0` is live on the public npm registry,
+alongside `@zhunam/auth@1.0.0`, `@zhunam/data-grid@1.1.0`, and
+`@zhunam/form-builder@1.1.0`. Ships with a demo page in
+`portfolio-showcase` (`/pdf-generator`), a full README, and the
+security guarantees documented in `libs/pdf-generator/ROADMAP.md`
+("Seguridad"), all manually verified in a real browser, not just
+against tests.
 
 ## Phases: full sequence
 
@@ -44,7 +46,8 @@ data-grid, form-builder, pdf-generator) instead of standing alone.
    Firebase/Supabase Auth): 100% free. **DONE, published on npm as
    `@zhunam/auth@1.0.0`**
 4. **Client-side document (PDF) generator** (`libs/pdf-generator`):
-   mostly free, possible template sales (Gumroad). Not started
+   mostly free, possible template sales (Gumroad). **DONE, published on
+   npm as `@zhunam/pdf-generator@1.1.0`**
 5. **Real-time chat / notifications** (`libs/chat-widget`, embeddable
    Web Component): pure SaaS, main candidate for real revenue. Not started
 6. **Calendar with Google Calendar integration** (`libs/calendar`):
