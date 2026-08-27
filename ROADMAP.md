@@ -13,18 +13,15 @@ only reference it.
 
 ## Active phase
 
-**Phase 5: Real-time chat / notifications**, waiting to start (scope
-definition session pending, per the same process used for previous
-phases).
+Ninguna fase activa por el momento. Fase 4 (Client-side document (PDF)
+generator) completada y publicada: `@zhunam/pdf-generator@1.1.0` en
+npm, junto con `@zhunam/auth@1.0.0`, `@zhunam/data-grid@1.1.0`, y
+`@zhunam/form-builder@1.1.0`.
 
-Phase 4 (Client-side document (PDF) generator) is done and published:
-`@zhunam/pdf-generator@1.1.0` is live on the public npm registry,
-alongside `@zhunam/auth@1.0.0`, `@zhunam/data-grid@1.1.0`, and
-`@zhunam/form-builder@1.1.0`. Ships with a demo page in
-`portfolio-showcase` (`/pdf-generator`), a full README, and the
-security guarantees documented in `libs/pdf-generator/ROADMAP.md`
-("Seguridad"), all manually verified in a real browser, not just
-against tests.
+Chat/notificaciones (antes fase 5) se sacó de la secuencia numerada el
+2026-08-27, ver "Future ideas" para el detalle. La siguiente candidata
+en la secuencia es Calendar, sesión de definición de scope pendiente
+(mismo proceso ya usado para las fases anteriores).
 
 ## Phases: full sequence
 
@@ -48,11 +45,9 @@ data-grid, form-builder, pdf-generator) instead of standing alone.
 4. **Client-side document (PDF) generator** (`libs/pdf-generator`):
    mostly free, possible template sales (Gumroad). **DONE, published on
    npm as `@zhunam/pdf-generator@1.1.0`**
-5. **Real-time chat / notifications** (`libs/chat-widget`, embeddable
-   Web Component): pure SaaS, main candidate for real revenue. Not started
-6. **Calendar with Google Calendar integration** (`libs/calendar`):
+5. **Calendar with Google Calendar integration** (`libs/calendar`):
    freemium UI + SaaS sync. Not started
-7. **Financial/crypto dashboard** (`apps/`, portfolio piece, not a
+6. **Financial/crypto dashboard** (`apps/`, portfolio piece, not a
    publishable lib): 100% free, not monetizable as a product. Meant to
    showcase auth, data-grid, form-builder, and pdf-generator working
    together in a real use case. Not started
@@ -87,6 +82,20 @@ promoted into the numbered sequence above.
   `shared/libraries.ts`, pese a que ese archivo ya existe como catálogo
   real y ya se usa así en el sidebar de cada demo. Detectado durante el
   mismo relevamiento.
+
+- **Chat/notificaciones en tiempo real (`libs/chat-widget`)**: sacado
+  de la secuencia numerada el 2026-08-27, tras una sesión de
+  investigación de mercado. Conclusión: el hueco "Angular-nativo" que
+  motivó la idea no existe de verdad (Stream ya publica
+  `stream-chat-angular` oficial), y competir en infraestructura de
+  chat hosteada contra jugadores financiados (Stream, Sendbird,
+  PubNub, Ably) no es viable para un desarrollador solo, el
+  benchmark de ingresos verificados de un dev solo en este espacio es
+  prácticamente inexistente. Un cliente Angular gratis (wrapper de
+  Firebase/Supabase, mismo patrón que `auth`, sin backend pago)
+  seguiría siendo válido como pieza de portfolio si se retoma más
+  adelante. No descartado para siempre, solo removido de la secuencia
+  activa hasta que haya una razón concreta para retomarlo.
 
 ## Lecciones de infraestructura
 
