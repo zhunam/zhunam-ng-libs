@@ -5,14 +5,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-08-26
+
 ### Added
 - `PdfPreview.result`: readonly `Signal<PdfResult | null>`, the exact
   `PdfResult` behind whatever is currently shown in the iframe, `null`
   until the first generation succeeds. Lets a consumer wire its own
   download/open actions against the already-generated result without
   triggering a second full `generatePdf()` call. Purely additive, no
-  existing input/output/signal changes shape; candidate for `v1.1.0`
-  once it ships.
+  existing input/output/signal changes shape.
 
 ## [1.0.0] - 2026-08-26
 
