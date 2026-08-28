@@ -40,12 +40,18 @@ export interface CalendarEvent<T = unknown> {
   allDay?: boolean;
 
   /**
-   * RRULE string (RFC 5545) describing this event's recurrence.
+   * RRULE string (RFC 5545) describing this event's recurrence, e.g.
+   * `'FREQ=DAILY;COUNT=5'`. The `RRULE:` prefix is optional, both forms
+   * parse identically. This event's own `start` is always used as the
+   * rule's `dtstart`, even if the string embeds its own `DTSTART` line,
+   * that line is ignored (confirmed against the real `rrule` package).
    *
-   * Not expanded yet: `CalendarStore.eventsInRange()`/`findConflicts()`
-   * currently treat a recurring event as a single occurrence at its
-   * literal `start`/`end`, ignoring this field entirely. Real expansion
-   * via `rrule` is a separate, later task (ROADMAP.md).
+   * `CalendarStore.eventsInRange()`/`findConflicts()` expand this via
+   * `rrule`, one entry per matching occurrence, all sharing this event's
+   * `id`. `addEvent()`/`updateEvent()` reject a string that doesn't
+   * parse as a real RRULE (`CalendarValidationError`).
+   * @example
+   * event.recurrence = 'FREQ=WEEKLY;BYDAY=MO,WE,FR;COUNT=10';
    */
   recurrence?: string;
 

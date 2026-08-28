@@ -64,18 +64,24 @@ export class CalendarStore {
 
 - [x] Tipos base (`CalendarEvent<T>`) — solo tipos, sin lógica.
 - [x] `CalendarStore`: CRUD reactivo a signals, `eventsInRange`,
-      `findConflicts`. Recurrencia tratada como ocurrencia única por
-      ahora (limitación temporal documentada, se resuelve en la
-      siguiente tarea). Correcciones posteriores: `addEvent()` rechaza
+      `findConflicts`. Correcciones posteriores: `addEvent()` rechaza
       un `id` duplicado; `addEvent()`/`updateEvent()` validan que
       `start`/`end` sean `Date` reales (no `Invalid Date`, no un valor
       que solo cumple el tipo en compilación) y guardan una copia
       defensiva del evento (clona los `Date`, así una mutación externa
       posterior nunca corrompe el store), ver CHANGELOG.md.
-- [ ] Integración real de `rrule`: expandir `recurrence` de verdad en
-      `eventsInRange`/`findConflicts`, reemplazando el placeholder de
-      la tarea anterior. Verificar contra la API real de `rrule`
-      (`RRule.between()`), no asumir la firma de memoria.
+- [x] Integración real de `rrule`: `eventsInRange`/`findConflicts`
+      expanden `recurrence` de verdad vía `expandOccurrences()`
+      (`.between()` real, nunca `.all()` sin acotar). `addEvent`/
+      `updateEvent` validan el string RRULE antes de guardar. Ver
+      CHANGELOG.md para el detalle de los casos de borde resueltos
+      (ocurrencia que empieza antes del rango pero lo solapa por
+      duración, ids compartidos entre ocurrencias). Corrección
+      posterior: cada evento recurrente se expande hasta un máximo de
+      `MAX_OCCURRENCES_PER_EXPANSION` (1000) ocurrencias por consulta,
+      cortado en el propio iterator de `rule.between()`, nunca lanza,
+      solo `console.warn()` con el id y el `recurrence` del evento
+      afectado.
 - [ ] Conector `/google`, autenticación: Google Identity Services,
       OAuth client-side sin backend (confirmado en la sesión de scope,
       re-verificar empíricamente al implementar). Token nunca como
