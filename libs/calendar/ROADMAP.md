@@ -98,15 +98,17 @@ export class CalendarStore {
       mapeando cada `Event` real de Google a `CalendarEvent`. Ver
       CLAUDE.md para el detalle completo (semántica real de
       `timeMin`/`timeMax`, trampa de `Date` con eventos de día
-      completo, solo la primera línea RRULE de `recurrence`, sin
-      seguir `nextPageToken` todavía, `GoogleApiError`/
-      `GoogleCalendarNotConnectedError` nuevos en `/google`).
+      completo, solo la primera línea RRULE de `recurrence`,
+      `GoogleApiError`/`GoogleCalendarNotConnectedError` nuevos en
+      `/google`). Corrección posterior: sigue `nextPageToken`
+      automáticamente hasta `MAX_PAGES_PER_FETCH` (4 páginas × 250
+      eventos, `maxResults` real de Google confirmado contra la
+      documentación), tope de 1000 eventos por llamada igual de
+      generoso que `MAX_OCCURRENCES_PER_EXPANSION` de `CalendarStore`;
+      al llegar al tope nunca lanza, solo `console.warn()`.
 - [ ] Conector `/google`, escritura: `createEvent`, `updateEvent`,
       `deleteEvent` mapeando `CalendarEvent` → formato real de eventos
       de Google Calendar API.
-- [ ] Conector `/google`, paginación: seguir `nextPageToken` en
-      `listEvents()` en vez de traer solo la primera página
-      (limitación de v1, ver CLAUDE.md).
 - [ ] Conector `/google`, sync incremental: investigar y decidir si
       `syncToken` entra en v1 o se documenta como limitación conocida
       para v1.1 (decisión a tomar con evidencia real de la API, no

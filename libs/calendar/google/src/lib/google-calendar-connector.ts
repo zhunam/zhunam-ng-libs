@@ -18,6 +18,29 @@ import { mapGoogleEvent } from './internal/map-google-event';
 const CALENDAR_EVENTS_SCOPE = 'https://www.googleapis.com/auth/calendar.events';
 
 /**
+ * Confirmed against Google's own `events.list` reference: "By default
+ * the value is 250 events. The page size can never be larger than 2500
+ * events." Requested explicitly on every page (`maxResults` query
+ * param) instead of left to that default: the total-event ceiling
+ * `MAX_PAGES_PER_FETCH * MAX_RESULTS_PER_PAGE` below is then a real
+ * guarantee by construction, not an assumption that only keeps holding
+ * as long as Google's own default doesn't change.
+ */
+const MAX_RESULTS_PER_PAGE = 250;
+
+/**
+ * Hard ceiling on how many pages `listEvents()` follows via
+ * `nextPageToken`. At `MAX_RESULTS_PER_PAGE` (250) each, 4 pages caps a
+ * single `listEvents()` call at 1000 events, the same generous ceiling
+ * `CalendarStore`'s own `MAX_OCCURRENCES_PER_EXPANSION` already uses
+ * for a single recurring event's expansion, so this connector doesn't
+ * introduce a different notion of "generous enough" from the rest of
+ * the library. Reached only by an extremely loaded calendar in the
+ * queried range; see `listEvents()`'s own JSDoc for what happens then.
+ */
+const MAX_PAGES_PER_FETCH = 4;
+
+/**
  * Client-side connector to a user's Google Calendar via Google Identity
  * Services (GIS), the current, Google-recommended replacement for the
  * old `gapi.auth2` library, plus read access to events via the real
@@ -172,13 +195,20 @@ export class GoogleCalendarConnector {
    * still happens correctly afterward via `CalendarStore`'s own `rrule`
    * integration once the mapped event is added to a store.
    *
-   * Only the first page of results is fetched, `nextPageToken` isn't
-   * followed in v1: a real, undocumented-until-now limitation for a
-   * calendar with enough events in `range` to paginate.
+   * Follows `nextPageToken` automatically, accumulating events across
+   * pages, until either there's no further page (the normal case for
+   * most UI-driven queries) or `MAX_PAGES_PER_FETCH` (4) pages have been
+   * fetched, whichever comes first. Hitting that limit never throws: an
+   * extremely loaded calendar in `range` shouldn't make `listEvents()`
+   * fail outright, it returns everything accumulated up to that point
+   * instead, and `console.warn()`s with the queried range and the total
+   * returned, so an incomplete result is discoverable while debugging
+   * rather than silently short. See `MAX_PAGES_PER_FETCH`'s own JSDoc
+   * for why 4 (at 250 events per page) is the chosen ceiling.
    * @throws {GoogleCalendarNotConnectedError} If `isConnected()` is
    * `false`; never attempts a fetch in that case.
-   * @throws {GoogleApiError} If Google responds with a non-2xx status.
-   * A `401` additionally clears this connector's authorization
+   * @throws {GoogleApiError} If Google responds with a non-2xx status on
+   * any page. A `401` additionally clears this connector's authorization
    * (`isConnected()` becomes `false`), since it means the token expired
    * or was revoked; any other status leaves `isConnected()` unchanged,
    * a `500` doesn't mean the user needs to reauthorize.
@@ -190,36 +220,59 @@ export class GoogleCalendarConnector {
       );
     }
 
-    const params = new URLSearchParams({
-      timeMin: range.start.toISOString(),
-      timeMax: range.end.toISOString(),
-    });
+    const events: CalendarEvent[] = [];
+    let pageToken: string | undefined;
+    let pagesFetched = 0;
 
-    const response = await fetch(
-      `https://www.googleapis.com/calendar/v3/calendars/primary/events?${params.toString()}`,
-      // isConnected() true guarantees #accessToken is set, they're only
-      // ever changed together (connect()'s success path, clearAuthorization()).
-      { headers: { Authorization: `Bearer ${this.#accessToken}` } },
-    );
-
-    if (!response.ok) {
-      if (response.status === 401) {
-        this.clearAuthorization();
+    do {
+      const params = new URLSearchParams({
+        timeMin: range.start.toISOString(),
+        timeMax: range.end.toISOString(),
+        maxResults: String(MAX_RESULTS_PER_PAGE),
+      });
+      if (pageToken) {
+        params.set('pageToken', pageToken);
       }
 
-      let message = `Google Calendar API request failed with status ${response.status}.`;
-      try {
-        const body: GoogleApiErrorResponse = await response.json();
-        message = body.error?.message ?? message;
-      } catch {
-        // Response body wasn't valid JSON; keep the generic message.
+      const response = await fetch(
+        `https://www.googleapis.com/calendar/v3/calendars/primary/events?${params.toString()}`,
+        // isConnected() true guarantees #accessToken is set, they're only
+        // ever changed together (connect()'s success path, clearAuthorization()).
+        { headers: { Authorization: `Bearer ${this.#accessToken}` } },
+      );
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          this.clearAuthorization();
+        }
+
+        let message = `Google Calendar API request failed with status ${response.status}.`;
+        try {
+          const body: GoogleApiErrorResponse = await response.json();
+          message = body.error?.message ?? message;
+        } catch {
+          // Response body wasn't valid JSON; keep the generic message.
+        }
+
+        throw new GoogleApiError(response.status, message);
       }
 
-      throw new GoogleApiError(response.status, message);
-    }
+      const body: GoogleCalendarEventsListResponse = await response.json();
+      events.push(...(body.items ?? []).map(mapGoogleEvent));
+      pageToken = body.nextPageToken;
+      pagesFetched += 1;
 
-    const body: GoogleCalendarEventsListResponse = await response.json();
-    return (body.items ?? []).map(mapGoogleEvent);
+      if (pageToken && pagesFetched >= MAX_PAGES_PER_FETCH) {
+        console.warn(
+          `GoogleCalendarConnector.listEvents(): reached the ${MAX_PAGES_PER_FETCH}-page limit for range ` +
+            `[${range.start.toISOString()}, ${range.end.toISOString()}). Returning ${events.length} events ` +
+            'accumulated so far; more may exist. Narrow the queried range to see the rest.',
+        );
+        break;
+      }
+    } while (pageToken);
+
+    return events;
   }
 
   /**

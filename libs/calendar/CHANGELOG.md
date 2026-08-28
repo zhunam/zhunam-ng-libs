@@ -59,10 +59,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   succeeds (no fetch attempted), or `GoogleApiError` (both new,
   exported from `@zhunam/calendar/google`) on a non-2xx response; a
   `401` specifically also clears `isConnected()`, since it means the
-  token expired or was revoked. Only the first page of results is
-  fetched, `nextPageToken` isn't followed yet.
+  token expired or was revoked.
 
 ### Fixed
+- `GoogleCalendarConnector.listEvents()` now follows `nextPageToken`
+  automatically, accumulating events across pages, instead of only
+  ever returning the first page. Capped at 4 pages (`MAX_PAGES_PER_FETCH`),
+  250 events each (`maxResults`, Google's own confirmed default,
+  requested explicitly rather than left implicit): a 1000-event
+  ceiling per call, matching `CalendarStore`'s own
+  `MAX_OCCURRENCES_PER_EXPANSION`. Reaching the limit never throws,
+  `listEvents()` returns everything accumulated so far and
+  `console.warn()`s with the queried range and the total returned.
 - `CalendarStore.addEvent()` now rejects an event whose `id` already
   matches one already in the store (`CalendarValidationError`), instead
   of silently adding it as a duplicate. The original event is left

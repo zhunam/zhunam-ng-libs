@@ -358,5 +358,98 @@ describe('GoogleCalendarConnector', () => {
       await expect(connector.listEvents(range)).rejects.toThrow(GoogleApiError);
       expect(connector.isConnected()).toBe(true);
     });
+
+    it('follows nextPageToken across multiple pages, without console.warn (limit not reached)', async () => {
+      const connector = await createConnectedConnector();
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(
+          fakeFetchResponse(200, {
+            items: [
+              {
+                id: 'evt-1',
+                summary: 'Page 1 event',
+                start: { dateTime: '2026-09-01T09:00:00Z' },
+                end: { dateTime: '2026-09-01T10:00:00Z' },
+              },
+            ],
+            nextPageToken: 'page-2',
+          }),
+        )
+        .mockResolvedValueOnce(
+          fakeFetchResponse(200, {
+            items: [
+              {
+                id: 'evt-2',
+                summary: 'Page 2 event',
+                start: { dateTime: '2026-09-02T09:00:00Z' },
+                end: { dateTime: '2026-09-02T10:00:00Z' },
+              },
+            ],
+            nextPageToken: 'page-3',
+          }),
+        )
+        .mockResolvedValueOnce(
+          fakeFetchResponse(200, {
+            items: [
+              {
+                id: 'evt-3',
+                summary: 'Page 3 event',
+                start: { dateTime: '2026-09-03T09:00:00Z' },
+                end: { dateTime: '2026-09-03T10:00:00Z' },
+              },
+            ],
+            // No nextPageToken: this is the last page.
+          }),
+        );
+      vi.stubGlobal('fetch', fetchMock);
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+      const events = await connector.listEvents(range);
+
+      expect(events.map((event) => event.id)).toEqual(['evt-1', 'evt-2', 'evt-3']);
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+      expect(warnSpy).not.toHaveBeenCalled();
+      // The 2nd/3rd requests carry the pageToken the previous response returned.
+      expect(fetchMock.mock.calls[1][0]).toContain('pageToken=page-2');
+      expect(fetchMock.mock.calls[2][0]).toContain('pageToken=page-3');
+
+      warnSpy.mockRestore();
+    });
+
+    it('stops at MAX_PAGES_PER_FETCH (4), returns what it accumulated, and warns exactly once', async () => {
+      const connector = await createConnectedConnector();
+      let callCount = 0;
+      const fetchMock = vi.fn().mockImplementation(() => {
+        callCount += 1;
+        // Every page still carries a nextPageToken: simulates a calendar
+        // loaded enough that pagination would otherwise never stop on
+        // its own.
+        return Promise.resolve(
+          fakeFetchResponse(200, {
+            items: [
+              {
+                id: `evt-${callCount}`,
+                summary: `Event ${callCount}`,
+                start: { dateTime: '2026-09-01T09:00:00Z' },
+                end: { dateTime: '2026-09-01T10:00:00Z' },
+              },
+            ],
+            nextPageToken: `page-${callCount + 1}`,
+          }),
+        );
+      });
+      vi.stubGlobal('fetch', fetchMock);
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+      const events = await connector.listEvents(range);
+
+      expect(fetchMock).toHaveBeenCalledTimes(4);
+      expect(events).toHaveLength(4);
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(warnSpy.mock.calls[0][0]).toContain('4');
+
+      warnSpy.mockRestore();
+    });
   });
 });

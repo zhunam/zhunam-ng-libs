@@ -27,6 +27,11 @@ export interface GoogleCalendarEvent {
 
 export interface GoogleCalendarEventsListResponse {
   items?: GoogleCalendarEvent[];
+  /**
+   * Present when there's another page of results to fetch; absent on
+   * the last page. Confirmed against Google's own reference.
+   */
+  nextPageToken?: string;
 }
 
 /**
