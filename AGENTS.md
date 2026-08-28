@@ -485,6 +485,20 @@ styling setups, without friction.
   directly in the hosting/CI platform's dashboard (Vercel, Netlify,
   Supabase, GitHub Actions Secrets), never by uploading the file.
 
+### Campos privados que guardan datos sensibles
+
+`private` de TypeScript es solo una restricción de compilación, no
+existe en runtime: cualquier IDE de debugging, JSON.stringify(),
+Object.keys(), o Reflect.ownKeys() revela el valor igual. Cualquier
+campo de clase que guarde un token, secreto, o dato sensible debe
+usar un campo privado real de ECMAScript (#nombre), nunca `private
+nombre` solo. Verificado como bug real en el conector /google de
+calendar: un `private accessToken` se filtraba por
+JSON.stringify(connector). Cualquier librería futura que maneje un
+dato sensible debe incluir un test explícito que confirme que
+JSON.stringify/Object.keys/Reflect.ownKeys no lo revelan, no
+alcanza con el tipo.
+
 ### Packaging
 
 - Always generate with `ng generate library` (uses `ng-packagr` under the

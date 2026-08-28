@@ -33,6 +33,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   the resulting event has an invalid `start`/`end`, `end` before
   `start`, or an unparseable `recurrence`, or by `addEvent()` when the
   given `id` already exists in the store.
+- `@zhunam/calendar/google`, new secondary entry point:
+  `GoogleCalendarConnector` (`isConnected`, `connect(clientId)`,
+  `disconnect()`), authorization-only against Google Identity Services
+  (the current OAuth2 token model, not the deprecated `gapi.auth2`).
+  `connect()` requests the `https://www.googleapis.com/auth/calendar.events`
+  scope and resolves once the user grants access; `disconnect()` clears
+  local state synchronously and best-effort revokes the token with
+  Google. No silent/background token renewal in this first half
+  (Google's own docs don't characterize `prompt: 'none'` as reliable
+  enough to promise it); reading/writing actual events is a separate,
+  later addition. The GIS script itself is loaded dynamically from
+  Google's own CDN only when `connect()` is actually called, never
+  bundled with this library (self-hosting it isn't supported by
+  Google). The access token lives in a real ECMAScript `#private`
+  field, never a TypeScript-only `private` one, and is never exposed
+  through any public method.
 
 ### Fixed
 - `CalendarStore.addEvent()` now rejects an event whose `id` already

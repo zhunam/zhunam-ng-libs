@@ -147,6 +147,17 @@ promoted into the numbered sequence above.
   revisar esto primero antes de asumir que es un problema del código
   o del repo.
 
+- **ng-packagr y tipos ambientales en entry points secundarios**: un
+  archivo de tipos ambientales (`declare global {...}`) escrito como
+  `.d.ts` puro rompe el bundler de declaraciones de ng-packagr para ese
+  entry point (`Could not resolve "./archivo"`), porque un `.d.ts` de
+  entrada nunca tiene un `.d.ts` de salida espejado. Solución: el
+  archivo debe ser un `.ts` real con `export {}` + `declare global
+  {...}`, nunca un `.d.ts` puro. Encontrado en el conector /google de
+  calendar, aplica a cualquier librería futura con entry points
+  secundarios que necesiten tipos ambientales (ej. tipos de un script
+  externo cargado en runtime).
+
 ## Recurring maintenance notes
 
 - Review each library's `peerDependencies` whenever Angular releases a

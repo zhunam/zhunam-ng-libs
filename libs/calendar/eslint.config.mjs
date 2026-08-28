@@ -45,4 +45,19 @@ export default [
     // Override or add rules here
     rules: {},
   },
+  {
+    // `declare namespace google.accounts.oauth2` augments the real global
+    // namespace Google's own gsi/client script attaches to `window` at
+    // runtime, there's no ES module form of a global augmentation like
+    // this. `allowDefinitionFiles` (the rule's own default exemption)
+    // doesn't cover this file: it has to be a real `.ts` module (not
+    // `.d.ts`), otherwise ng-packagr's declaration bundler can't resolve
+    // it when building the `@zhunam/calendar/google` entry point,
+    // confirmed by hitting that exact failure with a `.d.ts` version of
+    // this same file.
+    files: ['**/google-identity-services.ts'],
+    rules: {
+      '@typescript-eslint/no-namespace': ['error', { allowDeclarations: true }],
+    },
+  },
 ];

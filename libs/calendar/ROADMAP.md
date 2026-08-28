@@ -82,12 +82,17 @@ export class CalendarStore {
       cortado en el propio iterator de `rule.between()`, nunca lanza,
       solo `console.warn()` con el id y el `recurrence` del evento
       afectado.
-- [ ] Conector `/google`, autenticación: Google Identity Services,
-      OAuth client-side sin backend (confirmado en la sesión de scope,
-      re-verificar empíricamente al implementar). Token nunca como
-      propiedad pasiva. Scopes mínimos por defecto. Confirmar
-      empíricamente si los callbacks corren fuera de NgZone (ya
-      anotado como sospecha en CLAUDE.md).
+- [x] Conector `/google`, autenticación: `GoogleCalendarConnector`
+      (`isConnected`, `connect(clientId)`, `disconnect()`) sobre Google
+      Identity Services real, OAuth client-side sin backend, confirmado
+      contra la documentación oficial de Google (ver CLAUDE.md para el
+      detalle completo: API real usada, script cargado dinámicamente
+      desde el CDN de Google nunca empaquetado, scope
+      `calendar.events`, límites reales de renovación silenciosa, el
+      hallazgo de tooling de ng-packagr con el `.d.ts` ambiental, y por
+      qué el token terminó en un campo `#private` real en vez de
+      `private` de TypeScript). Sin renovación silenciosa en esta
+      mitad, sin CRUD todavía (próxima tarea).
 - [ ] Conector `/google`, CRUD: mapear `CalendarEvent` ↔ formato real
       de eventos de Google Calendar API (`listEvents`, `createEvent`,
       `updateEvent`, `deleteEvent`).
@@ -113,5 +118,14 @@ export class CalendarStore {
       → apps/portfolio-showcase/src/app/pages/calendar-demo/
       Mismo shell que las demás demos, entrada real en el sidebar
       (nunca "Coming Soon" residual), per el ítem 7 de AGENTS.md.
+- [ ] Verificación manual con Google Cloud real: probar connect()/
+      disconnect()/CRUD del conector /google contra un Client ID
+      real registrado en Google Cloud Console, con interacción real
+      de usuario (popup de consentimiento, token real, revoke()
+      real). Igual que con auth, en un proyecto Angular aislado
+      fuera de este repo, nunca con credenciales reales dentro del
+      repo público. Bloqueante antes de considerar esta librería
+      production-ready, no se puede verificar en el entorno
+      automatizado de esta sesión.
 - [ ] Verify production build
       → nx build calendar --configuration=production
