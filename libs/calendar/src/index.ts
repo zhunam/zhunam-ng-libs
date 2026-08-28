@@ -1,1 +1,3 @@
-export const CALENDAR_VERSION = '0.0.1';
+export * from './lib/models/calendar-event';
+export * from './lib/calendar-store';
+export * from './lib/errors/calendar-validation-error';
