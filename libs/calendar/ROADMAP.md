@@ -93,9 +93,20 @@ export class CalendarStore {
       qué el token terminó en un campo `#private` real en vez de
       `private` de TypeScript). Sin renovación silenciosa en esta
       mitad, sin CRUD todavía (próxima tarea).
-- [ ] Conector `/google`, CRUD: mapear `CalendarEvent` ↔ formato real
-      de eventos de Google Calendar API (`listEvents`, `createEvent`,
-      `updateEvent`, `deleteEvent`).
+- [x] Conector `/google`, lectura: `listEvents(range)` sobre el
+      endpoint REST real (`GET .../calendars/primary/events`),
+      mapeando cada `Event` real de Google a `CalendarEvent`. Ver
+      CLAUDE.md para el detalle completo (semántica real de
+      `timeMin`/`timeMax`, trampa de `Date` con eventos de día
+      completo, solo la primera línea RRULE de `recurrence`, sin
+      seguir `nextPageToken` todavía, `GoogleApiError`/
+      `GoogleCalendarNotConnectedError` nuevos en `/google`).
+- [ ] Conector `/google`, escritura: `createEvent`, `updateEvent`,
+      `deleteEvent` mapeando `CalendarEvent` → formato real de eventos
+      de Google Calendar API.
+- [ ] Conector `/google`, paginación: seguir `nextPageToken` en
+      `listEvents()` en vez de traer solo la primera página
+      (limitación de v1, ver CLAUDE.md).
 - [ ] Conector `/google`, sync incremental: investigar y decidir si
       `syncToken` entra en v1 o se documenta como limitación conocida
       para v1.1 (decisión a tomar con evidencia real de la API, no

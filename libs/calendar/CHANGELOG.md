@@ -49,6 +49,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   Google). The access token lives in a real ECMAScript `#private`
   field, never a TypeScript-only `private` one, and is never exposed
   through any public method.
+- `GoogleCalendarConnector.listEvents(range)`: reads events from the
+  user's primary Google Calendar via the real Calendar API v3 REST
+  endpoint, mapped to `CalendarEvent`. A recurring event keeps only its
+  first RRULE line (any EXRULE/RDATE/EXDATE or additional RRULE is
+  dropped); an all-day event maps to `allDay: true` with the correct
+  calendar date regardless of the runtime's local timezone. Throws
+  `GoogleCalendarNotConnectedError` if called before `connect()`
+  succeeds (no fetch attempted), or `GoogleApiError` (both new,
+  exported from `@zhunam/calendar/google`) on a non-2xx response; a
+  `401` specifically also clears `isConnected()`, since it means the
+  token expired or was revoked. Only the first page of results is
+  fetched, `nextPageToken` isn't followed yet.
 
 ### Fixed
 - `CalendarStore.addEvent()` now rejects an event whose `id` already

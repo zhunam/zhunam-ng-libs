@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { GoogleApiError } from './google-api-error';
 import { GoogleCalendarConnector } from './google-calendar-connector';
 
 /**
@@ -177,6 +178,185 @@ describe('GoogleCalendarConnector', () => {
       expect(() => connector.disconnect()).not.toThrow();
       expect(connector.isConnected()).toBe(false);
       expect(stub.revoke).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('listEvents()', () => {
+    async function createConnectedConnector(): Promise<GoogleCalendarConnector> {
+      const stub = stubGoogleIdentityServices();
+      stub.requestAccessToken.mockImplementation(() => {
+        stub.getConfig().callback({
+          access_token: 'fake-token',
+          expires_in: 3600,
+          scope: 'https://www.googleapis.com/auth/calendar.events',
+          token_type: 'Bearer',
+        });
+      });
+      const connector = createConnector();
+      await connector.connect('fake-client-id');
+      return connector;
+    }
+
+    /**
+     * Shape confirmed against the real Google Calendar API v3 reference
+     * (events list response envelope and Event resource), not invented.
+     */
+    function fakeFetchResponse(status: number, body: unknown): Response {
+      return {
+        ok: status >= 200 && status < 300,
+        status,
+        json: async () => body,
+      } as Response;
+    }
+
+    const range = { start: new Date('2026-09-01T00:00:00Z'), end: new Date('2026-09-30T00:00:00Z') };
+
+    it('rejects without calling fetch when not connected', async () => {
+      const connector = createConnector();
+      const fetchSpy = vi.fn();
+      vi.stubGlobal('fetch', fetchSpy);
+
+      await expect(connector.listEvents(range)).rejects.toThrow(/connect/i);
+      expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it('maps a normal timed event', async () => {
+      const connector = await createConnectedConnector();
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(
+          fakeFetchResponse(200, {
+            items: [
+              {
+                id: 'evt-1',
+                summary: 'Standup',
+                start: { dateTime: '2026-09-01T09:00:00-05:00' },
+                end: { dateTime: '2026-09-01T09:30:00-05:00' },
+              },
+            ],
+          }),
+        ),
+      );
+
+      const events = await connector.listEvents(range);
+
+      expect(events).toEqual([
+        {
+          id: 'evt-1',
+          title: 'Standup',
+          start: new Date('2026-09-01T09:00:00-05:00'),
+          end: new Date('2026-09-01T09:30:00-05:00'),
+          allDay: false,
+        },
+      ]);
+    });
+
+    it('maps an all-day event with allDay: true and the correct calendar date', async () => {
+      const connector = await createConnectedConnector();
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(
+          fakeFetchResponse(200, {
+            items: [
+              {
+                id: 'evt-2',
+                summary: 'Company holiday',
+                start: { date: '2026-09-05' },
+                end: { date: '2026-09-06' },
+              },
+            ],
+          }),
+        ),
+      );
+
+      const [event] = await connector.listEvents(range);
+
+      expect(event.allDay).toBe(true);
+      expect(event.start.toISOString()).toBe('2026-09-05T00:00:00.000Z');
+      expect(event.end.toISOString()).toBe('2026-09-06T00:00:00.000Z');
+    });
+
+    it('maps a single RRULE line to the plain recurrence string, not an array', async () => {
+      const connector = await createConnectedConnector();
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(
+          fakeFetchResponse(200, {
+            items: [
+              {
+                id: 'evt-3',
+                summary: 'Weekly sync',
+                start: { dateTime: '2026-09-01T09:00:00Z' },
+                end: { dateTime: '2026-09-01T10:00:00Z' },
+                recurrence: ['RRULE:FREQ=WEEKLY;COUNT=5'],
+              },
+            ],
+          }),
+        ),
+      );
+
+      const [event] = await connector.listEvents(range);
+
+      expect(event.recurrence).toBe('RRULE:FREQ=WEEKLY;COUNT=5');
+    });
+
+    it('keeps only the RRULE line when recurrence has multiple lines (RRULE + EXDATE), without throwing', async () => {
+      const connector = await createConnectedConnector();
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(
+          fakeFetchResponse(200, {
+            items: [
+              {
+                id: 'evt-4',
+                summary: 'Daily standup',
+                start: { dateTime: '2026-09-01T09:00:00Z' },
+                end: { dateTime: '2026-09-01T09:15:00Z' },
+                recurrence: ['RRULE:FREQ=DAILY;COUNT=10', 'EXDATE:20260903T090000Z'],
+              },
+            ],
+          }),
+        ),
+      );
+
+      const events = await connector.listEvents(range);
+
+      expect(events).toHaveLength(1);
+      expect(events[0].recurrence).toBe('RRULE:FREQ=DAILY;COUNT=10');
+    });
+
+    it('throws GoogleApiError and clears isConnected() on a 401', async () => {
+      const connector = await createConnectedConnector();
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(
+          fakeFetchResponse(401, {
+            error: {
+              errors: [{ domain: 'global', reason: 'authError', message: 'Invalid Credentials' }],
+              code: 401,
+              message: 'Invalid Credentials',
+            },
+          }),
+        ),
+      );
+
+      await expect(connector.listEvents(range)).rejects.toThrow(GoogleApiError);
+      expect(connector.isConnected()).toBe(false);
+    });
+
+    it('throws GoogleApiError on a 500 without clearing isConnected()', async () => {
+      const connector = await createConnectedConnector();
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(
+          fakeFetchResponse(500, {
+            error: { errors: [], code: 500, message: 'Internal error encountered.' },
+          }),
+        ),
+      );
+
+      await expect(connector.listEvents(range)).rejects.toThrow(GoogleApiError);
+      expect(connector.isConnected()).toBe(true);
     });
   });
 });

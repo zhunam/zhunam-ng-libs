@@ -106,6 +106,79 @@ debería partir de esto, no redescubrirlo:
   intención es que sea realmente inaccesible desde afuera y no solo
   "no tipado como público".
 
+## `/google`: Calendar API v3 REST, lectura (`listEvents()`, confirmado empíricamente)
+
+Hallazgos confirmados contra developers.google.com/calendar/api/v3/reference
+(`events.list`, recurso `Event`) y developers.google.com/calendar/api/guides/errors,
+no contra memoria ni tutoriales:
+
+- `GET https://www.googleapis.com/calendar/v3/calendars/primary/events`,
+  con `timeMin`/`timeMax` como RFC3339. **`timeMin`/`timeMax` no son
+  "start/end del rango" de forma ingenua**: `timeMin` es el límite
+  inferior EXCLUSIVO para el `end` de un evento, `timeMax` el límite
+  superior EXCLUSIVO para el `start` de un evento (texto real de
+  Google). Pasando `range.start`/`range.end` directo como `timeMin`/
+  `timeMax`, esto termina siendo exactamente el mismo test de
+  solapamiento de intervalo semi-abierto que ya usa `rangesOverlap()`
+  en `CalendarStore`, solo nombrado desde el ángulo opuesto (qué campo
+  del evento acota cada parámetro, no "los dos rangos se solapan"). No
+  hizo falta ningún ajuste especial en los valores, solo entender que
+  la lectura ingenua del nombre ("ambos dentro del rango") habría sido
+  incorrecta.
+- `singleEvents` se deja en su default real (`false`), nunca `true`: un
+  evento recurrente vuelve como un solo recurso con su array
+  `recurrence`, no ya expandido en instancias. Es justo lo que
+  `mapGoogleEvent()` necesita para delegarle la expansión real a
+  `CalendarStore`/`rrule` después.
+- La respuesta es un sobre paginado (`{ kind, items: [...],
+  nextPageToken?, nextSyncToken? }`), nunca un array plano. `nextPageToken`
+  **no se sigue en v1**: `listEvents()` solo trae la primera página.
+  Limitación real no pedida explícitamente en la tarea que la
+  introdujo, documentada acá en vez de dejarla en silencio; un
+  calendario con muchos eventos en el rango consultado puede devolver
+  menos de los reales.
+- `Event.start`/`Event.end`: `{ date }` (evento de día completo,
+  `"yyyy-mm-dd"`) o `{ dateTime }` (evento con hora, RFC3339 con
+  offset). **Trampa real de `Date` de JS, confirmada corriendo Node
+  directo**: `new Date('2026-09-01')` (solo fecha) parsea como
+  medianoche UTC, pero `new Date('2026-09-01T00:00:00')` (fecha + hora
+  sin offset) parsea como medianoche LOCAL. Construir la fecha de un
+  evento de día completo agregándole `"T00:00:00"` a mano habría
+  corrido el día según el huso horario del runtime; `mapGoogleEvent()`
+  usa el string `date` tal cual, sin agregarle nada.
+- `Event.recurrence` es `string[]`, cada línea con su propio prefijo
+  RFC5545 completo (`"RRULE:..."`, `"EXDATE:..."`, etc.), no solo el
+  valor sin prefijo. `mapGoogleEvent()` toma la primera línea que
+  empieza con `"RRULE:"` y descarta el resto (otro RRULE, EXRULE,
+  RDATE, EXDATE); un evento con múltiples reglas o excepciones editado
+  directo en Google Calendar no se representa con fidelidad completa
+  en v1.
+- Error real: `{ error: { errors: [...], code, message } }`. Un 401
+  responde con `errors[0].reason: "authError"`, `message: "Invalid
+  Credentials"` (ejemplo real de la documentación), confirmando que el
+  significado de un 401 acá es específicamente "token expirado o
+  inválido", no un error genérico de autorización.
+- **Desvío del path pedido, señalado explícitamente**: la tarea que
+  pidió `GoogleApiError` decía `libs/calendar/src/lib/google/
+  google-api-error.ts` (dentro de `src/lib/` del núcleo). Interpreté
+  esto como una probable errata: un archivo específico de `/google`
+  viviendo físicamente dentro del árbol de `src/lib/` del núcleo, pero
+  exportado únicamente desde el barrel de `/google`, sería una mezcla
+  rara sin precedente en `/firebase`/`/supabase` de auth (que nunca
+  alcanzan hacia el `src/lib/` del núcleo). Terminó en
+  `google/src/lib/google-api-error.ts`, junto al resto de `/google`, y
+  la aclaración "no desde el core" la entendí como una advertencia
+  para no agregarlo por error al barrel de `src/index.ts`.
+- **`GoogleCalendarNotConnectedError`, tipo nuevo, no reutilicé
+  `CalendarValidationError`**: el precondition-check de `listEvents()`
+  (llamado antes de `connect()`) no es un dato de `CalendarEvent`
+  inválido (lo que `CalendarValidationError` documenta explícitamente
+  que representa), ni una respuesta HTTP fallida (lo que representa
+  `GoogleApiError`, que además nunca llega a dispararse acá, no hay
+  fetch todavía). Reusar cualquiera de los dos habría hecho que un
+  consumidor atrapando ese tipo también atrape errores de una
+  categoría distinta sin quererlo.
+
 ## Nota de NgZone (confirmada por analogía, no reproducida en vivo)
 
 auth encontró que los callbacks de Firebase/Supabase corren fuera de

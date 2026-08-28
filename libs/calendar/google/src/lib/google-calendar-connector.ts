@@ -1,6 +1,11 @@
 import { NgZone, inject, signal } from '@angular/core';
+import type { CalendarEvent } from '@zhunam/calendar';
+import { GoogleApiError } from './google-api-error';
+import { GoogleCalendarNotConnectedError } from './google-calendar-not-connected-error';
 import './internal/google-identity-services';
+import type { GoogleApiErrorResponse, GoogleCalendarEventsListResponse } from './internal/google-calendar-api-types';
 import { loadGsiScript } from './internal/load-gsi-script';
+import { mapGoogleEvent } from './internal/map-google-event';
 
 /**
  * Scope requested for authorization: read/write access to events on the
@@ -15,10 +20,10 @@ const CALENDAR_EVENTS_SCOPE = 'https://www.googleapis.com/auth/calendar.events';
 /**
  * Client-side connector to a user's Google Calendar via Google Identity
  * Services (GIS), the current, Google-recommended replacement for the
- * old `gapi.auth2` library. Authorization only in this first half of the
- * connector: `connect()`/`disconnect()`. Reading/writing actual events
- * (`listEvents`, `createEvent`, etc.) is a separate, later piece built
- * on top of this one.
+ * old `gapi.auth2` library, plus read access to events via the real
+ * Calendar API v3 REST endpoint (`listEvents()`). Writing events
+ * (`createEvent`, `updateEvent`, `deleteEvent`) is a separate, later
+ * piece built on top of this one.
  *
  * 100% client-side, no backend of this library's own: confirmed against
  * Google's official docs, the browser OAuth2 token flow this connector
@@ -144,6 +149,77 @@ export class GoogleCalendarConnector {
 
       tokenClient.requestAccessToken();
     });
+  }
+
+  /**
+   * Events on the user's primary calendar whose range intersects
+   * `range` (same half-open `[start, end)` convention as `CalendarStore`).
+   * `range.start`/`range.end` become the real API's `timeMin`/`timeMax`
+   * query params directly: `timeMin` is Google's own exclusive lower
+   * bound on an event's *end* time and `timeMax` its exclusive upper
+   * bound on an event's *start* time, which is exactly this same
+   * half-open overlap test from the other direction, confirmed against
+   * Google's own reference, not a naive "start/end both inside range"
+   * read of those two names.
+   *
+   * A recurring event comes back from Google as a single resource with
+   * a `recurrence` array (`singleEvents` is deliberately left at its
+   * real default of `false`, never requested as `true`): only that
+   * event's *first* RRULE line is kept, any EXRULE/RDATE/EXDATE line or
+   * additional RRULE is dropped. An event edited directly in Google
+   * Calendar with multiple rules or explicit exceptions isn't
+   * represented with full fidelity in v1; instance expansion itself
+   * still happens correctly afterward via `CalendarStore`'s own `rrule`
+   * integration once the mapped event is added to a store.
+   *
+   * Only the first page of results is fetched, `nextPageToken` isn't
+   * followed in v1: a real, undocumented-until-now limitation for a
+   * calendar with enough events in `range` to paginate.
+   * @throws {GoogleCalendarNotConnectedError} If `isConnected()` is
+   * `false`; never attempts a fetch in that case.
+   * @throws {GoogleApiError} If Google responds with a non-2xx status.
+   * A `401` additionally clears this connector's authorization
+   * (`isConnected()` becomes `false`), since it means the token expired
+   * or was revoked; any other status leaves `isConnected()` unchanged,
+   * a `500` doesn't mean the user needs to reauthorize.
+   */
+  async listEvents(range: { start: Date; end: Date }): Promise<CalendarEvent[]> {
+    if (!this.connectedSignal()) {
+      throw new GoogleCalendarNotConnectedError(
+        'GoogleCalendarConnector.listEvents() was called before connect() succeeded.',
+      );
+    }
+
+    const params = new URLSearchParams({
+      timeMin: range.start.toISOString(),
+      timeMax: range.end.toISOString(),
+    });
+
+    const response = await fetch(
+      `https://www.googleapis.com/calendar/v3/calendars/primary/events?${params.toString()}`,
+      // isConnected() true guarantees #accessToken is set, they're only
+      // ever changed together (connect()'s success path, clearAuthorization()).
+      { headers: { Authorization: `Bearer ${this.#accessToken}` } },
+    );
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        this.clearAuthorization();
+      }
+
+      let message = `Google Calendar API request failed with status ${response.status}.`;
+      try {
+        const body: GoogleApiErrorResponse = await response.json();
+        message = body.error?.message ?? message;
+      } catch {
+        // Response body wasn't valid JSON; keep the generic message.
+      }
+
+      throw new GoogleApiError(response.status, message);
+    }
+
+    const body: GoogleCalendarEventsListResponse = await response.json();
+    return (body.items ?? []).map(mapGoogleEvent);
   }
 
   /**
