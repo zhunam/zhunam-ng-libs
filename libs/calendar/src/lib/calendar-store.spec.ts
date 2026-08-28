@@ -51,6 +51,39 @@ describe('CalendarStore', () => {
       expect(store.events()).toEqual([original, other]);
     });
 
+    it('addEvent throws CalendarValidationError when start is not a Date', () => {
+      const store = new CalendarStore();
+      const event = {
+        ...buildEvent('1', '2026-09-01T09:00:00Z', '2026-09-01T10:00:00Z'),
+        start: '2026-09-01T09:00:00Z',
+      } as unknown as CalendarEvent;
+
+      expect(() => store.addEvent(event)).toThrow(CalendarValidationError);
+      expect(store.events()).toEqual([]);
+    });
+
+    it('addEvent throws CalendarValidationError for a real Invalid Date', () => {
+      const store = new CalendarStore();
+      const event = buildEvent('1', '2026-09-01T09:00:00Z', '2026-09-01T10:00:00Z', {
+        start: new Date('not-a-real-date'),
+      });
+
+      expect(() => store.addEvent(event)).toThrow(CalendarValidationError);
+      expect(store.events()).toEqual([]);
+    });
+
+    it('stores a defensive copy: mutating the original Date after addEvent does not affect the store', () => {
+      const store = new CalendarStore();
+      const event = buildEvent('1', '2026-09-01T09:00:00Z', '2026-09-01T10:00:00Z');
+      const originalStartTime = event.start.getTime();
+
+      store.addEvent(event);
+      event.start.setFullYear(1999);
+
+      expect(event.start.getTime()).not.toBe(originalStartTime); // sanity: the mutation itself really happened
+      expect(store.events()[0].start.getTime()).toBe(originalStartTime);
+    });
+
     it('updateEvent merges changes into the matching event', () => {
       const store = new CalendarStore();
       store.addEvent(buildEvent('1', '2026-09-01T09:00:00Z', '2026-09-01T10:00:00Z'));
@@ -69,6 +102,17 @@ describe('CalendarStore', () => {
       );
       // Rejected update never applied.
       expect(store.events()[0].end).toEqual(new Date('2026-09-01T10:00:00Z'));
+    });
+
+    it('updateEvent throws CalendarValidationError when changes.end is an Invalid Date, leaving the event untouched', () => {
+      const store = new CalendarStore();
+      const event = buildEvent('1', '2026-09-01T09:00:00Z', '2026-09-01T10:00:00Z');
+      store.addEvent(event);
+
+      expect(() => store.updateEvent('1', { end: new Date('not-a-real-date') })).toThrow(
+        CalendarValidationError,
+      );
+      expect(store.events()).toEqual([event]);
     });
 
     it('updateEvent is a no-op when no event matches the given id', () => {

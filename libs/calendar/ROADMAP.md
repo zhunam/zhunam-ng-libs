@@ -66,9 +66,12 @@ export class CalendarStore {
 - [x] `CalendarStore`: CRUD reactivo a signals, `eventsInRange`,
       `findConflicts`. Recurrencia tratada como ocurrencia única por
       ahora (limitación temporal documentada, se resuelve en la
-      siguiente tarea). Corrección posterior: `addEvent()` rechaza un
-      `id` duplicado con `CalendarValidationError` en vez de agregarlo
-      igual, ver CHANGELOG.md.
+      siguiente tarea). Correcciones posteriores: `addEvent()` rechaza
+      un `id` duplicado; `addEvent()`/`updateEvent()` validan que
+      `start`/`end` sean `Date` reales (no `Invalid Date`, no un valor
+      que solo cumple el tipo en compilación) y guardan una copia
+      defensiva del evento (clona los `Date`, así una mutación externa
+      posterior nunca corrompe el store), ver CHANGELOG.md.
 - [ ] Integración real de `rrule`: expandir `recurrence` de verdad en
       `eventsInRange`/`findConflicts`, reemplazando el placeholder de
       la tarea anterior. Verificar contra la API real de `rrule`
