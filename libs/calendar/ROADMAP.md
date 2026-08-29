@@ -92,7 +92,7 @@ export class CalendarStore {
       hallazgo de tooling de ng-packagr con el `.d.ts` ambiental, y por
       qué el token terminó en un campo `#private` real en vez de
       `private` de TypeScript). Sin renovación silenciosa en esta
-      mitad, sin CRUD todavía (próxima tarea).
+      mitad.
 - [x] Conector `/google`, lectura: `listEvents(range)` sobre el
       endpoint REST real (`GET .../calendars/primary/events`),
       mapeando cada `Event` real de Google a `CalendarEvent`. Ver
@@ -106,9 +106,21 @@ export class CalendarStore {
       documentación), tope de 1000 eventos por llamada igual de
       generoso que `MAX_OCCURRENCES_PER_EXPANSION` de `CalendarStore`;
       al llegar al tope nunca lanza, solo `console.warn()`.
-- [ ] Conector `/google`, escritura: `createEvent`, `updateEvent`,
-      `deleteEvent` mapeando `CalendarEvent` → formato real de eventos
-      de Google Calendar API.
+- [x] Conector `/google`, escritura: `createEvent`, `updateEvent`,
+      `deleteEvent` sobre los endpoints REST reales (`POST`/`PATCH`/
+      `DELETE`). Ver CLAUDE.md para el detalle completo: `PATCH` real
+      (soporta actualización parcial de verdad) usado a propósito en
+      vez de la recomendación de cuota de Google (`get`+`update`),
+      `updateEvent()` solo hace `GET` extra cuando `changes` toca
+      `start`/`end`/`recurrence` para validar el resultado final
+      fusionado, `410` en `deleteEvent()` tratado como éxito silencioso
+      (`404` no), y el hallazgo de boundary de ng-packagr entre entry
+      points de una misma librería (`assertValidEvent()` duplicada en
+      `google/`, no compartida con el núcleo, no hay forma de un
+      helper interno cruzando entry points sin exponerlo públicamente).
+      Conector `/google` completo en su alcance de v1 (autenticación +
+      lectura + escritura); queda pendiente solo la verificación manual
+      con Google Cloud real (ver más abajo) antes de producción.
 - [ ] Conector `/google`, sync incremental: investigar y decidir si
       `syncToken` entra en v1 o se documenta como limitación conocida
       para v1.1 (decisión a tomar con evidencia real de la API, no

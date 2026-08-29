@@ -101,10 +101,9 @@ debería partir de esto, no redescubrirlo:
   corriente. Con `#accessToken`, ni `JSON.stringify()`, ni
   `Object.keys()`, ni `Reflect.ownKeys()` (la API de reflexión más
   exhaustiva de las tres) revelan el campo. Cualquier dato sensible
-  similar en el futuro de esta librería (o de `/google`'s próxima
-  mitad CRUD) debería usar `#campo`, no `private campo`, si la
-  intención es que sea realmente inaccesible desde afuera y no solo
-  "no tipado como público".
+  similar en el futuro de esta librería debería usar `#campo`, no
+  `private campo`, si la intención es que sea realmente inaccesible
+  desde afuera y no solo "no tipado como público".
 
 ## `/google`: Calendar API v3 REST, lectura (`listEvents()`, confirmado empíricamente)
 
@@ -178,6 +177,80 @@ no contra memoria ni tutoriales:
   fetch todavía). Reusar cualquiera de los dos habría hecho que un
   consumidor atrapando ese tipo también atrape errores de una
   categoría distinta sin quererlo.
+
+## `/google`: Calendar API v3 REST, escritura (`createEvent`/`updateEvent`/`deleteEvent`, confirmado empíricamente)
+
+Hallazgos confirmados contra developers.google.com/calendar/api/v3/reference
+(`events.insert`, `events.patch`, `events.delete`) y
+developers.google.com/calendar/api/guides/errors:
+
+- **`PATCH` existe y sí soporta actualización parcial real**: "The field
+  values you specify replace the existing values. Fields that you don't
+  specify in the request remain unchanged" (texto real de Google).
+  `updateEvent()` lo usa, mandando solo los campos que cambiaron.
+- **Diferencia real con lo que este prompt asumía**: Google recomienda
+  explícitamente `get` + `update` (`PUT` completo) en vez de `patch`,
+  por costo de cuota: *"each patch request consumes three quota units;
+  prefer using a `get` followed by an `update`"* (texto real, página de
+  `events.patch`). Igual se usó `PATCH`, no la recomendación de Google:
+  un `PUT` completo exige reenviar TODO el recurso tal cual se recibió,
+  incluyendo campos reales de `Event` que `CalendarEvent` no modela en
+  absoluto (`attendees`, `location`, `reminders`, `conferenceData`,
+  etc.), un riesgo real de pisar/perder datos que `updateEvent()` nunca
+  llegó a conocer. `PATCH` solo toca lo que efectivamente se manda. Acá
+  la corrección pesó más que el ahorro de cuota; documentado por si en
+  el futuro el volumen de uso hace que la cuota sí importe más que este
+  riesgo.
+- `updateEvent()` solo hace un `GET` adicional (antes del `PATCH`)
+  cuando `changes` toca `start`, `end`, o `recurrence`: necesario para
+  validar el resultado final fusionado (mismo criterio que
+  `CalendarStore.updateEvent()`), ya que este conector no mantiene
+  ningún estado local de eventos ya leídos. Si `changes` no toca
+  ninguno de esos tres campos, no hay `GET` extra.
+- **`DELETE` sobre un evento ya borrado: `410 Gone`, no `404`**,
+  confirmado contra la página oficial de errores: *"This error can also
+  occur if a request attempts to delete an event that has already been
+  deleted"*, con guía explícita *"For already deleted events, no
+  further action is necessary."* `deleteEvent()` trata un `410`
+  específicamente como éxito silencioso (el estado deseado, "el evento
+  no existe", ya es verdad). Un `404` (id que nunca existió, caso
+  distinto y también documentado por separado: *"the requested resource
+  ... has never existed"*) sí se trata como error real: silenciarlo
+  ocultaría un id equivocado pasado por el consumidor.
+- **Boundary real entre entry points de una misma librería ng-packagr,
+  confirmado con `nx build` real, no leyendo código**: `google/`
+  necesitaba la misma validación que ya tiene `CalendarStore.
+  assertValidEvent()` en el núcleo (`src/lib/calendar-store.ts`), no
+  exportada de ahí. Se probaron dos caminos reales, ambos fallan:
+  1. Import relativo directo cruzando hacia el árbol de otro entry
+     point (`../../../src/lib/calendar-store` desde dentro de
+     `google/`): `Cannot find module`, aun exportando la función.
+     ng-packagr compila cada entry point con su propio programa de
+     TypeScript acotado a su propio árbol de directorios.
+  2. Un alias de `tsconfig.base.json` con forma `@zhunam/calendar/<algo>`
+     apuntando a un archivo cualquiera del núcleo (no un entry point
+     real): `Entry point @zhunam/calendar/<algo> which is required by
+     @zhunam/calendar/google doesn't exist`. ng-packagr trata CUALQUIER
+     import con esa forma de subpath como si tuviera que corresponder a
+     un entry point secundario real y declarado, no hay forma de un
+     alias "privado" con esa forma.
+
+     El único camino que sí funciona es el barrel público real del
+     núcleo (`@zhunam/calendar`, es decir `src/index.ts`), que es
+     exactamente lo que ya se usa para `CalendarEvent`/
+     `CalendarValidationError`. No hay ninguna forma de compartir código
+     entre entry points de la misma librería sin exponerlo en ese
+     barrel público, o sin convertirlo en un entry point secundario
+     propio y real (que también sería público, solo que bajo otro
+     subpath). **Decisión**: duplicar una versión mínima de la
+     validación en `google/src/lib/internal/assert-valid-event.ts`
+     (misma lógica que la del núcleo, sin compartir código) en vez de
+     promover `assertValidEvent()` del núcleo a su barrel público
+     `src/index.ts` solo para este único caso de uso. Aplica a
+     cualquier librería futura de este workspace con múltiples entry
+     points que necesite compartir un helper interno (no público) entre
+     ellos: no existe tal cosa en ng-packagr, solo "público" o
+     "duplicado".
 
 ## Nota de NgZone (confirmada por analogía, no reproducida en vivo)
 

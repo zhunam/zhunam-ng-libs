@@ -3,9 +3,12 @@ import type { CalendarEvent } from '@zhunam/calendar';
 import { GoogleApiError } from './google-api-error';
 import { GoogleCalendarNotConnectedError } from './google-calendar-not-connected-error';
 import './internal/google-identity-services';
-import type { GoogleApiErrorResponse, GoogleCalendarEventsListResponse } from './internal/google-calendar-api-types';
+import { assertValidEvent } from './internal/assert-valid-event';
+import { extractGoogleErrorMessage } from './internal/extract-error-message';
+import type { GoogleCalendarEvent, GoogleCalendarEventsListResponse } from './internal/google-calendar-api-types';
 import { loadGsiScript } from './internal/load-gsi-script';
 import { mapGoogleEvent } from './internal/map-google-event';
+import { mapToGoogleEvent } from './internal/map-to-google-event';
 
 /**
  * Scope requested for authorization: read/write access to events on the
@@ -43,10 +46,9 @@ const MAX_PAGES_PER_FETCH = 4;
 /**
  * Client-side connector to a user's Google Calendar via Google Identity
  * Services (GIS), the current, Google-recommended replacement for the
- * old `gapi.auth2` library, plus read access to events via the real
- * Calendar API v3 REST endpoint (`listEvents()`). Writing events
- * (`createEvent`, `updateEvent`, `deleteEvent`) is a separate, later
- * piece built on top of this one.
+ * old `gapi.auth2` library, plus full read/write access to events via
+ * the real Calendar API v3 REST endpoints (`listEvents()`,
+ * `createEvent()`, `updateEvent()`, `deleteEvent()`).
  *
  * 100% client-side, no backend of this library's own: confirmed against
  * Google's official docs, the browser OAuth2 token flow this connector
@@ -246,15 +248,7 @@ export class GoogleCalendarConnector {
           this.clearAuthorization();
         }
 
-        let message = `Google Calendar API request failed with status ${response.status}.`;
-        try {
-          const body: GoogleApiErrorResponse = await response.json();
-          message = body.error?.message ?? message;
-        } catch {
-          // Response body wasn't valid JSON; keep the generic message.
-        }
-
-        throw new GoogleApiError(response.status, message);
+        throw new GoogleApiError(response.status, await extractGoogleErrorMessage(response));
       }
 
       const body: GoogleCalendarEventsListResponse = await response.json();
@@ -273,6 +267,194 @@ export class GoogleCalendarConnector {
     } while (pageToken);
 
     return events;
+  }
+
+  /**
+   * Creates a new event on the user's primary calendar. Validates
+   * `event` (same rules `CalendarStore` itself enforces: `start`/`end`
+   * real `Date`s, `end` not before `start`, `recurrence` parseable if
+   * present) before attempting any fetch, using this connector's own
+   * duplicated copy of that validation, see `assertValidEvent()`'s own
+   * JSDoc for why it's a duplicate, not a shared import from the core.
+   *
+   * `event.data` (this library's own consumer-defined metadata) is
+   * never sent to Google, its `Event` schema has no equivalent field
+   * for it; the returned `CalendarEvent` carries the exact same `data`
+   * value straight through, it never round-trips through Google.
+   * @throws {CalendarValidationError} If `event` itself is invalid.
+   * @throws {GoogleCalendarNotConnectedError} If `isConnected()` is
+   * `false`; never attempts a fetch in that case.
+   * @throws {GoogleApiError} If Google responds with a non-2xx status.
+   * A `401` additionally clears this connector's authorization.
+   */
+  async createEvent<T = unknown>(event: Omit<CalendarEvent<T>, 'id'>): Promise<CalendarEvent<T>> {
+    if (!this.connectedSignal()) {
+      throw new GoogleCalendarNotConnectedError(
+        'GoogleCalendarConnector.createEvent() was called before connect() succeeded.',
+      );
+    }
+
+    assertValidEvent(event);
+
+    const response = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${this.#accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(mapToGoogleEvent(event)),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        this.clearAuthorization();
+      }
+
+      throw new GoogleApiError(response.status, await extractGoogleErrorMessage(response));
+    }
+
+    const created: GoogleCalendarEvent = await response.json();
+    return { ...mapGoogleEvent(created), data: event.data } as CalendarEvent<T>;
+  }
+
+  /**
+   * Updates an existing event on the user's primary calendar via a real
+   * `PATCH` request, sending only the fields present in `changes`
+   * (confirmed against Google's own reference: unspecified fields
+   * "remain unchanged"). Google's own docs actually recommend `get` +
+   * `update` (a full `PUT`) over `patch` for quota reasons ("each patch
+   * request consumes three quota units; prefer using a `get` followed
+   * by an `update`"), but this connector still uses `PATCH`: a full
+   * `PUT` would require resending every field of the fetched resource
+   * verbatim, including real Google `Event` fields (`attendees`,
+   * `location`, `reminders`, `conferenceData`, ...) this library's own
+   * `CalendarEvent` doesn't model at all, a real risk of silently
+   * dropping data this method was never told about. `PATCH` only ever
+   * touches what's actually sent; correctness here outweighs the quota
+   * difference.
+   *
+   * If `changes` touches `start`, `end`, or `recurrence` at all, this
+   * first fetches the event's current state and validates the *merged*
+   * result, the same criterion `CalendarStore.updateEvent()` already
+   * uses: `changes` alone isn't meaningful to validate when it only
+   * carries one side of a range, or a `recurrence` string without the
+   * `start` its `dtstart` needs. A rejected merge never sends anything
+   * to Google, the event already there is left untouched. When
+   * `changes` touches none of those three fields, no extra fetch
+   * happens at all.
+   *
+   * `changes.data`, if present, is never sent to Google (same as
+   * `createEvent()`); the returned `CalendarEvent` carries it straight
+   * through.
+   * @throws {CalendarValidationError} If the merged event would be
+   * invalid.
+   * @throws {GoogleCalendarNotConnectedError} If `isConnected()` is
+   * `false`; never attempts a fetch in that case.
+   * @throws {GoogleApiError} If Google responds with a non-2xx status on
+   * any request this makes. A `401` additionally clears this
+   * connector's authorization.
+   */
+  async updateEvent<T = unknown>(id: string, changes: Partial<CalendarEvent<T>>): Promise<CalendarEvent<T>> {
+    if (!this.connectedSignal()) {
+      throw new GoogleCalendarNotConnectedError(
+        'GoogleCalendarConnector.updateEvent() was called before connect() succeeded.',
+      );
+    }
+
+    const body = mapToGoogleEvent({ title: changes.title });
+
+    if (changes.start !== undefined || changes.end !== undefined || changes.recurrence !== undefined) {
+      const current = await this.fetchEvent(id);
+      const start = changes.start ?? current.start;
+      const end = changes.end ?? current.end;
+      const allDay = changes.allDay ?? current.allDay;
+      const recurrence = changes.recurrence ?? current.recurrence;
+
+      assertValidEvent({ start, end, recurrence });
+      Object.assign(body, mapToGoogleEvent({ start, end, allDay, recurrence }));
+    }
+
+    const response = await fetch(
+      `https://www.googleapis.com/calendar/v3/calendars/primary/events/${encodeURIComponent(id)}`,
+      {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${this.#accessToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      },
+    );
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        this.clearAuthorization();
+      }
+
+      throw new GoogleApiError(response.status, await extractGoogleErrorMessage(response));
+    }
+
+    const updated: GoogleCalendarEvent = await response.json();
+    return { ...mapGoogleEvent(updated), data: changes.data } as CalendarEvent<T>;
+  }
+
+  /**
+   * Deletes an event from the user's primary calendar.
+   *
+   * A `410` response resolves normally, as a successful no-op, instead
+   * of throwing: confirmed against Google's own error reference, `410`
+   * is exactly what Google returns when "a request attempts to delete
+   * an event that has already been deleted," and Google's own
+   * documented guidance for that case is "no further action is
+   * necessary." The desired end state (the event doesn't exist) is
+   * already true either way. A `404` (the id never existed at all, a
+   * different, separately documented case) is *not* treated as
+   * success: that's still a genuine error, the caller likely passed a
+   * wrong id, and silently swallowing it would hide a real mistake.
+   * @throws {GoogleCalendarNotConnectedError} If `isConnected()` is
+   * `false`; never attempts a fetch in that case.
+   * @throws {GoogleApiError} If Google responds with a non-2xx,
+   * non-`410` status. A `401` additionally clears this connector's
+   * authorization.
+   */
+  async deleteEvent(id: string): Promise<void> {
+    if (!this.connectedSignal()) {
+      throw new GoogleCalendarNotConnectedError(
+        'GoogleCalendarConnector.deleteEvent() was called before connect() succeeded.',
+      );
+    }
+
+    const response = await fetch(
+      `https://www.googleapis.com/calendar/v3/calendars/primary/events/${encodeURIComponent(id)}`,
+      { method: 'DELETE', headers: { Authorization: `Bearer ${this.#accessToken}` } },
+    );
+
+    if (response.ok || response.status === 410) {
+      return;
+    }
+
+    if (response.status === 401) {
+      this.clearAuthorization();
+    }
+
+    throw new GoogleApiError(response.status, await extractGoogleErrorMessage(response));
+  }
+
+  /**
+   * Fetches a single event by id, mapped the same way `listEvents()`
+   * maps each item. Internal only: currently used just to read an
+   * event's current state before validating a merged `updateEvent()`.
+   */
+  private async fetchEvent(id: string): Promise<CalendarEvent> {
+    const response = await fetch(
+      `https://www.googleapis.com/calendar/v3/calendars/primary/events/${encodeURIComponent(id)}`,
+      { headers: { Authorization: `Bearer ${this.#accessToken}` } },
+    );
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        this.clearAuthorization();
+      }
+
+      throw new GoogleApiError(response.status, await extractGoogleErrorMessage(response));
+    }
+
+    const body: GoogleCalendarEvent = await response.json();
+    return mapGoogleEvent(body);
   }
 
   /**
@@ -301,10 +483,10 @@ export class GoogleCalendarConnector {
 
   /**
    * Drops the current token and flips `isConnected` to `false`, without
-   * revoking anything server-side (unlike `disconnect()`). Internal only,
-   * not part of the public API: this is the hook the future CRUD half of
-   * this connector will call the moment a Calendar API response reveals
-   * the token is no longer valid (expired, revoked elsewhere), so
+   * revoking anything server-side (unlike `disconnect()`). Internal
+   * only, not part of the public API: called by every method that talks
+   * to the real Calendar API the moment its response reveals the token
+   * is no longer valid (a `401`, expired or revoked elsewhere), so
    * `isConnected` reflects reality without this connector having asked
    * Google to revoke anything itself.
    */

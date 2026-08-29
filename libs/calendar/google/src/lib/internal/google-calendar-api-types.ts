@@ -1,7 +1,8 @@
 /**
  * Shapes confirmed against Google's own Calendar API v3 reference
  * (developers.google.com/calendar/api/v3/reference/events), covering
- * only the fields `mapGoogleEvent()` actually reads.
+ * only the fields `mapGoogleEvent()`/`mapToGoogleEvent()` actually
+ * read or write.
  */
 
 export interface GoogleEventDateTime {
@@ -9,6 +10,14 @@ export interface GoogleEventDateTime {
   date?: string;
   /** Present for a timed event, RFC3339. */
   dateTime?: string;
+  /**
+   * IANA zone name, e.g. `"America/Bogota"`. Display-only per Google's
+   * own reference, doesn't change which instant `dateTime` represents
+   * (that's already fully determined by `dateTime`'s own offset/`Z`).
+   * Only ever written by `mapToGoogleEvent()`, `mapGoogleEvent()` never
+   * reads it back.
+   */
+  timeZone?: string;
 }
 
 export interface GoogleCalendarEvent {

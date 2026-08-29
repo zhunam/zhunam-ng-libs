@@ -304,6 +304,21 @@ styling setups, without friction.
   ```
 - The core (`src/`) must be installable and buildable on the minimum
   floor without any optional entry point.
+- Un entry point secundario NO puede importar código "privado" (no
+  exportado) del núcleo ni de otro entry point: ng-packagr compila
+  cada entry point con su propio programa de TypeScript acotado a su
+  propio árbol. Un import relativo hacia otro entry point falla
+  (`Cannot find module`); un alias de path en tsconfig.base.json hacia
+  un archivo interno arbitrario también falla (`Entry point ... doesn't
+  exist`, ng-packagr trata cualquier import con forma de subpath como
+  si tuviera que ser un entry point declarado). Cualquier código que un
+  entry point secundario necesite del núcleo debe re-exportarse desde
+  el barrel público del núcleo (`src/index.ts`, una decisión real de
+  API pública, no gratis) o duplicarse localmente en ese entry point.
+  Planificar qué helpers internos va a necesitar un futuro entry point
+  ANTES de escribirlos, no después. Confirmado en el conector /google
+  de calendar, con dos intentos reales fallidos documentados en
+  CLAUDE.md de esa librería.
 
 ### Inputs/Outputs: signal-based API
 

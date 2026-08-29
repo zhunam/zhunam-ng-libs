@@ -60,6 +60,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   exported from `@zhunam/calendar/google`) on a non-2xx response; a
   `401` specifically also clears `isConnected()`, since it means the
   token expired or was revoked.
+- `GoogleCalendarConnector.createEvent(event)`: creates a new event on
+  the user's primary Google Calendar, validated (same rules as
+  `CalendarStore`) before any fetch. `event.data` is never sent to
+  Google (no equivalent field in its `Event` schema) but is preserved
+  on the returned `CalendarEvent`.
+- `GoogleCalendarConnector.updateEvent(id, changes)`: updates an
+  existing event via a real `PATCH` request, sending only the changed
+  fields. If `changes` touches `start`, `end`, or `recurrence`, fetches
+  the event's current state first and validates the merged result
+  (same "validate the final result, not `changes` in isolation"
+  criterion `CalendarStore.updateEvent()` already uses) before sending
+  anything; an invalid merge never reaches Google.
+- `GoogleCalendarConnector.deleteEvent(id)`: deletes an event via a real
+  `DELETE` request. A `410` (Google's own confirmed response for an
+  event that's already deleted) resolves as a successful no-op, not an
+  error, matching Google's own guidance that no further action is
+  needed; a `404` (an id that never existed) is still a real error.
+- Both `createEvent()`/`updateEvent()` throw `GoogleCalendarNotConnectedError`
+  if called before `connect()` succeeds, or `GoogleApiError` on a
+  non-2xx response (`401` also clears `isConnected()`), same as
+  `listEvents()`. `deleteEvent()` follows the same connection/error
+  rules, `410` aside.
 
 ### Fixed
 - `GoogleCalendarConnector.listEvents()` now follows `nextPageToken`
