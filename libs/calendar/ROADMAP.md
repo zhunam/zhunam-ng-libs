@@ -138,11 +138,19 @@ export class CalendarStore {
 - [x] `NgModule` wrapper del componente de `/calendar-ui`
       (`CalendarBoardModule`), desde esta tarea, no retroactivo (a
       diferencia de data-grid/form-builder).
-- [ ] Tests de seguridad dedicados: token de OAuth nunca legible como
-      propiedad pasiva, scopes mínimos, cualquier otro hallazgo de
-      seguridad real que surja durante la implementación del conector
-      `/google` (mismo criterio que la suite end-to-end de
-      pdf-generator).
+- [x] Tests de seguridad dedicados: `google-connector-security.spec.ts`,
+      suite end-to-end (no unit tests aislados, esos ya existían)
+      contra la superficie pública completa de `GoogleCalendarConnector`
+      ya con todo el CRUD agregado. Token nunca reflectable desde la
+      instancia completa (`JSON.stringify`/`Object.keys`/
+      `Reflect.ownKeys`, escaneando TODAS las claves por valor, no un
+      nombre de campo asumido), `disconnect()` deja los 4 métodos
+      públicos rechazando igual que "nunca conectado" sin llamar a
+      `fetch`, scope confirmado exacto end-to-end, y un test explícito
+      documentando que el Client ID SÍ puede aparecer en
+      `JSON.stringify`/logs (distinción deliberada frente al token, no
+      un descuido de la regla anterior). Mismo criterio que la suite
+      end-to-end de pdf-generator.
 - [ ] README.md (instalación, ejemplo <10 líneas por entry point,
       tabla de API, compatibilidad Angular, licencia, siguiendo el
       mismo patrón ya confirmado en data-grid/form-builder/auth).
