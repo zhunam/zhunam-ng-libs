@@ -82,6 +82,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   non-2xx response (`401` also clears `isConnected()`), same as
   `listEvents()`. `deleteEvent()` follows the same connection/error
   rules, `410` aside.
+- `@zhunam/calendar/calendar-ui`, new secondary entry point:
+  `CalendarBoard` (`events`, `viewMode`, `viewDate` as `model()`,
+  `eventClick`, `eventReschedule`, `visibleRangeChange`), a month/week/
+  day calendar board built on `angular-calendar` internally, never
+  exposed in this component's own public API. A recurring event
+  (`recurrence` set) renders as non-draggable and non-resizable.
+  `visibleRangeChange` emits an exclusive `[start, end)` range (the
+  start of the *next* period, not `angular-calendar`'s own inclusive
+  `endOf*()` boundary) whenever `viewDate()`/`viewMode()` changes.
+  `CalendarBoardModule` NgModule wrapper included, same pattern as this
+  workspace's other libraries. Requires `date-fns` (new `dependencies`
+  entry, `angular-calendar`'s own peer requirement for its
+  `DateAdapter`) and, separately, importing `angular-calendar`'s own
+  stylesheet (`angular-calendar/css/angular-calendar.css`) in the
+  consuming app; this component only styles its own toolbar.
 
 ### Fixed
 - `GoogleCalendarConnector.listEvents()` now follows `nextPageToken`

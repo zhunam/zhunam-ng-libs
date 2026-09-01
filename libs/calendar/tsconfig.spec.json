@@ -4,5 +4,12 @@
     "outDir": "../../dist/out-tsc",
     "types": ["vitest/globals"]
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "google/src/**/*.ts", "google/src/**/*.d.ts"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.d.ts",
+    "google/src/**/*.ts",
+    "google/src/**/*.d.ts",
+    "calendar-ui/src/**/*.ts",
+    "calendar-ui/src/**/*.d.ts"
+  ]
 }

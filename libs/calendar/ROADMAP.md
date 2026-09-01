@@ -125,12 +125,19 @@ export class CalendarStore {
       `syncToken` entra en v1 o se documenta como limitación conocida
       para v1.1 (decisión a tomar con evidencia real de la API, no
       ahora).
-- [ ] `/calendar-ui`, componente de vistas mes/semana/día: envuelve
-      `angular-calendar` internamente, nunca expone sus tipos en la
-      API pública (mismo principio que pdfmake oculto en
-      pdf-generator).
-- [ ] `NgModule` wrapper del componente de `/calendar-ui`, desde esta
-      tarea, no retroactivo (a diferencia de data-grid/form-builder).
+- [x] `/calendar-ui`, componente de vistas mes/semana/día: `CalendarBoard`,
+      envuelve `angular-calendar` internamente, ningún tipo suyo
+      expuesto en la API pública (mismo principio que pdfmake oculto en
+      pdf-generator). Ver CLAUDE.md para el detalle completo: forma
+      real de `CalendarEvent`/`resizable` (objeto por borde, no
+      booleano), `provideCalendar()` a nivel de componente confirmado
+      con render real, `date-fns` como dependency nueva (pedido
+      permiso antes de instalar), y por qué `visibleRangeChange` no usa
+      `endOf*()` de `angular-calendar` (fin inclusivo real, distinto
+      del `[start, end)` exclusivo del resto de la librería).
+- [x] `NgModule` wrapper del componente de `/calendar-ui`
+      (`CalendarBoardModule`), desde esta tarea, no retroactivo (a
+      diferencia de data-grid/form-builder).
 - [ ] Tests de seguridad dedicados: token de OAuth nunca legible como
       propiedad pasiva, scopes mínimos, cualquier otro hallazgo de
       seguridad real que surja durante la implementación del conector

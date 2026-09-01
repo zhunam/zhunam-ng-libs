@@ -12,6 +12,16 @@ export default [
         'error',
         {
           ignoredFiles: ['{projectRoot}/eslint.config.{js,cjs,mjs,ts,cts,mts}'],
+          // date-fns is never imported directly by this library's own
+          // source, only required transitively: angular-calendar's own
+          // `angular-calendar/date-adapters/date-fns` subpath imports it
+          // internally to build the DateAdapter. Still a genuine runtime
+          // dependency a consumer installing @zhunam/calendar needs
+          // present (confirmed: angular-calendar declares date-fns as an
+          // optional peerDependency, not bundled), just never something
+          // this rule can see as "used" by grepping our own imports.
+          // Permanent, not a placeholder waiting for real usage.
+          ignoredDependencies: ['date-fns'],
         },
       ],
     },

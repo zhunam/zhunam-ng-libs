@@ -273,6 +273,93 @@ este workspace corre sin `zone.js` instalado (confirmado, no está en
 para el caso sin zona real, así que `ngZone.run()` termina siendo una
 llamada directa sin efecto extra, nunca algo que pueda romper algo.
 
+## `/calendar-ui`: `CalendarBoard` sobre `angular-calendar` (confirmado empíricamente)
+
+Hallazgos confirmados contra los tipos reales instalados
+(`angular-calendar` 0.32.2, `calendar-utils` 0.12.x) y, para el punto
+más importante, contra un build+render real, no solo lectura de tipos:
+
+- **`date-fns` no estaba instalado y hacía falta pedir permiso antes de
+  instalarlo**: `angular-calendar` declara `date-fns`/`moment` como
+  `peerDependencies` opcionales (necesita al menos uno para su
+  `DateAdapter`), ninguno estaba en este workspace. Se detuvo la tarea
+  y se preguntó antes de instalar, per la regla de AGENTS.md. Se eligió
+  `date-fns` (^4.4.0) sobre `moment` (moderno, tree-shakeable, es lo
+  que la propia librería recomienda por sobre moment). Mismo patrón que
+  `angular-calendar`/`rrule`: `dependencies` real en
+  `libs/calendar/package.json` + `allowedNonPeerDependencies` en
+  `ng-package.json`. `date-fns` nunca se importa directo desde el
+  código propio (solo `angular-calendar/date-adapters/date-fns` lo usa
+  internamente), así que también hizo falta un
+  `ignoredDependencies: ['date-fns']` permanente (no un placeholder) en
+  `@nx/dependency-checks`.
+- El `CalendarEvent<MetaType>` real (de `calendar-utils`, no de
+  `angular-calendar` directamente) SÍ tiene `meta?: MetaType`, genérico,
+  confirmado. `mapToAngularCalendarEvent()` guarda ahí el
+  `CalendarEvent<T>` propio completo.
+- **`resizable` NO es un booleano**, a diferencia de lo que este
+  prompt asumía (`draggable/resizable = !recurrence`): el tipo real es
+  `{ beforeStart?: boolean; afterEnd?: boolean }`, un flag por borde.
+  Un evento recurrente recibe `resizable: undefined` (ambos bordes
+  deshabilitados), uno normal `{ beforeStart: true, afterEnd: true }`.
+  `draggable` sí es un booleano plano, eso coincidía.
+- **Que el motor realmente respeta `draggable`/`resizable` (no solo lo
+  documenta) se confirmó leyendo el bundle compilado real**
+  (`fesm2022/angular-calendar.mjs`), no simulando un drag: el template
+  real usa `[dragAxis]="{ x: event.draggable, y: event.draggable }"`
+  (deshabilita el movimiento en ambos ejes cuando es `false`) y
+  `*ngIf`-equivalentes sobre `event.resizable?.beforeStart`/`afterEnd`
+  para cada handle de resize por separado.
+- Nombres reales confirmados: `CalendarPreviousViewDirective`/
+  `CalendarNextViewDirective`/`CalendarTodayDirective` con `[view]`,
+  `[(viewDate)]` (input `viewDate` + output `viewDateChange`).
+  `CalendarMonthViewComponent`/`WeekViewComponent`/`DayViewComponent`
+  usan el MISMO nombre de output en las tres vistas:
+  `eventClicked: {event, sourceEvent}` y
+  `eventTimesChanged: CalendarEventTimesChangedEvent` (la de mes trae
+  además un campo `day` extra, estructuralmente compatible). Métodos
+  reales de `DateAdapter`: `startOfMonth`/`startOfWeek`/`startOfDay`,
+  `addMonths`/`addWeeks`/`addDays`, entre otros.
+- **`provideCalendar()` sí funciona declarado en los `providers` de un
+  solo componente standalone**, confirmado con un test real de
+  render (`calendar-board.spec.ts`, `TestBed.createComponent()` sin
+  ningún provider global de la app), no solo con lectura de tipos.
+  Sintaxis real (no la que uno adivinaría): `provideCalendar({
+  provide: DateAdapter, useFactory: adapterFactory })`, confirmado en
+  el propio JSDoc de `@deprecated` de `CalendarCommonModule`.
+- **Diferencia real no anticipada por este prompt**:
+  `DateAdapter.endOfMonth()`/`endOfWeek()`/`endOfDay()` devuelven
+  `23:59:59.999` del último día (fin INCLUSIVO), confirmado corriendo
+  el adapter real, no el límite exclusivo `[start, end)` que el resto
+  de esta librería usa (`CalendarStore`, `timeMin`/`timeMax` de
+  `GoogleCalendarConnector`). `visibleRangeChange` NO usa esos
+  métodos: calcula el `end` como el `start` del período SIGUIENTE
+  (`addMonths(startOfMonth(date), 1)`, etc.), un límite exacto de
+  medianoche, exclusivo de verdad, consistente con el resto de la
+  librería.
+- **CSS de `angular-calendar` no viaja con este componente**: la
+  librería expone su propia hoja de estilos real
+  (`angular-calendar/css/angular-calendar.css`), que el consumidor
+  tiene que importar por su cuenta (en `angular.json` o un stylesheet
+  global). `calendar-board.scss` de esta librería solo estiliza su
+  propio toolbar (`ViewEncapsulation.Emulated` no puede alcanzar el
+  markup interno no encapsulado de `angular-calendar`). Documentar
+  este paso en el README cuando se escriba.
+- **Estrategia de test, honesta sobre sus límites**: no se simula un
+  gesto físico de mouse de drag/resize (misma categoría de limitación
+  ya documentada con el popup de OAuth de Google). Sí se prueba con
+  confianza real: el render real con `provideCalendar()` a nivel de
+  componente, el mapeo de eventos (`draggable`/`resizable` según
+  `recurrence`, `meta`), `visibleRange`/`visibleRangeChange` contra el
+  `DateAdapter` real (nunca mockeado, comparado contra valores
+  calculados con el mismo adapter dentro del propio test para no
+  depender del huso horario de la máquina que corre los tests), y
+  `onEventClicked()`/`onEventTimesChanged()` invocados directo con un
+  payload sintético con la forma real confirmada (el mecanismo
+  "invocable sin simular el gesto físico" que pedía la tarea). Que el
+  motor de verdad dispare esos outputs ante un drag real queda cubierto
+  por la lectura del bundle compilado arriba, no por un test.
+
 ## Independencia
 
 No importa nada de `libs/data-grid`, `libs/form-builder`,

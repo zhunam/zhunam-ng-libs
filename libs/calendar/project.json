@@ -37,7 +37,11 @@
       "executor": "@nx/angular:unit-test",
       "options": {
         "watch": false,
-        "include": ["**/*.spec.ts", "../google/src/**/*.spec.ts"]
+        "include": [
+          "**/*.spec.ts",
+          "../google/src/**/*.spec.ts",
+          "../calendar-ui/src/**/*.spec.ts"
+        ]
       }
     },
     "lint": {

@@ -1,0 +1,59 @@
+:host {
+  // Re-theme any of these from the consumer app — nothing here is brand-specific.
+  --cal-board-text-color: #374151;
+  --cal-board-border-color: #d1d5db;
+  --cal-board-accent-color: #3b82f6;
+  --cal-board-font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  display: block;
+  color: var(--cal-board-text-color);
+  font-family: var(--cal-board-font-family);
+}
+
+// Only this toolbar is this library's own styling. Everything the day
+// cells/event pills/hour grid look like comes from angular-calendar's own
+// stylesheet (`angular-calendar/css/angular-calendar.css`), which the
+// consumer app imports itself, this component can't inject a third-party
+// package's global (non-view-encapsulated) CSS into the page on its own.
+.calendar-board__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-block-end: 0.75rem;
+}
+
+.calendar-board__nav-button {
+  border: 1px solid var(--cal-board-border-color);
+  background: none;
+  border-radius: 0.25rem;
+  padding: 0.25rem 0.6rem;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
+.calendar-board__title {
+  flex: 1;
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.calendar-board__view-switch {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.calendar-board__view-switch button {
+  border: 1px solid var(--cal-board-border-color);
+  background: none;
+  border-radius: 0.25rem;
+  padding: 0.25rem 0.6rem;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
+.calendar-board__view-switch-button--active {
+  border-color: var(--cal-board-accent-color);
+  color: var(--cal-board-accent-color);
+}

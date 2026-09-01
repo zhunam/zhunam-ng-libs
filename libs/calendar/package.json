@@ -7,6 +7,7 @@
   },
   "dependencies": {
     "angular-calendar": "^0.32.2",
+    "date-fns": "^4.4.0",
     "rrule": "^2.7.1"
   },
   "sideEffects": false
