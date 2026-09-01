@@ -151,9 +151,17 @@ export class CalendarStore {
       `JSON.stringify`/logs (distinción deliberada frente al token, no
       un descuido de la regla anterior). Mismo criterio que la suite
       end-to-end de pdf-generator.
-- [ ] README.md (instalación, ejemplo <10 líneas por entry point,
-      tabla de API, compatibilidad Angular, licencia, siguiendo el
-      mismo patrón ya confirmado en data-grid/form-builder/auth).
+- [x] README.md: instalación, ejemplo <10 líneas por entry point
+      (verificado compilando de verdad contra `dist/libs/calendar`, no
+      de memoria), tabla de API completa (`CalendarEvent`,
+      `CalendarStore`, `GoogleCalendarConnector`, los 3 errores,
+      `CalendarBoard`), compatibilidad, límites reales de
+      comportamiento (1000 ocurrencias, 1000 eventos por página de
+      `listEvents`), licencia. Patrón mixto entre auth (múltiples entry
+      points, tabla "Entry points") y pdf-generator (dependencias
+      internas bundleadas, no peer, ninguna elección del consumidor),
+      calendar no encaja del todo en ninguno de los dos moldes
+      individualmente.
 - [ ] Demo consuming the library
       → apps/portfolio-showcase/src/app/pages/calendar-demo/
       Mismo shell que las demás demos, entrada real en el sidebar
