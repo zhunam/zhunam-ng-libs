@@ -162,10 +162,16 @@ export class CalendarStore {
       internas bundleadas, no peer, ninguna elección del consumidor),
       calendar no encaja del todo en ninguno de los dos moldes
       individualmente.
-- [ ] Demo consuming the library
+- [x] Demo consuming the library
       → apps/portfolio-showcase/src/app/pages/calendar-demo/
       Mismo shell que las demás demos, entrada real en el sidebar
       (nunca "Coming Soon" residual), per el ítem 7 de AGENTS.md.
+      Requirió agregar `node_modules/angular-calendar/css/
+      angular-calendar.css` al array `styles` de
+      `apps/portfolio-showcase/project.json`: sin eso el grid
+      renderizaba visualmente roto (confirmado con screenshot real),
+      exactamente la advertencia ya documentada en CLAUDE.md sobre que
+      ese CSS no viaja con `CalendarBoard`.
 - [ ] Verificación manual con Google Cloud real: probar connect()/
       disconnect()/CRUD del conector /google contra un Client ID
       real registrado en Google Cloud Console, con interacción real

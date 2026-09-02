@@ -36,6 +36,13 @@ export const libraries: LibraryEntry[] = [
     route: '/pdf-generator',
     status: 'available',
   },
+  {
+    name: 'Calendar',
+    importPath: '@zhunam/calendar',
+    description: 'Signal-based event store with real RRULE recurrence, an optional Google Calendar connector, and a month/week/day UI component.',
+    route: '/calendar',
+    status: 'available',
+  },
 ];
 
 /**
@@ -57,3 +64,4 @@ export const dataGridLibrary = requireLibrary('@zhunam/data-grid');
 export const formBuilderLibrary = requireLibrary('@zhunam/form-builder');
 export const authLibrary = requireLibrary('@zhunam/auth');
 export const pdfGeneratorLibrary = requireLibrary('@zhunam/pdf-generator');
+export const calendarLibrary = requireLibrary('@zhunam/calendar');

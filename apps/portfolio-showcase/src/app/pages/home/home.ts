@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import {
   authLibrary,
+  calendarLibrary,
   dataGridLibrary,
   formBuilderLibrary,
   pdfGeneratorLibrary,
@@ -19,4 +20,5 @@ export class Home {
   protected readonly formBuilderLibrary = formBuilderLibrary;
   protected readonly authLibrary = authLibrary;
   protected readonly pdfGeneratorLibrary = pdfGeneratorLibrary;
+  protected readonly calendarLibrary = calendarLibrary;
 }
