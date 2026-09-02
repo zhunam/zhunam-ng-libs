@@ -11,7 +11,11 @@ import {
   DateAdapter,
   provideCalendar,
 } from 'angular-calendar';
-import type { CalendarEvent as NgCalendarEvent, CalendarEventTimesChangedEvent } from 'angular-calendar';
+import type {
+  CalendarEvent as NgCalendarEvent,
+  CalendarEventTimesChangedEvent,
+  CalendarMonthViewDay,
+} from 'angular-calendar';
 import { adapterFactory } from 'angular-calendar/date-adapters/date-fns';
 import { mapToAngularCalendarEvent } from './internal/map-to-angular-calendar-event';
 
@@ -195,5 +199,16 @@ export class CalendarBoard<T = unknown> {
       start: change.newStart,
       end: change.newEnd ?? original.end,
     });
+  }
+
+  /**
+   * Jumps straight to day view for whichever day was clicked, empty or
+   * not: seeing the full (empty or populated) schedule for that specific
+   * day is a valid, simple result either way, no need to special-case an
+   * empty day.
+   */
+  protected onDayClicked({ day }: { day: CalendarMonthViewDay }): void {
+    this.viewDate.set(day.date);
+    this.viewMode.set('day');
   }
 }

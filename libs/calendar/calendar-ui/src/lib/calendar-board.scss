@@ -57,3 +57,45 @@
   border-color: var(--cal-board-accent-color);
   color: var(--cal-board-accent-color);
 }
+
+// Month view renders one colored dot per event under each day
+// (`.cal-event`, angular-calendar's own CSS), colored via
+// `event.color?.primary`. CalendarEvent has no color/category concept in
+// v1, so every dot ends up the same default blue, no information of its
+// own. Background is neutralized instead of `display: none`-ing the
+// element: angular-calendar also uses this exact element
+// (`pointer-events: all !important` in its own CSS) as the drag handle
+// for month-view rescheduling, so removing it from layout/hit-testing
+// would silently break dragging an event to a different day.
+:host ::ng-deep .cal-month-view .cal-cell .cal-event {
+  background-color: transparent !important;
+}
+
+// The day badge (`.cal-day-badge`, angular-calendar's own CSS) normally
+// shows how many events a day has. Turned into a plain "this day has at
+// least one event" dot instead, no count anywhere: reshaped via CSS
+// rather than a custom `cellTemplate` (a real input on
+// `CalendarMonthViewComponent`, confirmed against the installed
+// package), because that template input replaces the cell's ENTIRE
+// default content, not just the badge, meaning every individual event
+// element inside it (`.cal-event`, above) would need to be hand-rebuilt
+// too, including its drag/drop/click directives and their exact
+// bindings, an unrelated and much riskier rewrite of angular-calendar's
+// own internal cell markup for what is otherwise a purely cosmetic
+// change. `font-size: 0` collapses the digit's own contribution to the
+// badge's width (its width comes from padding plus the digit's glyph
+// width, not a fixed value, confirmed in angular-calendar's own CSS), a
+// fixed `width`/`height` then makes every day with events render
+// identically regardless of its real count, whether that's 1 or 100.
+// Recolored to the same blue previously used for the (neutralized)
+// per-event dot above, one consistent "something's here" color instead
+// of introducing a second one alongside it.
+:host ::ng-deep .cal-month-view .cal-day-badge {
+  width: 8px;
+  height: 8px;
+  min-width: 0;
+  padding: 0;
+  font-size: 0;
+  border-radius: 50%;
+  background-color: #1e90ff;
+}

@@ -345,6 +345,80 @@ más importante, contra un build+render real, no solo lectura de tipos:
   propio toolbar (`ViewEncapsulation.Emulated` no puede alcanzar el
   markup interno no encapsulado de `angular-calendar`). Documentar
   este paso en el README cuando se escriba.
+- **El punto de color bajo cada día en vista mes (`.cal-event` dentro de
+  `.cal-cell`, confirmado leyendo el template real de
+  `CalendarMonthCellComponent` en `fesm2022/angular-calendar.mjs`) es un
+  indicador por-evento coloreado vía `[ngStyle]="{ backgroundColor:
+  event.color?.primary }"`**, no un elemento decorativo fijo.
+  `mapToAngularCalendarEvent()` nunca setea `color` (no existe ese campo
+  en `CalendarEvent` v1), así que el navegador aplica el
+  `background-color: #1e90ff` por defecto del propio CSS de
+  angular-calendar a todos los eventos por igual: el punto no es un
+  indicador roto, es un indicador real de color sin ninguna fuente de
+  color que lo alimente. Sin ningún concepto de categoría/color en el
+  modelo v1, es puro ruido visual sin información propia. Decisión: neutralizar el color en vez
+  de agregar un campo `color` a `CalendarEvent` solo para esto (fuera de
+  alcance de v1) o inventarle un significado no pedido (ej. color según
+  recurrencia). `calendar-board.scss` lo neutraliza con
+  `:host ::ng-deep .cal-month-view .cal-cell .cal-event { background-color:
+  transparent !important; }`, **`background-color`, no `display: none`**:
+  el mismo elemento es también, confirmado en el mismo template, el
+  drag handle real de reordenamiento en vista mes
+  (`.cal-month-view .cal-cell .cal-event { pointer-events: all !important;
+  }` en el CSS propio de angular-calendar, y `mwlDraggable` en el
+  template). `display: none` lo hubiera sacado del árbol de hit-testing
+  y roto silenciosamente el drag de `eventReschedule` en vista mes.
+  `::ng-deep` es la única vía real acá (no un atajo evitable): el
+  `.cal-event` de vista mes vive dentro del template de un componente
+  hijo de terceros (`mwl-calendar-month-view`), fuera del alcance de
+  `ViewEncapsulation.Emulated` de `CalendarBoard`, mismo límite ya
+  documentado arriba para el resto del CSS de angular-calendar. Alcance
+  deliberadamente acotado a `.cal-month-view .cal-cell`: el mismo nombre
+  de clase `.cal-event` también existe en `cal-open-day-events` (el
+  popup al expandir un día) y en `mwl-calendar-week-view-event` (donde
+  SÍ es el bloque real con el título del evento, no un punto), ninguno
+  de los dos tocado por este selector.
+- **Click en un día en vista mes: navega directo a vista día, no abre
+  un popup dentro de la misma vista mes.** Se evaluó primero cablear
+  `activeDayIsOpen`/`activeDay`/`dayClicked` de
+  `CalendarMonthViewComponent` (mecanismo real, confirmado contra el
+  paquete instalado, que renderiza `<mwl-calendar-open-day-events>`
+  automáticamente dentro de su propio template, sin que `CalendarBoard`
+  tenga que agregar ese elemento) y se implementó una versión completa
+  de esa idea. Revertida en una tarea posterior: navegar a vista día es
+  más simple, no introduce estado nuevo en `CalendarBoard`
+  (`activeDay`/`activeDayIsOpen` como signals propios), y evita
+  cualquier duda sobre si ese estado interactúa con el drag-and-drop ya
+  existente. `onDayClicked()` solo hace
+  `viewDate.set(day.date); viewMode.set('day')`, para cualquier día,
+  tenga o no eventos: ver el día completo (vacío o no) es un resultado
+  válido en sí mismo, no hace falta condicionarlo a `day.events.length`.
+- **El badge numérico de cada día (`.cal-day-badge`) ya no muestra
+  cantidad, solo presencia.** Antes mostraba `day.badgeTotal` (el
+  conteo real de eventos ese día); ahora es un punto sin dígito, mismo
+  tamaño sin importar si el día tiene 1 evento o 100. Reshapeado vía
+  CSS en `calendar-board.scss`
+  (`:host ::ng-deep .cal-month-view .cal-day-badge`), no vía
+  `cellTemplate` (input real de `CalendarMonthViewComponent`,
+  confirmado contra el paquete instalado, `TemplateRef<any>`):
+  `cellTemplate` reemplaza el contenido COMPLETO de la celda del día,
+  no solo el badge, así que usarlo hubiera obligado a reconstruir a
+  mano también los elementos de evento individuales de esa celda
+  (`.cal-event`, con todas sus directivas de drag/drop/click), una
+  reimplementación de markup interno de angular-calendar mucho más
+  grande y arriesgada que lo que el cambio realmente pedía. `font-size:
+  0` colapsa el ancho que el propio dígito le agrega al badge (su ancho
+  sale de `padding` más el glyph del dígito, no de un valor fijo,
+  confirmado en el CSS propio de angular-calendar), y un `width`/
+  `height` fijo hace que cualquier día con eventos se vea idéntico sin
+  importar la cantidad real. El texto del dígito sigue existiendo en el
+  DOM (`.cal-day-badge`'s `textContent`, CSS no puede borrar un nodo de
+  texto), solo queda visualmente colapsado a 0px; el test en
+  `calendar-board.spec.ts` compara `getComputedStyle` (tamaño, color,
+  `border-radius`) entre un día con 1 evento y uno con 3, no
+  `textContent`, por esta misma razón. Recoloreado al mismo azul que ya
+  se usaba para el punto por-evento neutralizado arriba, un solo
+  lenguaje visual de "hay algo acá" en vez de dos.
 - **Estrategia de test, honesta sobre sus límites**: no se simula un
   gesto físico de mouse de drag/resize (misma categoría de limitación
   ya documentada con el popup de OAuth de Google). Sí se prueba con

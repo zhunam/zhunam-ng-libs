@@ -39,6 +39,9 @@
 
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
       <section class="overflow-hidden rounded-box border border-slate-200 p-4">
+        @if (viewMode() === 'month') {
+          <p class="mb-2 text-sm font-semibold text-base-content">Click a day to view its full schedule</p>
+        }
         <lib-calendar-board
           [events]="visibleEvents()"
           [(viewMode)]="viewMode"
@@ -70,10 +73,81 @@
               }
             </div>
             <span class="font-mono text-xs text-slate-400">id: {{ event.id }}</span>
+            <button
+              type="button"
+              (click)="onDeleteSelected()"
+              class="btn btn-ghost btn-xs mt-1 w-fit text-slate-500 hover:text-red-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            >
+              Delete
+            </button>
           </div>
         } @else {
           <p class="text-sm text-slate-500">Click an event to see it here.</p>
         }
+      </section>
+    </div>
+
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <section class="rounded-box border border-slate-200 p-6">
+        <h2 class="mb-1 text-sm font-semibold text-base-content">Add event</h2>
+        <p class="mb-3 text-xs text-slate-500">
+          Calls <span class="font-mono text-xs">calendarStore.addEvent()</span> directly. An end
+          before start is rejected with the store's real validation error, shown below.
+        </p>
+        <form (submit)="onAddEvent(); $event.preventDefault()" class="flex flex-col gap-3">
+          <div class="flex flex-col gap-1">
+            <label for="newEventTitle" class="text-sm font-semibold text-base-content">Title</label>
+            <input
+              id="newEventTitle"
+              type="text"
+              required
+              [value]="newEventTitle()"
+              (input)="newEventTitle.set(titleInput.value)"
+              #titleInput
+              class="w-full rounded-md border border-slate-200 p-2 text-sm text-base-content focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label for="newEventStart" class="text-sm font-semibold text-base-content">Start</label>
+            <input
+              id="newEventStart"
+              type="datetime-local"
+              required
+              [value]="newEventStart()"
+              (input)="newEventStart.set(startInput.value)"
+              #startInput
+              class="w-full rounded-md border border-slate-200 p-2 text-sm text-base-content focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label for="newEventEnd" class="text-sm font-semibold text-base-content">End</label>
+            <input
+              id="newEventEnd"
+              type="datetime-local"
+              required
+              [value]="newEventEnd()"
+              (input)="newEventEnd.set(endInput.value)"
+              #endInput
+              class="w-full rounded-md border border-slate-200 p-2 text-sm text-base-content focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            />
+          </div>
+          @if (addEventError(); as error) {
+            <p class="text-xs text-red-600">{{ error }}</p>
+          }
+          <button
+            type="submit"
+            class="btn btn-outline btn-xs w-fit transition-transform duration-200 ease-out hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          >
+            Add event
+          </button>
+        </form>
+      </section>
+
+      <section class="rounded-box border border-slate-200 p-6">
+        <h2 class="mb-3 text-sm font-semibold text-base-content">Events (JSON)</h2>
+        <pre
+          class="overflow-x-auto rounded-md bg-base-content p-4 text-xs leading-relaxed text-slate-100"
+        ><code class="font-mono" translate="no">{{ eventsJson() }}</code></pre>
       </section>
     </div>
 

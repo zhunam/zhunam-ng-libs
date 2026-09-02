@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { CalendarStore, type CalendarEvent } from '@zhunam/calendar';
+import { CalendarStore, CalendarValidationError, type CalendarEvent } from '@zhunam/calendar';
 import {
   CalendarBoard,
   type CalendarBoardReschedule,
@@ -54,6 +54,13 @@ export class CalendarDemo {
     this.calendarStore.eventsInRange(this.visibleRange().start, this.visibleRange().end)(),
   );
 
+  protected readonly eventsJson = computed(() => JSON.stringify(this.calendarStore.events(), null, 2));
+
+  protected readonly newEventTitle = signal('');
+  protected readonly newEventStart = signal('');
+  protected readonly newEventEnd = signal('');
+  protected readonly addEventError = signal<string | null>(null);
+
   protected readonly coreUsageSnippet = `import { CalendarStore, type CalendarEvent } from '@zhunam/calendar';
 
 const store = new CalendarStore();
@@ -100,5 +107,34 @@ export class AgendaPage {
 
   protected onVisibleRangeChange(range: CalendarBoardVisibleRange): void {
     this.visibleRange.set(range);
+  }
+
+  protected onAddEvent(): void {
+    try {
+      this.calendarStore.addEvent({
+        id: crypto.randomUUID(),
+        title: this.newEventTitle(),
+        start: new Date(this.newEventStart()),
+        end: new Date(this.newEventEnd()),
+      });
+      this.addEventError.set(null);
+      this.newEventTitle.set('');
+      this.newEventStart.set('');
+      this.newEventEnd.set('');
+    } catch (error) {
+      this.addEventError.set((error as CalendarValidationError).message);
+    }
+  }
+
+  protected onDeleteSelected(): void {
+    const event = this.selectedEvent();
+    if (!event) {
+      return;
+    }
+    // Occurrences of a recurring event share their source event's id, so
+    // deleting one occurrence deletes the whole series, there's no
+    // per-occurrence deletion in v1.
+    this.calendarStore.deleteEvent(event.id);
+    this.selectedEvent.set(null);
   }
 }

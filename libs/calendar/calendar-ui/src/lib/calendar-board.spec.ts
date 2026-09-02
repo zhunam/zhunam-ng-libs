@@ -162,6 +162,120 @@ describe('CalendarBoard', () => {
     });
   });
 
+  describe('onDayClicked() (month view day cell click)', () => {
+    // Jumps straight to day view for whichever day was clicked. No
+    // "open day events" list (that was a previous iteration of this
+    // task, reverted): a click just navigates, same result whether the
+    // day has events or not.
+    function getDayHandler(fixture: ComponentFixture<CalendarBoard>) {
+      return fixture.componentInstance as unknown as {
+        onDayClicked(payload: { day: { date: Date; events: unknown[] }; sourceEvent: MouseEvent }): void;
+      };
+    }
+
+    it('sets viewDate to the clicked day and switches to day view, for a day with events', () => {
+      const fixture = createFixture();
+      fixture.detectChanges();
+      const clickedDate = new Date('2026-09-15T00:00:00Z');
+
+      getDayHandler(fixture).onDayClicked({
+        day: { date: clickedDate, events: [{}] },
+        sourceEvent: new MouseEvent('click'),
+      });
+
+      expect(fixture.componentInstance.viewDate()).toBe(clickedDate);
+      expect(fixture.componentInstance.viewMode()).toBe('day');
+    });
+
+    it('does the same for a day with no events: seeing its empty schedule is a valid result too', () => {
+      const fixture = createFixture();
+      fixture.detectChanges();
+      const emptyDate = new Date('2026-09-17T00:00:00Z');
+
+      getDayHandler(fixture).onDayClicked({
+        day: { date: emptyDate, events: [] },
+        sourceEvent: new MouseEvent('click'),
+      });
+
+      expect(fixture.componentInstance.viewDate()).toBe(emptyDate);
+      expect(fixture.componentInstance.viewMode()).toBe('day');
+    });
+
+    it('does not interfere with dragging/resizing a simple event (regression)', () => {
+      // Same assertion as the pre-existing onEventTimesChanged() tests
+      // below, but with a day already clicked first, to prove navigating
+      // via a day click doesn't affect the pre-existing reschedule path.
+      const fixture = createFixture();
+      const original = buildEvent('1', '2026-09-01T09:00:00Z', '2026-09-01T10:00:00Z');
+      const emitted: CalendarBoardReschedule[] = [];
+      fixture.componentInstance.eventReschedule.subscribe((change) => emitted.push(change));
+      getDayHandler(fixture).onDayClicked({
+        day: { date: new Date('2026-09-15T00:00:00Z'), events: [{}] },
+        sourceEvent: new MouseEvent('click'),
+      });
+
+      (
+        fixture.componentInstance as unknown as {
+          onEventTimesChanged(change: { type: string; event: { meta: CalendarEvent }; newStart: Date; newEnd?: Date }): void;
+        }
+      ).onEventTimesChanged({
+        type: 'drag',
+        event: { meta: original },
+        newStart: new Date('2026-09-02T09:00:00Z'),
+        newEnd: new Date('2026-09-02T11:00:00Z'),
+      });
+
+      expect(emitted).toEqual([
+        { id: '1', start: new Date('2026-09-02T09:00:00Z'), end: new Date('2026-09-02T11:00:00Z') },
+      ]);
+    });
+  });
+
+  describe('month view "has events" indicator (no count)', () => {
+    function inMonthDayCell(fixture: ComponentFixture<CalendarBoard>, dayNumber: number): HTMLElement {
+      const root = fixture.nativeElement as HTMLElement;
+      const cells = Array.from(root.querySelectorAll<HTMLElement>('.cal-cell.cal-in-month'));
+      const match = cells.find((cell) => cell.querySelector('.cal-day-number')?.textContent?.trim() === String(dayNumber));
+      if (!match) {
+        throw new Error(`No in-month cell found for day ${dayNumber} in the rendered fixture.`);
+      }
+      return match;
+    }
+
+    it('renders the same-sized, count-less indicator for a day with 1 event and a day with 3, and none for a day with 0', () => {
+      const events = [
+        buildEvent('1', '2026-09-05T09:00:00Z', '2026-09-05T10:00:00Z'),
+        buildEvent('2', '2026-09-10T09:00:00Z', '2026-09-10T10:00:00Z'),
+        buildEvent('3', '2026-09-10T11:00:00Z', '2026-09-10T12:00:00Z'),
+        buildEvent('4', '2026-09-10T13:00:00Z', '2026-09-10T14:00:00Z'),
+      ];
+      const fixture = createFixture(events);
+      fixture.componentRef.setInput('viewDate', new Date('2026-09-15T00:00:00Z'));
+      fixture.detectChanges();
+
+      const oneEventBadge = inMonthDayCell(fixture, 5).querySelector<HTMLElement>('.cal-day-badge');
+      const threeEventBadge = inMonthDayCell(fixture, 10).querySelector<HTMLElement>('.cal-day-badge');
+      const noEventBadge = inMonthDayCell(fixture, 6).querySelector<HTMLElement>('.cal-day-badge');
+
+      expect(oneEventBadge).not.toBeNull();
+      expect(threeEventBadge).not.toBeNull();
+      expect(noEventBadge).toBeNull();
+
+      // Real digit text is still present in the DOM (there's no
+      // `cellTemplate` override to omit it, see calendar-board.scss for
+      // why), but visually collapsed to a fixed-size, count-less dot:
+      // this is what the two non-empty days must render identically.
+      const oneStyle = getComputedStyle(oneEventBadge as HTMLElement);
+      const threeStyle = getComputedStyle(threeEventBadge as HTMLElement);
+      expect(oneStyle.fontSize).toBe('0px');
+      expect(threeStyle.fontSize).toBe('0px');
+      expect(oneStyle.width).toBe(threeStyle.width);
+      expect(oneStyle.height).toBe(threeStyle.height);
+      expect(oneStyle.backgroundColor).toBe(threeStyle.backgroundColor);
+      expect(oneStyle.borderRadius).toBe(threeStyle.borderRadius);
+    });
+  });
+
   describe('onEventTimesChanged()', () => {
     function getHandler(fixture: ComponentFixture<CalendarBoard>) {
       return fixture.componentInstance as unknown as {

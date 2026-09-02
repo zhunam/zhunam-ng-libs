@@ -26,6 +26,7 @@
       <mwl-calendar-month-view
         [viewDate]="viewDate()"
         [events]="angularCalendarEvents()"
+        (dayClicked)="onDayClicked($event)"
         (eventClicked)="onEventClicked($event)"
         (eventTimesChanged)="onEventTimesChanged($event)"
       />

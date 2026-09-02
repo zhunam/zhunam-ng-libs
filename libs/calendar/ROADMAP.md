@@ -135,6 +135,16 @@ export class CalendarStore {
       permiso antes de instalar), y por qué `visibleRangeChange` no usa
       `endOf*()` de `angular-calendar` (fin inclusivo real, distinto
       del `[start, end)` exclusivo del resto de la librería).
+      Actualización posterior: click en un día de la vista mes navega
+      directo a vista día para esa fecha (`viewDate`/`viewMode`), para
+      cualquier día, tenga o no eventos. El badge numérico de cada día
+      pasó de mostrar la cantidad real de eventos a un indicador simple
+      de presencia, sin dígito, mismo tamaño sin importar la cantidad
+      (vía CSS en `calendar-board.scss`, no vía `cellTemplate`: ese
+      input existe de verdad en `CalendarMonthViewComponent` pero
+      reemplaza el contenido completo de la celda, no solo el badge).
+      Detalle completo, incluyendo el intento previo (expandir eventos
+      del día inline, revertido) y por qué, en CLAUDE.md.
 - [x] `NgModule` wrapper del componente de `/calendar-ui`
       (`CalendarBoardModule`), desde esta tarea, no retroactivo (a
       diferencia de data-grid/form-builder).

@@ -97,6 +97,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `DateAdapter`) and, separately, importing `angular-calendar`'s own
   stylesheet (`angular-calendar/css/angular-calendar.css`) in the
   consuming app; this component only styles its own toolbar.
+- Month view: clicking a day (with events or not) switches straight to
+  day view for that date (`viewDate`/`viewMode` set accordingly), a
+  simple way to see a day's full schedule without leaving the board. No
+  new public API, purely internal wiring of `angular-calendar`'s own
+  `dayClicked` output on `CalendarMonthViewComponent`.
+- Month view's day badge (previously a number showing how many events a
+  day has) is now a plain "this day has at least one event" indicator,
+  same size regardless of count, and absent entirely for a day with
+  none. `angular-calendar` has no way to reshape only the badge without
+  replacing the day cell's entire content (a real `cellTemplate` input,
+  confirmed against the installed package, but one that would require
+  hand-rebuilding the cell's other content, including each event's own
+  drag/drop/click directives, entirely on this library's side), so this
+  is done via CSS in `calendar-board.scss` instead.
 
 ### Fixed
 - `GoogleCalendarConnector.listEvents()` now follows `nextPageToken`
@@ -123,3 +137,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   store kept the exact object/`Date` references handed to it, so
   mutating them after the call (e.g. `event.start.setFullYear(...)`)
   silently corrupted the store's own state from the outside.
+- `CalendarBoard` month view no longer renders the small colored dot
+  `angular-calendar` draws under each day with events. It's colored via
+  `event.color?.primary`, a field `CalendarEvent` has no equivalent of in
+  v1, so every dot rendered the same default blue, no information beyond
+  what the numeric day badge already shows. Neutralized via
+  `background-color`, not hidden outright: the same element is also the
+  drag handle for month-view rescheduling, and removing it from the
+  layout would have silently broken dragging an event to a different
+  day.
