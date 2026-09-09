@@ -24,6 +24,7 @@
           }
         ],
         "styles": [
+          "node_modules/angular-calendar/css/angular-calendar.css",
           "apps/portfolio-showcase/src/styles.css"
         ]
       },

@@ -1,0 +1,51 @@
+<div class="calendar-board">
+  <header class="calendar-board__toolbar">
+    <button type="button" class="calendar-board__nav-button" mwlCalendarPreviousView [view]="viewMode()" [(viewDate)]="viewDate">
+      &lsaquo;
+    </button>
+    <button type="button" class="calendar-board__nav-button" mwlCalendarToday [(viewDate)]="viewDate">Today</button>
+    <button type="button" class="calendar-board__nav-button" mwlCalendarNextView [view]="viewMode()" [(viewDate)]="viewDate">
+      &rsaquo;
+    </button>
+    <h2 class="calendar-board__title">{{ viewDate() | calendarDate: viewMode() + 'ViewTitle' : 'en' }}</h2>
+    <div class="calendar-board__view-switch">
+      <button type="button" [class.calendar-board__view-switch-button--active]="viewMode() === 'month'" (click)="viewMode.set('month')">
+        Month
+      </button>
+      <button type="button" [class.calendar-board__view-switch-button--active]="viewMode() === 'week'" (click)="viewMode.set('week')">
+        Week
+      </button>
+      <button type="button" [class.calendar-board__view-switch-button--active]="viewMode() === 'day'" (click)="viewMode.set('day')">
+        Day
+      </button>
+    </div>
+  </header>
+
+  @switch (viewMode()) {
+    @case ('month') {
+      <mwl-calendar-month-view
+        [viewDate]="viewDate()"
+        [events]="angularCalendarEvents()"
+        (dayClicked)="onDayClicked($event)"
+        (eventClicked)="onEventClicked($event)"
+        (eventTimesChanged)="onEventTimesChanged($event)"
+      />
+    }
+    @case ('week') {
+      <mwl-calendar-week-view
+        [viewDate]="viewDate()"
+        [events]="angularCalendarEvents()"
+        (eventClicked)="onEventClicked($event)"
+        (eventTimesChanged)="onEventTimesChanged($event)"
+      />
+    }
+    @case ('day') {
+      <mwl-calendar-day-view
+        [viewDate]="viewDate()"
+        [events]="angularCalendarEvents()"
+        (eventClicked)="onEventClicked($event)"
+        (eventTimesChanged)="onEventTimesChanged($event)"
+      />
+    }
+  }
+</div>

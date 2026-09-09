@@ -137,6 +137,27 @@ promoted into the numbered sequence above.
   de arreglo real (agregar `provideRouter([])` a los `TestBed` afectados),
   fuera del alcance de la tarea que lo detectó.
 
+- **`/tmp` de WSL puede llenarse con restos de `npm install` viejos**:
+  el `tmpfs` de la instancia WSL usada para verificación es de 2GB:
+  encontrado lleno al 100% con ~33 directorios de 64MB sin limpiar de
+  instalaciones anteriores (fecha ~22 de agosto), causando
+  `ENOSPC: no space left on device` al correr tests. Antes de borrar
+  cualquier resto de /tmp, confirmar con `lsof` que ningún proceso
+  activo lo tiene abierto. Si un `nx test` en WSL falla con ENOSPC,
+  revisar esto primero antes de asumir que es un problema del código
+  o del repo.
+
+- **ng-packagr y tipos ambientales en entry points secundarios**: un
+  archivo de tipos ambientales (`declare global {...}`) escrito como
+  `.d.ts` puro rompe el bundler de declaraciones de ng-packagr para ese
+  entry point (`Could not resolve "./archivo"`), porque un `.d.ts` de
+  entrada nunca tiene un `.d.ts` de salida espejado. Solución: el
+  archivo debe ser un `.ts` real con `export {}` + `declare global
+  {...}`, nunca un `.d.ts` puro. Encontrado en el conector /google de
+  calendar, aplica a cualquier librería futura con entry points
+  secundarios que necesiten tipos ambientales (ej. tipos de un script
+  externo cargado en runtime).
+
 ## Recurring maintenance notes
 
 - Review each library's `peerDependencies` whenever Angular releases a

@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../dist/out-tsc",
+    "declaration": true,
+    "declarationMap": true,
+    "inlineSources": true,
+    "types": []
+  },
+  "include": ["src/**/*.ts", "google/src/**/*.ts", "calendar-ui/src/**/*.ts"],
+  "exclude": [
+    "src/**/*.spec.ts",
+    "src/**/*.test.ts",
+    "google/src/**/*.spec.ts",
+    "google/src/**/*.test.ts",
+    "calendar-ui/src/**/*.spec.ts",
+    "calendar-ui/src/**/*.test.ts"
+  ]
+}

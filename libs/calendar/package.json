@@ -1,0 +1,14 @@
+{
+  "name": "@zhunam/calendar",
+  "version": "0.0.1",
+  "license": "MIT",
+  "peerDependencies": {
+    "@angular/core": "^20.0.0 || ^21.0.0 || ^22.0.0"
+  },
+  "dependencies": {
+    "angular-calendar": "^0.32.2",
+    "date-fns": "^4.4.0",
+    "rrule": "^2.7.1"
+  },
+  "sideEffects": false
+}

@@ -20,7 +20,10 @@
       "@zhunam/auth/firebase": ["./libs/auth/firebase/src/index.ts"],
       "@zhunam/auth/supabase": ["./libs/auth/supabase/src/index.ts"],
       "@zhunam/auth/form-ui": ["./libs/auth/form-ui/src/index.ts"],
-      "@zhunam/pdf-generator": ["./libs/pdf-generator/src/index.ts"]
+      "@zhunam/pdf-generator": ["./libs/pdf-generator/src/index.ts"],
+      "@zhunam/calendar": ["./libs/calendar/src/index.ts"],
+      "@zhunam/calendar/google": ["./libs/calendar/google/src/index.ts"],
+      "@zhunam/calendar/calendar-ui": ["./libs/calendar/calendar-ui/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

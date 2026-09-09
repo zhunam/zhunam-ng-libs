@@ -304,6 +304,21 @@ styling setups, without friction.
   ```
 - The core (`src/`) must be installable and buildable on the minimum
   floor without any optional entry point.
+- Un entry point secundario NO puede importar código "privado" (no
+  exportado) del núcleo ni de otro entry point: ng-packagr compila
+  cada entry point con su propio programa de TypeScript acotado a su
+  propio árbol. Un import relativo hacia otro entry point falla
+  (`Cannot find module`); un alias de path en tsconfig.base.json hacia
+  un archivo interno arbitrario también falla (`Entry point ... doesn't
+  exist`, ng-packagr trata cualquier import con forma de subpath como
+  si tuviera que ser un entry point declarado). Cualquier código que un
+  entry point secundario necesite del núcleo debe re-exportarse desde
+  el barrel público del núcleo (`src/index.ts`, una decisión real de
+  API pública, no gratis) o duplicarse localmente en ese entry point.
+  Planificar qué helpers internos va a necesitar un futuro entry point
+  ANTES de escribirlos, no después. Confirmado en el conector /google
+  de calendar, con dos intentos reales fallidos documentados en
+  CLAUDE.md de esa librería.
 
 ### Inputs/Outputs: signal-based API
 
@@ -484,6 +499,20 @@ styling setups, without friction.
 - Nothing deploys a `.env` file to production: variables are configured
   directly in the hosting/CI platform's dashboard (Vercel, Netlify,
   Supabase, GitHub Actions Secrets), never by uploading the file.
+
+### Campos privados que guardan datos sensibles
+
+`private` de TypeScript es solo una restricción de compilación, no
+existe en runtime: cualquier IDE de debugging, JSON.stringify(),
+Object.keys(), o Reflect.ownKeys() revela el valor igual. Cualquier
+campo de clase que guarde un token, secreto, o dato sensible debe
+usar un campo privado real de ECMAScript (#nombre), nunca `private
+nombre` solo. Verificado como bug real en el conector /google de
+calendar: un `private accessToken` se filtraba por
+JSON.stringify(connector). Cualquier librería futura que maneje un
+dato sensible debe incluir un test explícito que confirme que
+JSON.stringify/Object.keys/Reflect.ownKeys no lo revelan, no
+alcanza con el tipo.
 
 ### Packaging
 

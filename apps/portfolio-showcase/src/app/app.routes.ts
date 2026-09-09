@@ -11,4 +11,8 @@ export const appRoutes: Route[] = [
   { path: 'form-builder', component: FormBuilderDemo },
   { path: 'auth', component: AuthDemo },
   { path: 'pdf-generator', component: PdfGeneratorDemo },
+  {
+    path: 'calendar',
+    loadComponent: () => import('./pages/calendar-demo/calendar-demo').then((m) => m.CalendarDemo),
+  },
 ];

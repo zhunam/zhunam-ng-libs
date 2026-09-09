@@ -1,0 +1,211 @@
+<div class="drawer gap-6 lg:drawer-open">
+  <input id="library-explorer-drawer" type="checkbox" class="drawer-toggle" />
+
+  <div class="drawer-content flex min-w-0 flex-col gap-8">
+    <label
+      for="library-explorer-drawer"
+      aria-label="Toggle library explorer"
+      class="drawer-tab btn btn-square fixed top-16 left-0 z-40 rounded-l-none border border-l-0 border-slate-200 bg-base-100 shadow-md transition-all duration-300 ease-out lg:hidden"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="h-5 w-5"
+        aria-hidden="true"
+      >
+        <path d="M4 6h16M4 12h16M4 18h16" />
+      </svg>
+    </label>
+
+    <nav aria-label="Breadcrumb" class="text-sm text-slate-500">
+      <a routerLink="/" class="hover:text-primary"><span translate="no">Home</span></a>
+      <span class="mx-1.5">/</span>
+      <span class="text-base-content" translate="no">Calendar</span>
+    </nav>
+
+    <header class="flex flex-col gap-3">
+      <span class="text-primary font-bold w-fit font-mono text-2xl">&#64;zhunam/calendar</span>
+      <h1 class="text-lg font-bold tracking-tight text-balance text-base-content">Live Demo</h1>
+      <p class="max-w-prose text-slate-600">
+        A signal-based event store with real RRULE recurrence, rendered with
+        <span class="font-mono text-sm">CalendarBoard</span>. Navigate between months, click an
+        event to see it below. Everything here runs on local, in-memory data only.
+      </p>
+    </header>
+
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
+      <section class="overflow-hidden rounded-box border border-slate-200 p-4">
+        @if (viewMode() === 'month') {
+          <p class="mb-2 text-sm font-semibold text-base-content">Click a day to view its full schedule</p>
+        }
+        <lib-calendar-board
+          [events]="visibleEvents()"
+          [(viewMode)]="viewMode"
+          [(viewDate)]="viewDate"
+          (eventClick)="onEventClick($event)"
+          (eventReschedule)="onEventReschedule($event)"
+          (visibleRangeChange)="onVisibleRangeChange($event)"
+        />
+      </section>
+
+      <section class="rounded-box border border-slate-200 p-6">
+        <h2 class="mb-3 text-sm font-semibold text-base-content">Selected event</h2>
+        @if (selectedEvent(); as event) {
+          <div class="flex flex-col gap-2" translate="no">
+            <span class="font-medium text-base-content">{{ event.title }}</span>
+            <span class="text-sm text-slate-600">
+              @if (event.allDay) {
+                {{ event.start | date: 'mediumDate' }}
+              } @else {
+                {{ event.start | date: 'medium' }} – {{ event.end | date: 'shortTime' }}
+              }
+            </span>
+            <div class="flex flex-wrap gap-2">
+              @if (event.recurrence) {
+                <span class="badge badge-outline">Recurring</span>
+              }
+              @if (event.allDay) {
+                <span class="badge badge-outline">All day</span>
+              }
+            </div>
+            <span class="font-mono text-xs text-slate-400">id: {{ event.id }}</span>
+            <button
+              type="button"
+              (click)="onDeleteSelected()"
+              class="btn btn-ghost btn-xs mt-1 w-fit text-slate-500 hover:text-red-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            >
+              Delete
+            </button>
+          </div>
+        } @else {
+          <p class="text-sm text-slate-500">Click an event to see it here.</p>
+        }
+      </section>
+    </div>
+
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <section class="rounded-box border border-slate-200 p-6">
+        <h2 class="mb-1 text-sm font-semibold text-base-content">Add event</h2>
+        <p class="mb-3 text-xs text-slate-500">
+          Calls <span class="font-mono text-xs">calendarStore.addEvent()</span> directly. An end
+          before start is rejected with the store's real validation error, shown below.
+        </p>
+        <form (submit)="onAddEvent(); $event.preventDefault()" class="flex flex-col gap-3">
+          <div class="flex flex-col gap-1">
+            <label for="newEventTitle" class="text-sm font-semibold text-base-content">Title</label>
+            <input
+              id="newEventTitle"
+              type="text"
+              required
+              [value]="newEventTitle()"
+              (input)="newEventTitle.set(titleInput.value)"
+              #titleInput
+              class="w-full rounded-md border border-slate-200 p-2 text-sm text-base-content focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label for="newEventStart" class="text-sm font-semibold text-base-content">Start</label>
+            <input
+              id="newEventStart"
+              type="datetime-local"
+              required
+              [value]="newEventStart()"
+              (input)="newEventStart.set(startInput.value)"
+              #startInput
+              class="w-full rounded-md border border-slate-200 p-2 text-sm text-base-content focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label for="newEventEnd" class="text-sm font-semibold text-base-content">End</label>
+            <input
+              id="newEventEnd"
+              type="datetime-local"
+              required
+              [value]="newEventEnd()"
+              (input)="newEventEnd.set(endInput.value)"
+              #endInput
+              class="w-full rounded-md border border-slate-200 p-2 text-sm text-base-content focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            />
+          </div>
+          @if (addEventError(); as error) {
+            <p class="text-xs text-red-600">{{ error }}</p>
+          }
+          <button
+            type="submit"
+            class="btn btn-outline btn-xs w-fit transition-transform duration-200 ease-out hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          >
+            Add event
+          </button>
+        </form>
+      </section>
+
+      <section class="rounded-box border border-slate-200 p-6">
+        <h2 class="mb-3 text-sm font-semibold text-base-content">Events (JSON)</h2>
+        <pre
+          class="overflow-x-auto rounded-md bg-base-content p-4 text-xs leading-relaxed text-slate-100"
+        ><code class="font-mono" translate="no">{{ eventsJson() }}</code></pre>
+      </section>
+    </div>
+
+    <div class="grid grid-cols-1 gap-6">
+      <section class="rounded-box border border-slate-200 p-6">
+        <h2 class="mb-1 text-sm font-semibold text-base-content">Core usage</h2>
+        <p class="mb-3 text-sm text-slate-500">
+          <span class="font-mono text-xs">CalendarStore</span>, the reactive event store powering
+          this page, no UI or provider required.
+        </p>
+        <pre
+          class="overflow-x-auto rounded-md bg-base-content p-4 text-xs leading-relaxed text-slate-100"
+        ><code class="font-mono" translate="no">{{ coreUsageSnippet }}</code></pre>
+      </section>
+
+      <section class="rounded-box border border-slate-200 p-6">
+        <h2 class="mb-1 text-sm font-semibold text-base-content">CalendarBoard usage</h2>
+        <p class="mb-3 text-sm text-slate-500">
+          The board above, wired up exactly like this in a real app.
+        </p>
+        <pre
+          class="overflow-x-auto rounded-md bg-base-content p-4 text-xs leading-relaxed text-slate-100"
+        ><code class="font-mono" translate="no">{{ calendarUiUsageSnippet }}</code></pre>
+      </section>
+
+      <section class="rounded-box border border-slate-200 p-6">
+        <h2 class="mb-1 text-sm font-semibold text-base-content">Connecting a real Google Calendar</h2>
+        <p class="mb-3 text-sm text-slate-500">
+          Not run on this page — this demo only ever uses the local mock data above — but this is
+          the real, complete code for it.
+        </p>
+        <pre
+          class="overflow-x-auto rounded-md bg-base-content p-4 text-xs leading-relaxed text-slate-100"
+        ><code class="font-mono" translate="no">{{ googleUsageSnippet }}</code></pre>
+      </section>
+    </div>
+  </div>
+
+  <div class="drawer-side">
+    <label for="library-explorer-drawer" aria-label="Close library explorer" class="drawer-overlay"></label>
+    <aside
+      class="h-fit w-72 bg-base-100 border-0 shadow-none p-4 max-lg:border-r max-lg:border-slate-200 lg:sticky lg:top-6 lg:w-55 lg:rounded-box lg:border lg:border-slate-200"
+    >
+      <h2 class="mb-3 text-sm font-semibold text-base-content">Library Explorer</h2>
+      <nav class="flex flex-col gap-1">
+        @for (lib of libraries; track lib.name) {
+          @if (lib.route) {
+            <a [routerLink]="lib.route" [class]="sidebarLinkClasses(lib.route === currentUrl())"
+              ><span translate="no">{{ lib.name }}</span></a
+            >
+          } @else {
+            <span class="flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium text-slate-400">
+              <span translate="no">{{ lib.name }}</span>
+              <span class="text-xs font-normal">Coming Soon</span>
+            </span>
+          }
+        }
+      </nav>
+    </aside>
+  </div>
+</div>
