@@ -19,6 +19,7 @@ on:
       - "libs/form-builder/**"
       - "libs/auth/**"
       - "libs/pdf-generator/**"
+      - "libs/calendar/**"
 
 jobs:
   test:
@@ -26,7 +27,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        project: [data-grid, form-builder, auth, pdf-generator]
+        project: [data-grid, form-builder, auth, pdf-generator, calendar]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

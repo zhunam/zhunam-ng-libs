@@ -121,10 +121,14 @@ export class CalendarStore {
       Conector `/google` completo en su alcance de v1 (autenticación +
       lectura + escritura); queda pendiente solo la verificación manual
       con Google Cloud real (ver más abajo) antes de producción.
-- [ ] Conector `/google`, sync incremental: investigar y decidir si
-      `syncToken` entra en v1 o se documenta como limitación conocida
-      para v1.1 (decisión a tomar con evidencia real de la API, no
-      ahora).
+- [x] Conector `/google`, sync incremental: Decisión: syncToken NO
+      entra en v1. La paginación vía nextPageToken (ya implementada,
+      límite de 1000 eventos por llamada) cubre el caso de uso real de
+      v1 (listEvents() con navegador abierto). syncToken tiene valor
+      real solo para sincronización repetida en segundo plano, que
+      está fuera de esta librería por diseño (ver sección de
+      arquitectura). Candidata a v1.1 si alguna vez se construye esa
+      pieza.
 - [x] `/calendar-ui`, componente de vistas mes/semana/día: `CalendarBoard`,
       envuelve `angular-calendar` internamente, ningún tipo suyo
       expuesto en la API pública (mismo principio que pdfmake oculto en
