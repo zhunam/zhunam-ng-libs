@@ -186,14 +186,26 @@ export class CalendarStore {
       renderizaba visualmente roto (confirmado con screenshot real),
       exactamente la advertencia ya documentada en CLAUDE.md sobre que
       ese CSS no viaja con `CalendarBoard`.
-- [ ] Verificación manual con Google Cloud real: probar connect()/
+- [x] Verificación manual con Google Cloud real: probar connect()/
       disconnect()/CRUD del conector /google contra un Client ID
       real registrado en Google Cloud Console, con interacción real
       de usuario (popup de consentimiento, token real, revoke()
       real). Igual que con auth, en un proyecto Angular aislado
       fuera de este repo, nunca con credenciales reales dentro del
-      repo público. Bloqueante antes de considerar esta librería
-      production-ready, no se puede verificar en el entorno
-      automatizado de esta sesión.
-- [ ] Verify production build
+      repo público.
+      Resultado: verificado completo contra Google Calendar real
+      (connect, listEvents, createEvent, updateEvent directo y vía
+      drag-and-drop de CalendarBoard, deleteEvent, disconnect/revoke),
+      sin encontrar ningún defecto real de la librería; el único
+      ajuste necesario fue en el propio proyecto de pruebas
+      (sincronizar el CalendarStore local después de un reschedule vía
+      drag-and-drop, ya que CalendarBoard nunca sincroniza el store
+      por su cuenta, comportamiento correcto y ya documentado).
+- [x] Verify production build
       → nx build calendar --configuration=production
+      Ya verificado limpio (confirmado explícitamente en una corrida
+      anterior de esta sesión); libs/calendar tiene
+      defaultConfiguration: "production" en su target build, por lo
+      que cualquier nx build calendar corrido a lo largo del
+      desarrollo de esta librería ya era este mismo build, no uno
+      distinto. Sin warnings ni errores en ninguna corrida.
