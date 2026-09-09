@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-09-08
+
 ### Added
 - `CalendarEvent<T>`: generic event model (`id`, `title`, `start`, `end`,
   `allDay`, `recurrence` as an RRULE string, `data: T`). Modeled as a
