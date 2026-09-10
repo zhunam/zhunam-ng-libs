@@ -54,3 +54,6 @@ __screenshots__/
 .env
 .env.local
 
+
+.vercel
+.env*

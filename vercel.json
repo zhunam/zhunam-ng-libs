@@ -1,0 +1,7 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npx nx build portfolio-showcase --configuration=production",
+  "installCommand": "npm ci",
+  "outputDirectory": "dist/apps/portfolio-showcase/browser",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+}

@@ -1,0 +1,45 @@
+name: Deploy
+
+# Deploys apps/portfolio-showcase to Vercel on every push to master. Preview
+# deployments for pull requests are a separate concern, not set up here.
+#
+# Uses the `vercel pull -> vercel build -> vercel deploy --prebuilt` flow
+# (see vercel.json for buildCommand/installCommand/outputDirectory) so the
+# build runs entirely on this runner, using this repo's own real
+# `nx build portfolio-showcase` rather than a build Vercel runs on its own
+# infrastructure against a Git integration.
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    name: Deploy to Vercel
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install workspace dependencies
+        run: npm ci
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel
+
+      - name: Pull Vercel project settings
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build for Vercel
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy prebuilt output
+        run: vercel deploy --prebuilt --prod --archive=tgz --token=${{ secrets.VERCEL_TOKEN }}
