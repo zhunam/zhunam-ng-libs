@@ -13,15 +13,19 @@ only reference it.
 
 ## Active phase
 
-Ninguna fase activa por el momento. Fase 4 (Client-side document (PDF)
-generator) completada y publicada: `@zhunam/pdf-generator@1.1.0` en
-npm, junto con `@zhunam/auth@1.0.0`, `@zhunam/data-grid@1.1.0`, y
-`@zhunam/form-builder@1.1.0`.
+Ninguna fase activa por el momento. Fase 5 (Calendar with Google
+Calendar integration) completada y publicada: `@zhunam/calendar@1.0.0`
+en npm, junto con `@zhunam/auth@1.0.0`, `@zhunam/data-grid@1.1.0`,
+`@zhunam/form-builder@1.1.0`, y `@zhunam/pdf-generator@1.1.0`.
 
-Chat/notificaciones (antes fase 5) se sacó de la secuencia numerada el
-2026-08-27, ver "Future ideas" para el detalle. La siguiente candidata
-en la secuencia es Calendar, sesión de definición de scope pendiente
-(mismo proceso ya usado para las fases anteriores).
+La siguiente y última fase de la secuencia numerada es el dashboard
+financiero/cripto (`apps/`, no publicable), sesión de definición de
+scope pendiente.
+
+Infraestructura de despliegue agregada 2026-09 (fuera de la secuencia
+de fases, aplica a todo el repo): `portfolio-showcase` se despliega
+automáticamente a Vercel en cada push a `master`, ver sección
+"Despliegue" en README.md.
 
 ## Phases: full sequence
 
@@ -46,7 +50,8 @@ data-grid, form-builder, pdf-generator) instead of standing alone.
    mostly free, possible template sales (Gumroad). **DONE, published on
    npm as `@zhunam/pdf-generator@1.1.0`**
 5. **Calendar with Google Calendar integration** (`libs/calendar`):
-   freemium UI + SaaS sync. Not started
+   freemium UI + SaaS sync. **DONE, published on npm as
+   `@zhunam/calendar@1.0.0`**
 6. **Financial/crypto dashboard** (`apps/`, portfolio piece, not a
    publishable lib): 100% free, not monetizable as a product. Meant to
    showcase auth, data-grid, form-builder, and pdf-generator working
@@ -157,6 +162,26 @@ promoted into the numbered sequence above.
   calendar, aplica a cualquier librería futura con entry points
   secundarios que necesiten tipos ambientales (ej. tipos de un script
   externo cargado en runtime).
+
+- **daisyUI v5 sigue aplicando su propio tema segun
+  `prefers-color-scheme` del sistema si `<html>` no tiene `data-theme`
+  explícito**, incluso con `default: true` configurado en el tema
+  propio del proyecto. Un visitante con modo oscuro activo veía el
+  tema genérico azul/violeta de daisyUI en vez de la paleta real, en
+  cualquier navegador (confirmado en Chromium, Firefox, y WebKit por
+  igual, no es un problema de compatibilidad entre motores).
+  Encontrado en `apps/portfolio-showcase` el 2026-09-10, vía una
+  captura real en Firefox que no coincidía con lo visto en Chrome.
+  Solución: `data-theme="<nombre-del-tema>"` explícito en el `<html>`
+  de `index.html`, confirmando que sobrevive el paso de inlineado de
+  CSS crítico del build de producción (Beasties en este proyecto).
+
+- **El Router de Angular no vuelve el scroll a 0 al cambiar de ruta
+  por defecto**: sin `withInMemoryScrolling({ scrollPositionRestoration:
+  'top' })` en `provideRouter()`, una SPA hereda la posición de scroll
+  de la ruta anterior. Encontrado en `apps/portfolio-showcase` el
+  2026-09-10. Aplica a cualquier app Angular nueva con múltiples
+  rutas, agregar esta configuración desde el principio.
 
 ## Recurring maintenance notes
 
