@@ -52,10 +52,12 @@ data-grid, form-builder, pdf-generator) instead of standing alone.
 5. **Calendar with Google Calendar integration** (`libs/calendar`):
    freemium UI + SaaS sync. **DONE, published on npm as
    `@zhunam/calendar@1.0.0`**
-6. **Financial/crypto dashboard** (`apps/`, portfolio piece, not a
-   publishable lib): 100% free, not monetizable as a product. Meant to
-   showcase auth, data-grid, form-builder, and pdf-generator working
-   together in a real use case. Not started
+6. **Crypto market dashboard** (`apps/`, portfolio piece, not a
+   publishable lib): 100% free, not monetizable as a product. Showcases
+   data-grid, form-builder, and pdf-generator together over real,
+   live market data (CoinGecko public API, no backend). auth
+   deliberately excluded: a login here would gate nothing real, it
+   already has its own honest demo. Not started
 
 
 ## Future ideas (not yet phased)
