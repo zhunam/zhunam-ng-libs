@@ -80,23 +80,58 @@ investigación real antes de escribir código)
   detrás de un proxy (como recomienda la propia documentación de
   CoinGecko para el tier Pro) queda fuera de alcance mientras este
   piece no tenga backend. Si eso cambia, revisar esta decisión.
-- **Pendiente de investigar, no cubierto todavía**: el endpoint
-  `/global` (estado general del mercado, candidato real para
-  `components/market-state/`) y `/search/trending` (candidato para
-  `components/trending-carousel/`, a confirmar si es la fuente real
-  de ese componente o si termina siendo más bien un carrusel de
-  `sparkline_in_7d` por coin) no se investigaron todavía contra la
-  API real. No asumir su forma antes de esa investigación.
+- **`GET /global` no tiene una sola moneda por defecto, trae todas a
+  la vez.** `total_market_cap` y `total_volume` son objetos con ~60
+  claves (una por moneda: `usd`, `eur`, `btc`, `eth`, etc.), no un
+  número plano en una moneda fija. Un selector de moneda de
+  referencia en `market-state` puede leer la clave correcta del MISMO
+  response, sin una llamada adicional por moneda. Excepción real:
+  `market_cap_change_percentage_24h_usd` y
+  `volume_change_percentage_24h_usd` sí están fijos en USD (el sufijo
+  `_usd` lo dice), no hay variante para otras monedas. Campos
+  confirmados reales y útiles para una franja de estadísticas
+  generales: `active_cryptocurrencies` (21084), `markets` (1496),
+  `market_cap_percentage` (dominancia por moneda, ej. `btc: 58.17`,
+  `eth: 11.65`, hasta 10 monedas, no limitado a btc/eth),
+  `market_cap_change_percentage_24h_usd`,
+  `volume_change_percentage_24h_usd`, `updated_at` (unix timestamp).
+  Los campos de ICOs (`upcoming_icos`/`ongoing_icos`/`ended_icos`)
+  están pero no aportan nada útil hoy, no vale la pena mostrarlos.
+- **`GET /search/trending` SÍ trae precio y variación 24h por coin**,
+  no hace falta una llamada extra a `/coins/markets` solo para eso:
+  cada `coins[].item.data` tiene `price` (número plano) y
+  `price_change_percentage_24h` (objeto multi-moneda, igual que
+  `/global`). Pero **`sparkline` es una URL a una imagen SVG externa
+  ya renderizada por CoinGecko** (`https://data.coingecko.com/coins/
+  {id}/sparkline.svg`), no un array de precios como
+  `sparkline_in_7d.price` de `/coins/markets`: no sirve para un
+  gráfico propio con el estilo de esta app, solo para incrustar la
+  imagen tal cual viene. Si `trending-carousel` quiere un mini-gráfico
+  propio (no la imagen externa de CoinGecko), sí hace falta una
+  llamada complementaria a `/coins/markets?ids=<ids de trending>` para
+  traer `sparkline_in_7d.price` real de esos mismos coins. `market_cap`/
+  `total_volume` acá vienen como strings ya formateados en USD
+  (`"$252,487,520"`, con el símbolo y las comas incluidas), no como
+  número crudo en la moneda elegida, otra razón más para esa llamada
+  complementaria si el selector de moneda debe aplicar también a
+  estos dos campos en el carrusel. Devuelve 15 coins (no se probó si
+  `limit`/`per_page` son parámetros reales, no investigado). Además
+  de `coins`, el response trae `nfts` (7 ítems) y `categories` (6
+  ítems) trending, no usados por ahora pero ahí están si se quiere
+  ampliar el carrusel más adelante.
 
 ## Tareas (1-3h cada una, en orden)
 
-- [ ] **Investigación complementaria de API**: `/global` y
+- [x] **Investigación complementaria de API**: `/global` y
       `/search/trending` contra la API real con la clave Demo, mismo
       criterio que la investigación ya hecha (evidencia real, no
-      documentación de memoria). Necesaria antes de las tareas de
-      `market-state`/`trending-carousel` de más abajo.
+      documentación de memoria). Resultado en "Decisiones de
+      arquitectura" arriba: `/global` trae todas las monedas a la vez
+      (sin llamada extra por moneda), `/search/trending` trae
+      precio+variación 24h por coin pero su `sparkline` es solo una
+      imagen externa, no datos reales para un gráfico propio.
 - [x] Estructura de carpetas (`components/{price-ticker,market-table,
-      trending-carousel,currency-converter,market-state}`,
+      trending-carousel,currency-converter,market-state,coin-spinner}`,
       `services/`, `models/`) y `environments/` con `fileReplacements`
       real en `project.json`, confirmado con build de producción y
       desarrollo real (no solo la config, el bundle compilado).
@@ -116,16 +151,32 @@ investigación real antes de escribir código)
       reales confirmadas: `image`, `name`, `symbol`,
       `market_cap_rank`, `current_price`,
       `price_change_percentage_24h`.
-- [ ] `components/trending-carousel`: depende de la investigación
-      pendiente de `/search/trending`. Si termina mostrando historial
-      por coin, respetar el límite real de 365 días (no 2 años) en
-      cualquier selector de rango.
+- [ ] `components/trending-carousel`: sobre `/search/trending`
+      (precio + variación 24h ya vienen ahí, sin llamada extra). Si el
+      mini-gráfico de cada tarjeta debe ser propio (no la imagen SVG
+      externa de CoinGecko), agregar la llamada complementaria a
+      `/coins/markets?ids=...` para traer `sparkline_in_7d.price`
+      real. Cualquier selector de rango de historial más largo debe
+      respetar el límite real de 365 días (no 2 años).
 - [ ] `components/currency-converter`: sobre `vs_currency` reales
       (`/simple/supported_vs_currencies`, re-confirmar la lista
       completa en el momento, no la muestra de este documento).
       Candidato real para reusar `lib-form-builder`.
-- [ ] `components/market-state`: depende de la investigación pendiente
-      de `/global`.
+- [ ] `components/market-state`: franja de estadísticas globales del
+      mercado (no un estado de carga), sobre `GET /global` ya
+      investigado: dominancia BTC/ETH y del resto del top 10,
+      capitalización total, cambio 24h, cantidad de criptomonedas
+      activas. Ver "Decisiones de arquitectura" para qué campos leer
+      directo del mismo response al cambiar de moneda, y cuáles
+      quedan fijos en USD.
+- [ ] `components/coin-spinner`: componente chico de carga/error,
+      reusado por `price-ticker`, `market-table`, `trending-carousel`,
+      y `market-state` mientras esperan la API o si falla una llamada.
+      `prefers-reduced-motion` ya se resuelve solo (regla global en
+      `styles.css`, `animation-duration: 0.01ms !important` cuando
+      está activo), no hace falta lógica propia para eso, solo usar
+      `animation`/`transition` de CSS estándar, no una animación
+      manejada por JS que la esquive.
 - [ ] Reemplazar `REPLACE_WITH_REAL_COINGECKO_DEMO_API_KEY` en
       `environments/environment.ts`/`environment.production.ts` por
       la clave real (el usuario la pega directamente, nunca generada
