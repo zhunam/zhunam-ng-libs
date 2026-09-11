@@ -100,6 +100,24 @@ And join the Nx community:
 - [Our Youtube channel](https://www.youtube.com/@nxdevtools)
 - [Our blog](https://nx.dev/blog?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
 
+## Despliegue
+
+`portfolio-showcase` se despliega automáticamente a Vercel en cada
+push a `master`, vía `.github/workflows/deploy.yml`. Sitio en vivo:
+https://zhunam-dev.vercel.app
+
+El build corre con `nx build portfolio-showcase --configuration=production`
+(no el build nativo de Vercel, que no conoce las dependencias entre
+librerías de este monorepo), configurado en `vercel.json` mediante
+`buildCommand`/`outputDirectory` explícitos.
+
+Nota real de troubleshooting: los tokens de acceso de Vercel con scope
+limitado a un solo proyecto (`Project`) tienen un bug conocido a la
+fecha de este despliegue (confirmado en el foro de comunidad de
+Vercel) que los hace fallar con "User not found" en `whoami`/`pull`/
+`deploy`. El secreto `VERCEL_TOKEN` de este repo usa scope de `Team`
+en su lugar, no `Project`, hasta que Vercel resuelva ese bug.
+
 ## About
 
 Built by Ariana Mora ([@zhunam](https://github.com/zhunam)).
