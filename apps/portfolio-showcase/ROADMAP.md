@@ -215,14 +215,28 @@ investigación real antes de escribir código)
       automáticamente; se agregó un chequeo puntual de `matchMedia` solo
       para el scroll de las flechas (no para animaciones CSS en general,
       que siguen sin necesitar chequeo propio).
-- [ ] `components/market-ticker`: cinta horizontal de scroll continuo,
-      debajo del header, con las N monedas de mayor market_cap_rank
-      (vía /coins/markets, mismo endpoint que market-table). Por
-      moneda: symbol, currentPrice, changePercentage24h coloreado
-      (reusa priceDirection()). Sin logo/ícono, sin gráfico: solo
-      texto, prioriza densidad sobre detalle. Distinto en criterio de
-      trending-carousel: éste usa ranking de mercado (relevancia por
-      tamaño), no /search/trending (relevancia por interés/búsqueda).
+- [x] `components/market-ticker`: cinta de marquee CSS continua (no
+      controles de usuario, a diferencia de trending-carousel).
+      Autocontenido: inyecta `CoinGeckoService` directo y hace su
+      propio polling (a diferencia de price-ticker/market-table/
+      trending-carousel, que reciben datos vía input de un consumidor).
+      `TICKER_COIN_COUNT` calculado para que un set completo de monedas
+      sea más ancho que un viewport de 1280px asumido (con un ancho por
+      ítem deliberadamente subestimado, ~120px, para redondear hacia
+      más monedas en vez de menos), evitando que el set duplicado
+      (para el loop sin costura) muestre la misma moneda dos veces en
+      pantalla a la vez. Polling cada 50s (leve margen sobre el TTL de
+      caché de 45s del service, para no aterrizar justo antes de que
+      expire). **No insertado en ningún layout todavía** (decisión del
+      usuario: la página real del dashboard aún no existe como tarea;
+      insertarlo en `app.html` lo haría global a todo el sitio,
+      disparando polling a CoinGecko en páginas no relacionadas).
+      **Verificado empíricamente con Playwright** que la regla global
+      de `styles.css` SÍ alcanza para esta animación (a diferencia del
+      `scrollTo` de trending-carousel): `animation-duration` colapsa a
+      0.01ms y el `transform` quedó en `none` durante toda la
+      animación bajo `prefers-reduced-motion: reduce`, sin necesidad
+      de ningún chequeo de JS.
 - [ ] `components/currency-converter`: sobre `vs_currency` reales
       (`/simple/supported_vs_currencies`, re-confirmar la lista
       completa en el momento, no la muestra de este documento).
@@ -244,3 +258,14 @@ investigación real antes de escribir código)
       contra la API real, no solo que compila.
 - [ ] `nx build portfolio-showcase --configuration=production` y
       `nx lint portfolio-showcase` limpios como cierre.
+
+## Notas de diseño pendientes
+
+- **Auto-refresh de datos**: decidido como criterio general para todo
+  el dashboard (la app muestra valores que deben verse actualizados
+  sin que el visitante recargue la página manualmente), pero aplicado
+  primero solo en `market-ticker` (polling propio al método existente
+  de `CoinGeckoService`, respetando su TTL de caché de 45s). El
+  retrofit de `price-ticker`, `market-table`, y `trending-carousel`
+  con el mismo criterio queda pendiente como tarea separada, a definir
+  después (no implementado junto con `market-ticker`).

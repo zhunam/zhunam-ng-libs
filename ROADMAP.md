@@ -117,6 +117,29 @@ promoted into the numbered sequence above.
 
 ## Lecciones de infraestructura
 
+- **El monorepo es zoneless: `fakeAsync`/`tick` de Angular no funcionan
+  en ningún test con timers** (`apps/portfolio-showcase` no tiene
+  `zone.js` como dependencia en absoluto, confirmado en `package.json`;
+  tampoco hay `provideZoneChangeDetection()` en ningún `app.config.ts`).
+  Encontrado el 2026-09-12 construyendo `market-ticker`
+  (crypto-dashboard): un test con `fakeAsync(() => { ...; tick(...); })`
+  falló con `Error: zone-testing.js is needed for the fakeAsync() test
+  helper but could not be found`, confirmado en WSL, no un problema de
+  configuración de esa librería puntual sino de todo el workspace (sin
+  `zone.js` instalado, `fakeAsync`/`tick` no pueden funcionar en ningún
+  proyecto del monorepo). Solución: usar los fake timers nativos de
+  Vitest (`vi.useFakeTimers()` / `vi.advanceTimersByTimeAsync()`), que
+  interceptan `setInterval`/`setTimeout` a nivel del runtime de JS, sin
+  depender de zonas de Angular. Detalle importante confirmado
+  empíricamente: `vi.useFakeTimers()` debe instalarse **antes** de crear
+  el componente/servicio bajo test (`TestBed.createComponent(...)`), no
+  después — un `setInterval` ya registrado con timers reales (ej. desde
+  el constructor de un componente) queda invisible para los fake timers
+  si estos se instalan recién en el cuerpo del test, después de que el
+  componente ya se construyó. Aplica a cualquier test futuro de este
+  monorepo que necesite simular el paso del tiempo (polling, debounce,
+  timeouts), no solo a `market-ticker`.
+
 - **Vitest no aísla specs que mockean el mismo SDK externo** (`test.isolate`
   default `false` en `@nx/angular:unit-test`): causa real de una falla en
   CI (Linux) en `form-builder` el 2026-08-16. Varios specs llamando

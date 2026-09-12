@@ -1,0 +1,19 @@
+@if (error(); as errorMessage) {
+  <app-coin-spinner variant="error" [message]="errorMessage" (retry)="onRetryClick()" />
+} @else if (coins().length === 0) {
+  <app-coin-spinner variant="loading" />
+} @else {
+  <div class="market-ticker overflow-hidden border-y border-slate-200 bg-base-100 py-2">
+    <div class="market-ticker__track flex w-max">
+      @for (coin of trackCoins(); track $index) {
+        <span class="flex shrink-0 items-center gap-2 px-4 text-sm">
+          <span class="font-semibold uppercase text-base-content">{{ coin.symbol }}</span>
+          <span class="text-base-content">{{ coin.currentPrice | currency }}</span>
+          <span class="font-medium" [class]="changeColorFor(coin)">
+            {{ coin.changePercentage24h > 0 ? '+' : '' }}{{ coin.changePercentage24h | number: '1.2-2' }}%
+          </span>
+        </span>
+      }
+    </div>
+  </div>
+}
