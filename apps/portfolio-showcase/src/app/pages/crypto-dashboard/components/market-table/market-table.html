@@ -1,0 +1,15 @@
+@if (error(); as errorMessage) {
+  <app-coin-spinner variant="error" [message]="errorMessage" (retry)="onRetryClick()" />
+} @else if (coins().length === 0) {
+  <app-coin-spinner variant="loading" />
+} @else {
+  <lib-data-grid [data]="coins()" [columns]="columns" />
+}
+
+<ng-template #imageCell let-coin>
+  <img [src]="coin.image" [alt]="coin.name" class="h-6 w-6 rounded-full" />
+</ng-template>
+
+<ng-template #changeCell let-coin>
+  {{ coin.changePercentage24h > 0 ? '+' : '' }}{{ coin.changePercentage24h | number: '1.2-2' }}%
+</ng-template>

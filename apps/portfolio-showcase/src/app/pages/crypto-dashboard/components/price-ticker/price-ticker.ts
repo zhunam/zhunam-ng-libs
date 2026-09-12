@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, input, signal } from '@angular/core';
 import { CurrencyPipe, DecimalPipe } from '@angular/common';
 import { CryptoCoin } from '../../models/coin';
+import { priceDirection } from '../../utils/price-direction';
 
 type ChangeDirection = 'positive' | 'negative' | 'neutral';
 
@@ -14,11 +15,18 @@ type ChangeDirection = 'positive' | 'negative' | 'neutral';
 export class PriceTicker {
   coin = input.required<CryptoCoin>();
 
+  // Maps the shared up/down/neutral helper to this component's own
+  // positive/negative/neutral vocabulary, which its template and tests
+  // already depend on (see utils/price-direction.ts for the shared logic).
   changeDirection = computed<ChangeDirection>(() => {
-    const change = this.coin().changePercentage24h;
-    if (change > 0) return 'positive';
-    if (change < 0) return 'negative';
-    return 'neutral';
+    switch (priceDirection(this.coin().changePercentage24h)) {
+      case 'up':
+        return 'positive';
+      case 'down':
+        return 'negative';
+      default:
+        return 'neutral';
+    }
   });
 
   private readonly flashingSignal = signal(false);

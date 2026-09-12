@@ -167,28 +167,37 @@ investigación real antes de escribir código)
       nueva: `DESIGN.md` no tenía un color para cambios positivos/negativos
       (solo teal + rojo como única excepción, para validación). Se agregó
       verde como segunda excepción documentada ("Price Direction
-      Indicator"), decisión del usuario, no asumida.
-- [ ] `components/coin-spinner`: componente chico de carga/error,
-      reusado por `price-ticker`, `market-table`, `trending-carousel`,
-      y `market-state` mientras esperan la API o si falla una llamada.
-      `prefers-reduced-motion` ya se resuelve solo (regla global en
-      `styles.css`, `animation-duration: 0.01ms !important` cuando
-      está activo), no hace falta lógica propia para eso, solo usar
-      `animation`/`transition` de CSS estándar, no una animación
-      manejada por JS que la esquive. **Reordenado antes que
+      Indicator"), decisión del usuario, no asumida. **Retrofit
+      posterior**: `changeDirection` ahora delega en el helper
+      compartido `utils/price-direction.ts` (extraído al construir
+      `market-table`, ver ese ítem), manteniendo su propio vocabulario
+      público (`'positive'|'negative'|'neutral'`) sin tocar sus tests
+      existentes; comportamiento visible sin cambios.
+- [x] `components/coin-spinner`: `variant = input<'loading'|'error'>('loading')`,
+      `message = input<string>()`, `retry = output<void>()`.
+      `prefers-reduced-motion` sin lógica propia, resuelto por la regla
+      global de `styles.css`. **Reordenado antes que
       market-table/trending-carousel/currency-converter/market-state**
       (mismo criterio que el reordenamiento ya documentado en
       ROADMAP.md raíz, 2026-08-10: los componentes siguientes lo
       necesitan desde su primera versión, para no escribir un estado
       de carga/error descartable en cada uno y reescribirlo después).
-      `price-ticker` no se retrofitea para consumirlo en esta tarea
-      (ya fue construido antes de que coin-spinner existiera); queda
+      Consumido por `market-table` desde su primera versión. `price-ticker`
+      sigue sin retrofitear (ya existía antes de coin-spinner); pendiente
       como tarea futura separada.
-- [ ] `components/market-table`: probablemente envuelve
-      `lib-data-grid` sobre el resultado de `/coins/markets`. Columnas
-      reales confirmadas: `image`, `name`, `symbol`,
-      `market_cap_rank`, `current_price`,
-      `price_change_percentage_24h`.
+- [x] `components/market-table`: envuelve `lib-data-grid` sobre
+      `coins = input.required<CryptoCoin[]>()`. Columnas: `image`
+      (imagen vía `cellTemplate`), `name`, `symbol`, `rank`,
+      `currentPrice`, `changePercentage24h` (color vía `cellClass` +
+      helper compartido `priceDirection()`, ver `utils/price-direction.ts`).
+      **Bloqueo real encontrado en investigación**: `ColumnConfig<T>` de
+      `@zhunam/data-grid@1.1.0` no soportaba render custom por columna
+      (solo `key`/`label`/`sortable`, celdas como texto plano). Se
+      extendió la librería (`cellTemplate`/`cellClass`, aditivo, ver
+      `libs/data-grid/CHANGELOG.md` y `ROADMAP.md`), decisión del
+      usuario tras presentar alternativas. `error = input<string | null>(null)`
+      y `retry = output<void>()` muestran/reenvían el estado de
+      `coin-spinner` en vez de la tabla.
 - [ ] `components/trending-carousel`: sobre `/search/trending`
       (precio + variación 24h ya vienen ahí, sin llamada extra). Si el
       mini-gráfico de cada tarjeta debe ser propio (no la imagen SVG
