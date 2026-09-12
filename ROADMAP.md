@@ -27,6 +27,17 @@ de fases, aplica a todo el repo): `portfolio-showcase` se despliega
 automáticamente a Vercel en cada push a `master`, ver sección
 "Despliegue" en README.md.
 
+**Pendiente de publicar**: `@zhunam/data-grid` tiene cambios reales sin
+publicar (`ColumnConfig<T>.cellTemplate`/`cellClass`, agregados durante
+la fase 6 para que `market-table` pueda mostrar imagen y color por
+celda; ver `libs/data-grid/CHANGELOG.md` → `[Unreleased]`). Sigue en
+`1.1.0` en npm. No bloquea el desarrollo local (`portfolio-showcase`
+importa el código fuente directo vía path mapping, no el paquete
+publicado), pero falta bump a `1.2.0` (minor, aditivo) y `npm publish`
+antes de que un consumidor externo pueda usar esta capacidad. Plan:
+publicar al cerrar la fase 6 completa, no ahora mismo, para no
+republicar varias veces por cambios sueltos.
+
 ## Phases: full sequence
 
 Each phase corresponds to one library (or, for the last phase, one

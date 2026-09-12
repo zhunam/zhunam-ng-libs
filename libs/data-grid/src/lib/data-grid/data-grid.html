@@ -38,7 +38,16 @@
           (keydown.space)="$event.preventDefault(); onRowClick(row)"
         >
           @for (column of columns(); track column.key) {
-            <td>{{ row[column.key] }}</td>
+            <td [class]="column.cellClass ? column.cellClass(row) : null">
+              @if (column.cellTemplate) {
+                <ng-container
+                  [ngTemplateOutlet]="column.cellTemplate"
+                  [ngTemplateOutletContext]="{ $implicit: row }"
+                />
+              } @else {
+                {{ row[column.key] }}
+              }
+            </td>
           }
         </tr>
       }

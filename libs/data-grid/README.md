@@ -37,15 +37,36 @@ const columns: ColumnConfig<User>[] = [{ key: 'name', label: 'Name', sortable: t
 
 ### `ColumnConfig<T>`
 
-| Property   | Type       | Default   | Description                                             |
-| ---------- | ---------- | --------- | --------------------------------------------------------- |
-| `key`      | `keyof T`  | Required  | Property of `T` this column reads its cell values from. |
-| `label`    | `string`   | Required  | Text displayed in the column header.                     |
-| `sortable` | `boolean`  | `false`      | Whether clicking the header sorts the grid by this column. |
+| Property       | Type                                    | Default   | Description                                             |
+| -------------- | --------------------------------------- | --------- | --------------------------------------------------------- |
+| `key`          | `keyof T`                                | Required  | Property of `T` this column reads its cell values from. |
+| `label`        | `string`                                 | Required  | Text displayed in the column header.                     |
+| `sortable`     | `boolean`                                | `false`      | Whether clicking the header sorts the grid by this column. |
+| `cellTemplate` | `TemplateRef<{ $implicit: T }>`          | None      | Custom template for this column's cells, instead of plain text. |
+| `cellClass`    | `(row: T) => string`                     | None      | CSS class(es) applied to this column's cell for a given row. |
+
+### Custom cell rendering
+
+```html
+<ng-template #imageCell let-coin>
+  <img [src]="coin.image" [alt]="coin.name" />
+</ng-template>
+
+<lib-data-grid [data]="coins" [columns]="columns" />
+```
+
+```typescript
+@ViewChild('imageCell', { static: true }) imageCell!: TemplateRef<{ $implicit: Coin }>;
+
+columns: ColumnConfig<Coin>[] = [
+  { key: 'image', label: '', cellTemplate: this.imageCell },
+  { key: 'change', label: 'Change', cellClass: (c) => (c.change > 0 ? 'is-up' : 'is-down') },
+];
+```
 
 ## Compatibility
 
-`@angular/core` and `@angular/common` `^20.0.0 || ^21.0.0 || ^22.0.0`.
+`@angular/core` and `@angular/common` (new peer dependency, needed for `cellTemplate`'s `NgTemplateOutlet`) `^20.0.0 || ^21.0.0 || ^22.0.0`.
 
 ## Why this one
 
