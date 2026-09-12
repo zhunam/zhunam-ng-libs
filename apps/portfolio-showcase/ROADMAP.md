@@ -135,14 +135,26 @@ investigación real antes de escribir código)
       `services/`, `models/`) y `environments/` con `fileReplacements`
       real en `project.json`, confirmado con build de producción y
       desarrollo real (no solo la config, el bundle compilado).
-- [ ] `models/`: tipos para lo ya confirmado contra la API real
-      (`CryptoCoin` desde `/coins/markets`, `MarketChartPoint` desde
-      `/coins/{id}/market_chart`), ampliar cuando se investiguen
-      `/global`/`/search/trending`.
-- [ ] `services/`: `CoinGeckoService` base (HTTP real, header
-      `x-cg-demo-api-key`, base URL desde `environment.coinGecko`).
-      Espaciar/cachear llamadas desde el día uno (ver hallazgo de rate
-      limiting arriba), no agregarlo después como parche.
+- [x] `models/coin.ts`: `CryptoCoin`, `GlobalMarketStats`, y
+      `TrendingCoin`. `TrendingCoin` terminó siendo un alias exacto de
+      `CryptoCoin` (`export type TrendingCoin = CryptoCoin`), no un tipo
+      con menos campos: el propio `sparkline` de `/search/trending` es
+      solo una URL a una imagen SVG (ver "Decisiones de arquitectura"),
+      así que `getTrending()` siempre completa un `sparkline: number[]`
+      real vía la llamada complementaria a `/coins/markets` antes de
+      devolver el resultado. No se agregó `MarketChartPoint`:
+      `getMarketChart()` devuelve directo `number[]` (ver abajo), sin
+      necesidad de un tipo de punto propio.
+- [x] `services/coingecko.ts`: `CoinGeckoService` (`providedIn: 'root'`),
+      con caché en memoria (TTL 45s, invalidable con
+      `invalidateCache()`) y cola de espaciado (mínimo 1.5s entre
+      fetches reales) internos, ningún componente futuro necesita
+      preocuparse por ninguno de los dos. Usa `fetch` nativo, no
+      `HttpClient`: esta app no tiene `provideHttpClient()` en
+      `app.config.ts` (confirmado, no se usa en ningún otro lado),
+      agregarlo solo para un service con un único consumidor de red no
+      sumaba nada frente a `fetch` + Promises encadenadas, que ya
+      resuelven la lógica de caché/cola sin RxJS.
 - [ ] `components/price-ticker`: vía `nx g @nx/angular:component`,
       nunca copiado a mano. Campos reales confirmados:
       `current_price`, `price_change_percentage_24h`.
