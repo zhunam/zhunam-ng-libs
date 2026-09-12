@@ -168,6 +168,22 @@ investigación real antes de escribir código)
       (solo teal + rojo como única excepción, para validación). Se agregó
       verde como segunda excepción documentada ("Price Direction
       Indicator"), decisión del usuario, no asumida.
+- [ ] `components/coin-spinner`: componente chico de carga/error,
+      reusado por `price-ticker`, `market-table`, `trending-carousel`,
+      y `market-state` mientras esperan la API o si falla una llamada.
+      `prefers-reduced-motion` ya se resuelve solo (regla global en
+      `styles.css`, `animation-duration: 0.01ms !important` cuando
+      está activo), no hace falta lógica propia para eso, solo usar
+      `animation`/`transition` de CSS estándar, no una animación
+      manejada por JS que la esquive. **Reordenado antes que
+      market-table/trending-carousel/currency-converter/market-state**
+      (mismo criterio que el reordenamiento ya documentado en
+      ROADMAP.md raíz, 2026-08-10: los componentes siguientes lo
+      necesitan desde su primera versión, para no escribir un estado
+      de carga/error descartable en cada uno y reescribirlo después).
+      `price-ticker` no se retrofitea para consumirlo en esta tarea
+      (ya fue construido antes de que coin-spinner existiera); queda
+      como tarea futura separada.
 - [ ] `components/market-table`: probablemente envuelve
       `lib-data-grid` sobre el resultado de `/coins/markets`. Columnas
       reales confirmadas: `image`, `name`, `symbol`,
@@ -191,14 +207,6 @@ investigación real antes de escribir código)
       activas. Ver "Decisiones de arquitectura" para qué campos leer
       directo del mismo response al cambiar de moneda, y cuáles
       quedan fijos en USD.
-- [ ] `components/coin-spinner`: componente chico de carga/error,
-      reusado por `price-ticker`, `market-table`, `trending-carousel`,
-      y `market-state` mientras esperan la API o si falla una llamada.
-      `prefers-reduced-motion` ya se resuelve solo (regla global en
-      `styles.css`, `animation-duration: 0.01ms !important` cuando
-      está activo), no hace falta lógica propia para eso, solo usar
-      `animation`/`transition` de CSS estándar, no una animación
-      manejada por JS que la esquive.
 - [ ] Reemplazar `REPLACE_WITH_REAL_COINGECKO_DEMO_API_KEY` en
       `environments/environment.ts`/`environment.production.ts` por
       la clave real (el usuario la pega directamente, nunca generada

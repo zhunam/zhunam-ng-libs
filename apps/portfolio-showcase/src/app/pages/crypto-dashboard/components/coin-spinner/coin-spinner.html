@@ -1,0 +1,22 @@
+@if (variant() === 'loading') {
+  <div class="flex flex-col items-center justify-center gap-2 p-6" role="status" aria-live="polite">
+    <span class="coin-spinner__ring h-8 w-8 rounded-full border-2 border-slate-200 border-t-primary"></span>
+    <span class="text-sm text-slate-600">Loading...</span>
+  </div>
+} @else {
+  <div class="flex flex-col items-center justify-center gap-2 p-6 text-center" role="alert">
+    <span class="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-6 w-6">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m0 3.75h.008v.008H12v-.008ZM21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+      </svg>
+    </span>
+    <span class="text-sm text-slate-600">{{ errorMessage() }}</span>
+    <button
+      type="button"
+      class="btn btn-primary btn-sm mt-2 w-fit transition-transform duration-200 ease-out hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+      (click)="onRetryClick()"
+    >
+      Retry
+    </button>
+  </div>
+}
