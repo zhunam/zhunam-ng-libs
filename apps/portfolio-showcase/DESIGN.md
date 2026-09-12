@@ -96,7 +96,7 @@ A single accent over near-white, Tailwind's own Slate scale carrying every neutr
 - **Ink Muted** (`#475569`, Tailwind Slate-600): secondary text, descriptions, captions. 7.58:1 against Vellum, safe at full opacity, no opacity-blend guesswork needed. Stays a literal Tailwind utility, not a theme token, since it never doubles as a surface fill the way Ink does.
 
 ### Named Rules
-**The One Accent Rule.** Teal is the only brand color. No second hue for status/info: a badge is either filled teal (live, actionable) or plain slate-outlined (informational, inactive). Never invent a second accent to fill a gap.
+**The One Accent Rule.** Teal is the only brand color for status/info in the general UI: a badge is either filled teal (live, actionable) or plain slate-outlined (informational, inactive). Never invent a second accent to fill a gap without a documented exception here. Two exist today, both because a normal viewer reads them as a different semantic category entirely, not as a competing brand hue: red (`text-red-600`) for form validation errors (see Form Fields), and red/green (`text-red-600`/`text-green-600`) for financial price-direction indicators (see Price Direction Indicator under Components, first used in `price-ticker`). No third exception without updating this rule.
 
 **The No-Fill-Section Rule.** Never use a gray background to separate a region of the page. Separation comes from spacing (`gap-*`, section padding) and a single hairline border, never from `bg-slate-100`/`bg-slate-200` panels.
 
@@ -143,6 +143,11 @@ Flat by default, split by role exactly as before: a surface is either a **bounde
 ### Badges
 - **Live/status** (`badge-primary`): filled pill, Signal Teal background, white text. The pattern for a single availability tag; not currently rendered anywhere: the Library Explorer's "Available" tag is commented out for now (redundant with the FAQ's "how many libraries" answer while there's only one), and the demo page's package identifier moved to a plain label (see Package Identifier Label). The class stays defined for when a second library ships and status needs distinguishing again.
 - **Coming Soon / informational** (`badge-outline`): outline pill, Hairline border, Ink Muted text. No fill, visually recedes, matching its non-interactive role. Still live: the role tag in the "Selected row" panel.
+
+### Price Direction Indicator
+- **Use:** any percentage or value change tied to real market data (24h price change, market cap change), first introduced in `price-ticker` (crypto-dashboard).
+- **Style:** `text-green-600` for a positive change, `text-red-600` for a negative change (same weight-600 shade already established for the validation exception, kept for palette consistency), `text-slate-600` (Ink Muted) for a change of exactly 0. Zero is neutral, never colored as good or bad.
+- **Rationale:** financial positive/negative is a near-universal, fast-scanned convention; forcing a viewer to read direction from a sign or icon alone on a frequently-updating ticker adds real friction the One Accent Rule wasn't written to protect against. Scoped narrowly to real financial deltas, not reused as a general-purpose status color elsewhere in the app.
 
 ### Avatar
 - **Style:** `avatar avatar-placeholder` (daisyUI v5), 2.5rem circle, Signal Teal fill, white initial.

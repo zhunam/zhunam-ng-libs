@@ -155,9 +155,19 @@ investigación real antes de escribir código)
       agregarlo solo para un service con un único consumidor de red no
       sumaba nada frente a `fetch` + Promises encadenadas, que ya
       resuelven la lógica de caché/cola sin RxJS.
-- [ ] `components/price-ticker`: vía `nx g @nx/angular:component`,
-      nunca copiado a mano. Campos reales confirmados:
-      `current_price`, `price_change_percentage_24h`.
+- [x] `components/price-ticker`: vía `nx g @nx/angular:component`, en su
+      propia subcarpeta (`components/price-ticker/`). `coin =
+      input.required<CryptoCoin>()`, `changeDirection` con `computed()`,
+      flash de énfasis con `effect()` (se salta el primer render, se
+      resetea vía `(animationend)` en el template, no un `setTimeout` con
+      duración duplicada de la del SCSS). Sin chequeo manual de
+      `prefers-reduced-motion`: se decidió no duplicar el patrón, ya
+      resuelto por la regla global de `styles.css` (mismo criterio que
+      `coin-spinner`, ver nota de ese ítem más abajo). Decisión de diseño
+      nueva: `DESIGN.md` no tenía un color para cambios positivos/negativos
+      (solo teal + rojo como única excepción, para validación). Se agregó
+      verde como segunda excepción documentada ("Price Direction
+      Indicator"), decisión del usuario, no asumida.
 - [ ] `components/market-table`: probablemente envuelve
       `lib-data-grid` sobre el resultado de `/coins/markets`. Columnas
       reales confirmadas: `image`, `name`, `symbol`,
