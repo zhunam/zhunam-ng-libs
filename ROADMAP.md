@@ -38,6 +38,13 @@ antes de que un consumidor externo pueda usar esta capacidad. Plan:
 publicar al cerrar la fase 6 completa, no ahora mismo, para no
 republicar varias veces por cambios sueltos.
 
+**`@zhunam/form-builder` en la misma situación**: `mode: input<'submit'
+| 'live'>('submit')` + `valueChange: output<T>` agregados durante la
+fase 6 (necesidad real: `currency-converter` necesitaba valores en
+vivo, el contrato submit-only existente no alcanzaba; ver
+`libs/form-builder/CHANGELOG.md` → `[Unreleased]`). Sigue en `1.1.0`
+en npm, mismo plan: publicar (minor) al cerrar la fase 6 completa.
+
 ## Phases: full sequence
 
 Each phase corresponds to one library (or, for the last phase, one

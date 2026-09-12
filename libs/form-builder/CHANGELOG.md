@@ -5,6 +5,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
 
 ## [Unreleased]
 
+### Added
+- `mode: input<'submit' | 'live'>('submit')` and `valueChange:
+  output<T>`: an opt-in live mode that emits the typed, valid form
+  values continuously as the user edits, instead of only on submit.
+  `formSubmit` keeps working exactly as before in both modes. Fully
+  additive: with `mode` left at its default (`'submit'`, every existing
+  consumer), behavior is unchanged, confirmed with an explicit
+  regression test, not just "existing tests still pass." No new
+  dependency: reuses `FormGroup.valueChanges`, already available
+  through `@angular/forms`, an existing peer dependency.
+
 ## [1.1.0] - 2026-08-17
 
 ### Added

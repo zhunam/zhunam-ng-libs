@@ -47,3 +47,17 @@
       se sigue infiriendo correctamente a través del NgModule, sin
       necesitar ningún ajuste especial. Resuelve la deuda técnica
       anotada en el ROADMAP.md raíz bajo "Future ideas".
+- [x] `mode: input<'submit' | 'live'>('submit')` + `valueChange:
+      output<T>`: modo en vivo, aditivo, activado explícitamente por el
+      consumidor. Necesidad real detectada al intentar reusar la
+      librería en `apps/portfolio-showcase` (fase 6, crypto-dashboard):
+      `currency-converter` necesitaba valores en vivo mientras se
+      escribe/selecciona, y el contrato existente (`formSubmit` solo al
+      enviar) no lo permitía, ni siquiera parcialmente. Reusa
+      `coerceNumberFields()`/cross-field validators ya existentes, sin
+      exponer `FormGroup`/`AbstractControl` (respeta el principio de
+      diseño ya documentado). Con `mode` en su default, comportamiento
+      100% idéntico al existente, confirmado con test de regresión
+      explícito. Sin dependencia nueva (`FormGroup.valueChanges` ya
+      viene de `@angular/forms`). Todavía necesita bump de versión
+      (minor) antes de republicar.
