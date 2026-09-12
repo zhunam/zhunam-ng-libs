@@ -198,13 +198,31 @@ investigación real antes de escribir código)
       usuario tras presentar alternativas. `error = input<string | null>(null)`
       y `retry = output<void>()` muestran/reenvían el estado de
       `coin-spinner` en vez de la tabla.
-- [ ] `components/trending-carousel`: sobre `/search/trending`
-      (precio + variación 24h ya vienen ahí, sin llamada extra). Si el
-      mini-gráfico de cada tarjeta debe ser propio (no la imagen SVG
-      externa de CoinGecko), agregar la llamada complementaria a
-      `/coins/markets?ids=...` para traer `sparkline_in_7d.price`
-      real. Cualquier selector de rango de historial más largo debe
-      respetar el límite real de 365 días (no 2 años).
+- [x] `components/trending-carousel`: `coins = input.required<CryptoCoin[]>()`,
+      sin llamada a la API propia (el consumidor llama `getTrending()` y
+      pasa el resultado, que ya viene con `sparkline` real vía la llamada
+      complementaria a `/coins/markets`). Tarjeta: imagen, nombre, símbolo,
+      precio, badge de variación coloreado, mini-gráfico de área SVG
+      (path calculado directo del array de 168 puntos, sin librería de
+      charting), mismo color vía `priceDirection()`. Flechas ← → con
+      scroll horizontal, deshabilitadas en cada extremo. `error`/`retry`
+      con `coin-spinner`, mismo patrón que `market-table`.
+      **Hallazgo real verificado con Playwright** (emulando
+      `prefers-reduced-motion: reduce`): un `scrollTo({behavior:'smooth'})`
+      explícito en JS anima igual (~18 frames), aunque la regla global de
+      `styles.css` fuerce `scroll-behavior: auto` por CSS. A diferencia de
+      una animación CSS, el `behavior` explícito de JS no lo respeta
+      automáticamente; se agregó un chequeo puntual de `matchMedia` solo
+      para el scroll de las flechas (no para animaciones CSS en general,
+      que siguen sin necesitar chequeo propio).
+- [ ] `components/market-ticker`: cinta horizontal de scroll continuo,
+      debajo del header, con las N monedas de mayor market_cap_rank
+      (vía /coins/markets, mismo endpoint que market-table). Por
+      moneda: symbol, currentPrice, changePercentage24h coloreado
+      (reusa priceDirection()). Sin logo/ícono, sin gráfico: solo
+      texto, prioriza densidad sobre detalle. Distinto en criterio de
+      trending-carousel: éste usa ranking de mercado (relevancia por
+      tamaño), no /search/trending (relevancia por interés/búsqueda).
 - [ ] `components/currency-converter`: sobre `vs_currency` reales
       (`/simple/supported_vs_currencies`, re-confirmar la lista
       completa en el momento, no la muestra de este documento).
