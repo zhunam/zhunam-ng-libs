@@ -100,6 +100,22 @@ And join the Nx community:
 - [Our Youtube channel](https://www.youtube.com/@nxdevtools)
 - [Our blog](https://nx.dev/blog?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
 
+## Portfolio
+
+Este monorepo es un portfolio de desarrollo frontend Angular: cada
+pieza en `libs/*` es una librería real, instalable de forma
+independiente en otros proyectos, no solo una demo. `apps/portfolio-showcase`
+es la única pieza que no se publica: consume y demuestra las
+librerías del repo funcionando juntas sobre casos de uso reales.
+
+La pieza más reciente es **Crypto Market Dashboard**
+(`apps/portfolio-showcase/src/app/pages/crypto-dashboard`): integra
+`@zhunam/data-grid`, `@zhunam/form-builder`, y `@zhunam/pdf-generator`
+sobre datos de mercado reales y en vivo (API de CoinGecko), no datos
+de muestra estáticos. Ver su propio
+[README.md](apps/portfolio-showcase/src/app/pages/crypto-dashboard/README.md)
+para el detalle de qué API de cada librería usa y por qué.
+
 ## Despliegue
 
 `portfolio-showcase` se despliega automáticamente a Vercel en cada
