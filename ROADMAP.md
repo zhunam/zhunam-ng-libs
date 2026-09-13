@@ -75,7 +75,13 @@ data-grid, form-builder, pdf-generator) instead of standing alone.
    data-grid, form-builder, and pdf-generator together over real,
    live market data (CoinGecko public API, no backend). auth
    deliberately excluded: a login here would gate nothing real, it
-   already has its own honest demo. Not started
+   already has its own honest demo. In progress, most of the page
+   already built (see `apps/portfolio-showcase/ROADMAP.md`, the source
+   of truth for this phase's detail, not duplicated here): the
+   pdf-generator gap named in this scope line specifically — it was
+   never actually integrated until late in the process, a real hole
+   caught before closing the phase — is now closed, an "Export PDF"
+   report button next to the market table.
 
 
 ## Future ideas (not yet phased)

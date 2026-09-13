@@ -804,3 +804,140 @@ investigación real antes de escribir código)
         interceptación de rutas, ya que la API real seguía con cuota
         agotada por el volumen acumulado de pruebas de esta sesión
         (mismo diagnóstico ya cerrado más arriba en este archivo).
+
+- [x] **Integración de `@zhunam/pdf-generator` en `crypto-dashboard` —
+      cierra el hueco real detectado tarde en el proceso** (el scope
+      original de la fase, en el ROADMAP raíz, menciona explícitamente
+      reutilizar data-grid/form-builder/pdf-generator juntos; esta
+      librería nunca se había integrado). Botón "Export PDF" junto al
+      encabezado "Market", genera un reporte real con
+      `generatePdf()`/`result.download()` de la librería (llamada
+      directa, sin montar `<lib-pdf-preview>` — confirmado en la
+      investigación previa que la librería lo soporta tal cual, no es
+      la única forma de usarla pese a que la demo de la librería y
+      `PROMPTS_EFFECTIVE.md` Ejemplo 6 solo documentan el patrón con
+      preview visible).
+      - **Nuevo fetch de `getGlobalStats()` en `crypto-dashboard.ts`**,
+        mismo patrón sin params que ya usa `market-state.ts` (sin
+        tocar ese archivo): mismo cache-key, sin llamada real
+        duplicada gracias al caché de 45s de `CoinGeckoService`. Solo
+        alimenta el PDF (no se renderiza en la página, market-state ya
+        muestra su propia copia en vivo), por eso se pide una sola vez
+        al iniciar, no se sumó al intervalo de auto-refresh.
+      - **Todo el contenido dinámico pasa por `{{path}}` de la propia
+        librería**, nunca concatenado en un string del template
+        (pedido explícito de seguridad de la tarea): precios,
+        porcentajes con signo, market cap/volumen con separador de
+        miles, y `dominanceByCoin` (`Record<string, number>`)
+        transformado a un array `{coin, share}` para una tabla chica
+        separada — todo formateado en TS antes de armar el `data`
+        object, vía `buildPdfReportData()`, una función pura extraída
+        específicamente para poder testearla sin mockear la librería.
+      - **Sin color en la columna "24h Change"**: limitación real
+        confirmada contra el modelo de `PdfTableColumn` antes de
+        implementar (no hay hook de estilo condicional por celda en
+        esta v1), documentada con un comentario en el código, no un
+        olvido. El signo `+`/`-` es la única señal de dirección que
+        esa tabla puede llevar.
+      - **Ícono de descarga**: SVG dibujado a mano inline, mismo
+        criterio que el resto del proyecto (confirmado que no hay
+        ninguna librería de íconos instalada, no se agregó ninguna).
+        Spinner de carga del botón: mismo técnica de anillo girando
+        que ya usa `coin-spinner.scss`, replicada a escala chica en
+        `crypto-dashboard.scss` (no se reutilizó el componente
+        `coin-spinner` en sí, pensado para un bloque completo con
+        padding, no para uso inline dentro de un botón).
+      - **Lección real de testing**: intentar mockear `@zhunam/pdf-
+        generator` (un alias de path de tsconfig, no un paquete npm
+        real) con `vi.mock()` resultó frágil — el import usado dentro
+        de `crypto-dashboard.ts` nunca quedó interceptado pese a
+        `vi.hoisted()`. Se resolvió extrayendo el armado de datos del
+        PDF (`buildPdfReportData()`, función pura) para testearlo
+        directamente sin mockear la librería en absoluto; el único
+        test que sí necesitaba simular el click del botón usa
+        `vi.spyOn(component, 'exportPdf')` en vez de interceptar la
+        librería.
+      - Verificado: build y lint limpios. WSL con los mismos 5 fallos
+        preexistentes (cero nuevos), 124 passed (+6 tests nuevos).
+        **PDF real generado y descargado en el navegador real
+        (Playwright)**: `crypto-market-report-2026-09-13.pdf`,
+        contenido confirmado leyendo el archivo real — encabezado con
+        título + fecha/hora exacta repetido en cada página, resumen
+        global con los mismos números que market-state, tabla de
+        dominancia (10 monedas), tabla de mercado paginada
+        automáticamente por pdfmake (20 monedas reales en 2 páginas),
+        y el footer con la atribución a CoinGecko + el disclaimer
+        financiero repetido en cada página.
+- [x] **Dos ajustes puntuales sobre lo anterior, ya cerrado.**
+      1. **Botón "Export PDF" restilizado**: de rectángulo sólido
+         Signal Teal a pill blanca (`rounded-full bg-base-100`), texto
+         e ícono en Signal Teal, sombra suave, sin borde. **Discrepancia
+         real detectada, no asumida**: la tarea pedía el mismo valor de
+         sombra "ya usado en los paneles de esta página" pero escribió
+         `rgba(15,37,42,0.12)`; el valor REAL ya usado en
+         market-state/market-table/trending-carousel/currency-converter
+         y en las tabs Trending/Top Movers es `0.08` (confirmado con
+         grep antes de asumir cuál era correcto). Se usó `0.08`, el
+         valor real, no el escrito en la tarea, para lograr la
+         consistencia que la tarea misma pedía. Spinner de carga:
+         mismo anillo, recoloreado a `border-slate-200 border-t-primary`
+         (los mismos colores que ya usa `coin-spinner.scss`, ahora que
+         el fondo del botón también es blanco). Estado disabled: texto/
+         ícono atenuado (`disabled:text-slate-400`), no un fondo sólido
+         atenuado.
+      2. **Márgenes del PDF investigados y corregidos**: `PdfTemplate.
+         margins` SÍ existe y SÍ está conectado de verdad a
+         `pageMargins` de pdfmake (confirmado leyendo
+         `compile-template.ts` de la librería antes de usarlo, no
+         asumido — mismo criterio que ya se aplicó para confirmar el
+         fix de `PdfTableColumn.width`). Causa real del problema
+         visual: pdfmake renderiza header/footer DENTRO del margen
+         superior/inferior de la página; el default de la librería
+         (40pt parejo en los 4 lados cuando `margins` no se define) no
+         alcanzaba para el header de 2 líneas (título + fecha),
+         generando la superposición visual que se veía en el PDF
+         anterior. Se configuró `{ top: 90, bottom: 60, left: 40,
+         right: 40 }`. Verificado generando un PDF real de nuevo: ya
+         no hay superposición, espacio correcto entre el encabezado y
+         "Global Market Summary" en cada página.
+      - Verificado: build y lint limpios, WSL con los mismos 5 fallos
+        preexistentes (124 passed, sin regresión). Botón nuevo y PDF
+        con márgenes corregidos confirmados en navegador real.
+- [x] **Corrección: el fix de márgenes anterior solo cubría el cuerpo
+      del PDF, no el header/footer, que seguían pegados al borde de
+      la página.** Investigado y resuelto ÚNICAMENTE desde
+      `crypto-dashboard.ts`, sin tocar `libs/pdf-generator`.
+      - **Causa real, confirmada contra los tipos reales de pdfmake**
+        (`node_modules/@types/pdfmake/interfaces.d.ts`, no supuesto):
+        `pageMargins` es literalmente "Margins around the content"
+        (el body), y su propio doc comment aclara que si hay
+        header/footer, `pageMargins` solo tiene que dejar "sufficient
+        room for it to be rendered at all" — no le da al header/footer
+        ningún margen propio. header/footer se renderizan pegados al
+        borde físico de la página por defecto.
+      - **Confirmado que la API pública de `@zhunam/pdf-generator` no
+        expone ningún campo `margin`** en `PdfLayoutOptions` ni
+        `PdfTextOptions` (revisado `pdf-block.ts` antes de concluirlo),
+        pese a que el `Content` real de pdfmake sí soporta
+        `margin`/`marginTop`/etc. en cualquier nodo. Es un hueco real
+        de la librería, no implementado ahora sin confirmación (mismo
+        criterio que data-grid/form-builder) — queda propuesto como
+        posible extensión aditiva futura (ej. un `margin` en
+        `PdfLayoutOptions`), no aplicado.
+      - **Resuelto entero con la API pública ya existente**: una
+        `pdfColumn([], { width: 40 })` vacía dentro de un `pdfRow(...)`
+        actúa como inset izquierdo/derecho (mismo criterio de "bloque
+        vacío para espaciado" que la tarea sugería), y un `pdfSpacer()`
+        inicial dentro de la columna del header como inset superior.
+        Para el footer (texto centrado), se agregó también un ancho
+        explícito a la columna central (`595.28 - 40*2`, A4 real en
+        puntos, confirmado contra `pdfmake/src/standardPageSizes.js`,
+        no memorizado) ya que `PdfLayoutOptions.width` solo acepta un
+        `number`, sin forma de pasar `'*'`/`'auto'` para "ocupar el
+        espacio restante" — así el texto centrado queda realmente
+        centrado dentro del mismo margen que el cuerpo, no solo
+        recortado a su propio ancho de contenido.
+      - Verificado con PDF real regenerado: header y footer ya
+        alineados con el margen del cuerpo en ambas páginas, sin
+        pegarse al borde. Build y lint limpios, WSL con los mismos 5
+        fallos preexistentes (124 passed, sin regresión).

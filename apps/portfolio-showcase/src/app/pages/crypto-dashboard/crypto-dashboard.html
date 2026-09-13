@@ -137,7 +137,25 @@
 
   <section class="flex flex-col gap-6 lg:flex-row lg:items-start">
     <div class="flex flex-1 flex-col gap-3">
-      <h2 class="text-sm font-semibold text-base-content">Market</h2>
+      <div class="flex items-center justify-between">
+        <h2 class="text-sm font-semibold text-base-content">Market</h2>
+        <button
+          type="button"
+          class="flex cursor-pointer items-center gap-1.5 rounded-full bg-base-100 px-4 py-1.5 text-sm font-semibold text-primary shadow-[0_2px_10px_rgba(15,37,42,0.08)] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:text-slate-400"
+          [disabled]="!canExportPdf()"
+          (click)="exportPdf()"
+        >
+          @if (pdfExporting()) {
+            <span class="pdf-export-spinner h-3.5 w-3.5 rounded-full border-2 border-slate-200 border-t-primary"></span>
+            Generating…
+          } @else {
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16" />
+            </svg>
+            Export PDF
+          }
+        </button>
+      </div>
       <app-market-table [coins]="marketCoins()" [error]="marketError()" (retry)="onMarketRetry()" />
     </div>
 

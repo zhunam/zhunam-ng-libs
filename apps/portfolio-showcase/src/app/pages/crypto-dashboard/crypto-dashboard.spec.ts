@@ -1,6 +1,12 @@
 import { provideRouter } from '@angular/router';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { CryptoDashboard, MARKET_TABLE_SIZE, REFRESH_INTERVAL_MS } from './crypto-dashboard';
+import {
+  buildPdfReportData,
+  CryptoDashboard,
+  formatDateForFilename,
+  MARKET_TABLE_SIZE,
+  REFRESH_INTERVAL_MS,
+} from './crypto-dashboard';
 import { CoinGeckoService } from './services/coingecko';
 import { CryptoCoin, GlobalMarketStats } from './models/coin';
 
@@ -31,6 +37,7 @@ describe('CryptoDashboard', () => {
   let fixture: ComponentFixture<CryptoDashboard>;
   let getMarketsSpy: ReturnType<typeof vi.fn>;
   let getTrendingSpy: ReturnType<typeof vi.fn>;
+  let getGlobalStatsSpy: ReturnType<typeof vi.fn>;
 
   // This page assembles several components that each inject
   // CoinGeckoService independently (market-ticker, currency-converter,
@@ -40,6 +47,7 @@ describe('CryptoDashboard', () => {
   function provideMockCoinGecko() {
     getMarketsSpy = vi.fn().mockResolvedValue([buildCoin(), buildCoin({ id: 'ethereum', symbol: 'eth', name: 'Ethereum' })]);
     getTrendingSpy = vi.fn().mockResolvedValue([buildCoin()]);
+    getGlobalStatsSpy = vi.fn().mockResolvedValue(sampleStats);
     return {
       provide: CoinGeckoService,
       useValue: {
@@ -47,7 +55,7 @@ describe('CryptoDashboard', () => {
         getTrending: getTrendingSpy,
         getSupportedCurrencies: vi.fn().mockResolvedValue(['usd', 'eur', 'btc', 'eth']),
         getSimplePrice: vi.fn().mockResolvedValue(65000),
-        getGlobalStats: vi.fn().mockResolvedValue(sampleStats),
+        getGlobalStats: getGlobalStatsSpy,
       },
     };
   }
@@ -267,5 +275,101 @@ describe('CryptoDashboard', () => {
 
     expect(trendingTab.getAttribute('aria-pressed')).toBe('false');
     expect(moversTab.getAttribute('aria-pressed')).toBe('true');
+  });
+
+  // buildPdfReportData() is a pure function (see crypto-dashboard.ts's
+  // own doc comment on it): tested directly here, no TestBed, no
+  // mocking of @zhunam/pdf-generator at all. Deliberately not mocking
+  // that library's generatePdf() itself: it's resolved via a tsconfig
+  // path alias, not a real npm package, and vi.mock() on that kind of
+  // specifier proved unreliable in practice here (silently never
+  // intercepted the import actually used inside crypto-dashboard.ts,
+  // confirmed empirically before this test file settled on this
+  // approach instead). Testing the pure data-assembly step directly
+  // covers everything these tests actually care about (formatting,
+  // the dominance transform) without depending on that.
+  it('formats prices, signed percentages, and summary numbers', () => {
+    const coins = [
+      buildCoin({ id: 'bitcoin', name: 'Bitcoin', symbol: 'btc', currentPrice: 65000, changePercentage24h: 1.5 }),
+      buildCoin({ id: 'ethereum', name: 'Ethereum', symbol: 'eth', currentPrice: 2500.4, changePercentage24h: -2.5 }),
+    ];
+
+    const data = buildPdfReportData(sampleStats, coins, new Date(2026, 8, 13, 15, 30));
+
+    expect(data.coins).toEqual([
+      { name: 'Bitcoin', symbol: 'BTC', price: '$65,000.00', change: '+1.50%' },
+      { name: 'Ethereum', symbol: 'ETH', price: '$2,500.40', change: '-2.50%' },
+    ]);
+    expect(data.summary.totalMarketCap).toBe('$2,654,490,015,954.50');
+    expect(data.summary.totalVolume).toBe('$107,207,728,882.80');
+    expect(data.summary.activeCryptocurrencies).toBe('21,084');
+  });
+
+  it('transforms dominanceByCoin into the expected {coin, share} table rows, symbol uppercased', () => {
+    const data = buildPdfReportData(sampleStats, [buildCoin()], new Date(2026, 8, 13));
+
+    expect(data.dominance).toEqual([
+      { coin: 'BTC', share: '58.17%' },
+      { coin: 'ETH', share: '11.65%' },
+    ]);
+  });
+
+  it('formatDateForFilename() produces the YYYY-MM-DD format exportPdf() uses for the download filename', () => {
+    expect(formatDateForFilename(new Date(2026, 8, 13))).toBe('2026-09-13');
+    expect(formatDateForFilename(new Date(2026, 0, 5))).toBe('2026-01-05'); // single-digit month/day, zero-padded
+  });
+
+  it('clicking "Export PDF" triggers exportPdf()', async () => {
+    fixture = await createSettledFixture();
+    const exportSpy = vi.spyOn(fixture.componentInstance, 'exportPdf').mockResolvedValue(undefined);
+    const button = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('button')).find((btn) =>
+      btn.textContent?.includes('Export PDF'),
+    ) as HTMLButtonElement;
+
+    button.click();
+    fixture.detectChanges();
+
+    expect(exportSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('disables the Export PDF button until both market coins and global stats have loaded', () => {
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    getGlobalStatsSpy.mockReturnValue(new Promise(() => {}));
+    fixture = TestBed.createComponent(CryptoDashboard);
+    fixture.detectChanges();
+
+    const button = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('button')).find((btn) =>
+      btn.textContent?.includes('Export PDF'),
+    ) as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+  });
+
+  it('never adds a repeated getGlobalStats() call from the auto-refresh interval', async () => {
+    // getGlobalStatsSpy is shared across every real caller on this page,
+    // same aliasing as getMarketsSpy/pageMarketFetchCount() above:
+    // market-state.ts already calls getGlobalStats() on its own (see
+    // that component's own file, untouched by this task), and this
+    // page's own new fetch is a second, independent real caller. Both
+    // legitimately call it once each on init; CoinGeckoService's real
+    // cache is what dedupes them into one real network request, not
+    // something a call-count assertion on a mocked function can see.
+    // What this test actually guards is that the auto-refresh interval
+    // doesn't add a THIRD call on top of those two.
+    vi.useFakeTimers();
+    try {
+      fixture = TestBed.createComponent(CryptoDashboard);
+      fixture.detectChanges();
+      await vi.advanceTimersByTimeAsync(0); // lets both components' plain .then()/effect() calls resolve
+      const callsAfterInit = getGlobalStatsSpy.mock.calls.length;
+      expect(callsAfterInit).toBeGreaterThan(0);
+
+      await vi.advanceTimersByTimeAsync(REFRESH_INTERVAL_MS * 2);
+      fixture.detectChanges();
+      expect(getGlobalStatsSpy).toHaveBeenCalledTimes(callsAfterInit); // no growth from the interval
+
+      fixture.destroy();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
