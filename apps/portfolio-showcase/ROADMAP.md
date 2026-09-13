@@ -504,6 +504,48 @@ investigación real antes de escribir código)
       Verificado: build y lint limpios, mismos 6 fallos preexistentes
       en WSL (91 passed, sin regresión), capturas reales de Playwright
       en desktop y mobile.
+- [x] **Nombres completos en los selectores de moneda destino
+      (market-state + currency-converter "To").** `/simple/
+      supported_vs_currencies` reconfirmado contra la API real: 63
+      códigos exactos (mismo número ya documentado), sin nombres
+      asociados. Desglose real, verificado, no de memoria:
+      - **12 tickers cripto**: btc, eth, ltc, bch, bnb, eos, xrp, xlm,
+        link, dot, yfi, sol. De estos, **10 resuelven** contra el top
+        100 por market cap (`getMarkets('usd', 100)`, mismo que ya usa
+        `currency-converter` para su "From"); **eos y yfi NO** (cayeron
+        fuera del top 100 por cap real hoy) — caso borde real, no
+        hipotético, confirmado contra `/coins/markets` antes de asumir
+        que las 12 iban a resolver.
+      - **51 códigos no-cripto**: 46 fiat ISO 4217 (usd..zar), 2 metales
+        preciosos (xag=Silver, xau=Gold), 1 unidad del FMI (xdr=IMF
+        Special Drawing Rights), y 2 subunidades de display de Bitcoin
+        que NO son coins propias (bits=Bits/µBTC, sats=Satoshi) — tabla
+        estática acotada a estos 51 códigos reales exactos, ninguno
+        genérico agregado de memoria.
+      - **Helper nuevo**: `utils/currency-display-name.ts` (mismo
+        patrón que `utils/price-direction.ts`), `currencyDisplayName
+        (code, coins)` → "Nombre (CÓDIGO)", cruza primero contra la
+        lista de coins recibida, después contra la tabla estática fiat/
+        otros, y si ninguna matchea devuelve el código en mayúsculas
+        solo (nunca vacío, mismo comportamiento que ya existía). 7 tests
+        propios cubriendo cripto/fiat/especiales/fallback/prioridad.
+      - **market-state no tenía lista de coins propia** (solo `/global`
+        + `/simple/supported_vs_currencies`): se le agregó el mismo
+        `getMarkets('usd', 100)` que ya usa `currency-converter`, mismos
+        params exactos para compartir la cache de 45s de
+        `CoinGeckoService` (mismo criterio ya documentado ahí mismo para
+        `getSupportedCurrencies()`) — no es una llamada nueva desde la
+        perspectiva de la API real, es la misma llamada que el segundo
+        componente en pedirla sirve desde cache. Un fallo en esta
+        llamada específica se traga silenciosamente (no rompe
+        `errorSignal`): es enriquecimiento cosmético, `currencyDisplayName`
+        ya cae al código plano sin ella.
+      - Verificado con Playwright real (no solo los tests): ambos
+        selectores muestran el formato nuevo en el navegador real,
+        idéntico entre los dos componentes, valores/ids enviados a la
+        API sin cambios (solo texto mostrado). Build y lint limpios,
+        mismos 6 fallos preexistentes en WSL (100 passed, +9 tests
+        nuevos, sin regresión).
 
 ## Notas de diseño pendientes
 

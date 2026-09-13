@@ -3,6 +3,7 @@ import { DecimalPipe } from '@angular/common';
 import { FieldConfig, FormBuilder } from '@zhunam/form-builder';
 import { CoinGeckoService } from '../../services/coingecko';
 import { CryptoCoin } from '../../models/coin';
+import { currencyDisplayName } from '../../utils/currency-display-name';
 import { CoinSpinner } from '../coin-spinner/coin-spinner';
 
 // Reuses getMarkets(), same as market-table, for the "from" dropdown.
@@ -111,7 +112,7 @@ export class CurrencyConverter {
       defaultValue: this.toCurrencyDefaultSignal(),
       options: this.currencies().map((currency) => ({
         value: currency,
-        label: currency.toUpperCase(),
+        label: currencyDisplayName(currency, this.coins()),
       })),
     },
   ]);

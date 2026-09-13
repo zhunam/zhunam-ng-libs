@@ -12,8 +12,8 @@
         (change)="onCurrencyChange($event)"
         class="rounded-field border border-slate-200 bg-base-100 p-1 text-sm text-base-content"
       >
-        @for (code of currencies(); track code) {
-          <option [value]="code">{{ code.toUpperCase() }}</option>
+        @for (option of currencyOptions(); track option.code) {
+          <option [value]="option.code">{{ option.label }}</option>
         }
       </select>
     </div>

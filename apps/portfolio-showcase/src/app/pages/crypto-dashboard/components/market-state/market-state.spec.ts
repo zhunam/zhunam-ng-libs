@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MarketState } from './market-state';
 import { CoinGeckoService } from '../../services/coingecko';
-import { GlobalMarketStats } from '../../models/coin';
+import { CryptoCoin, GlobalMarketStats } from '../../models/coin';
 
 const sampleStats: GlobalMarketStats = {
   totalMarketCapByCurrency: { usd: 2_654_490_015_954.5, eur: 2_288_403_988_874.2 },
@@ -13,6 +13,20 @@ const sampleStats: GlobalMarketStats = {
 };
 const sampleCurrencies = ['usd', 'eur'];
 
+function buildCoin(overrides: Partial<CryptoCoin> = {}): CryptoCoin {
+  return {
+    id: 'bitcoin',
+    symbol: 'btc',
+    name: 'Bitcoin',
+    image: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png',
+    currentPrice: 65000,
+    rank: 1,
+    changePercentage24h: 1.5,
+    sparkline: [],
+    ...overrides,
+  };
+}
+
 function root(fixture: ComponentFixture<MarketState>): HTMLElement {
   return fixture.nativeElement as HTMLElement;
 }
@@ -20,10 +34,12 @@ function root(fixture: ComponentFixture<MarketState>): HTMLElement {
 describe('MarketState', () => {
   let getGlobalStatsSpy: ReturnType<typeof vi.fn>;
   let getSupportedCurrenciesSpy: ReturnType<typeof vi.fn>;
+  let getMarketsSpy: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
     getGlobalStatsSpy = vi.fn().mockResolvedValue(sampleStats);
     getSupportedCurrenciesSpy = vi.fn().mockResolvedValue(sampleCurrencies);
+    getMarketsSpy = vi.fn().mockResolvedValue([buildCoin()]);
 
     await TestBed.configureTestingModule({
       imports: [MarketState],
@@ -33,6 +49,7 @@ describe('MarketState', () => {
           useValue: {
             getGlobalStats: getGlobalStatsSpy,
             getSupportedCurrencies: getSupportedCurrenciesSpy,
+            getMarkets: getMarketsSpy,
           },
         },
       ],
@@ -130,6 +147,28 @@ describe('MarketState', () => {
 
     expect(getGlobalStatsSpy).toHaveBeenCalledTimes(2);
     expect(root(fixture).textContent).not.toContain('Could not load global market stats.');
+  });
+
+  it('renders the reference-currency selector with "Name (CODE)" labels, crypto tickers and fiat alike', async () => {
+    getSupportedCurrenciesSpy.mockResolvedValue(['btc', 'usd']);
+    getMarketsSpy.mockResolvedValue([buildCoin()]);
+    const fixture = await createSettledFixture();
+
+    const options = Array.from(root(fixture).querySelectorAll('select option')).map(
+      (option) => option.textContent?.trim(),
+    );
+    expect(options).toEqual(['Bitcoin (BTC)', 'US Dollar (USD)']);
+  });
+
+  it('falls back to a plain uppercased code in the selector when a code has no known name', async () => {
+    getSupportedCurrenciesSpy.mockResolvedValue(['zzz']);
+    getMarketsSpy.mockResolvedValue([]);
+    const fixture = await createSettledFixture();
+
+    const options = Array.from(root(fixture).querySelectorAll('select option')).map(
+      (option) => option.textContent?.trim(),
+    );
+    expect(options).toEqual(['ZZZ']);
   });
 
   it('never renders currency codes via innerHTML', async () => {

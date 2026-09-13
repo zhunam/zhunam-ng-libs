@@ -277,6 +277,16 @@ describe('CurrencyConverter', () => {
     expect(root(fixture).textContent).toContain('Could not load the currency list.');
   });
 
+  it('renders the "To" select with "Name (CODE)" labels, crypto tickers and fiat alike', async () => {
+    const fixture = await createSettledFixture();
+
+    const [, toCurrencySelect] = getSelects(fixture);
+    const optionLabels = Array.from(toCurrencySelect.options).map((option) => option.textContent?.trim());
+    // sampleCurrencies = ['usd', 'eur', 'eth', 'btc']; 'eth'/'btc' match
+    // sampleCoins, 'usd'/'eur' resolve from the static fiat table.
+    expect(optionLabels).toEqual(['US Dollar (USD)', 'Euro (EUR)', 'Ethereum (ETH)', 'Bitcoin (BTC)']);
+  });
+
   it('never renders coin/currency data via innerHTML', async () => {
     getMarketsSpy.mockResolvedValue([buildCoin({ name: '<b>Bitcoin</b>' })]);
     const fixture = await createSettledFixture();
