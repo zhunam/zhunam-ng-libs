@@ -182,6 +182,29 @@ describe('CoinGeckoService (unit, mocked fetch)', () => {
     expect(currencies).toEqual(['usd', 'eur', 'btc']);
   });
 
+  it('getSimplePrice() reads the rate from the nested coin-then-currency shape', async () => {
+    fetchSpy.mockResolvedValue(jsonResponse({ bitcoin: { usd: 77219 } }));
+
+    const rate = await service.getSimplePrice('bitcoin', 'usd');
+
+    expect(rate).toBe(77219);
+  });
+
+  it('getSimplePrice() throws when the requested coin/currency pair is missing from the response', async () => {
+    fetchSpy.mockResolvedValue(jsonResponse({ bitcoin: {} }));
+
+    await expect(service.getSimplePrice('bitcoin', 'usd')).rejects.toThrow(/bitcoin/);
+  });
+
+  it('serves a second getSimplePrice() call with identical params from cache, without a second real fetch', async () => {
+    fetchSpy.mockResolvedValue(jsonResponse({ bitcoin: { usd: 77219 } }));
+
+    await service.getSimplePrice('bitcoin', 'usd');
+    await service.getSimplePrice('bitcoin', 'usd');
+
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+  });
+
   it('throws a readable error when CoinGecko responds with a non-ok status', async () => {
     fetchSpy.mockResolvedValue(new Response('{}', { status: 401 }));
 
@@ -225,6 +248,17 @@ describe('CoinGeckoService (real API integration)', () => {
       for (const coin of trending) {
         expect(coin.sparkline.length).toBeGreaterThan(0);
       }
+    },
+    20_000,
+  );
+
+  it.skipIf(!realApiKey)(
+    'getSimplePrice() returns a real positive conversion rate for bitcoin in usd',
+    async () => {
+      const rate = await service.getSimplePrice('bitcoin', 'usd');
+
+      expect(typeof rate).toBe('number');
+      expect(rate).toBeGreaterThan(0);
     },
     20_000,
   );

@@ -237,10 +237,48 @@ investigación real antes de escribir código)
       0.01ms y el `transform` quedó en `none` durante toda la
       animación bajo `prefers-reduced-motion: reduce`, sin necesidad
       de ningún chequeo de JS.
-- [ ] `components/currency-converter`: sobre `vs_currency` reales
-      (`/simple/supported_vs_currencies`, re-confirmar la lista
-      completa en el momento, no la muestra de este documento).
-      Candidato real para reusar `lib-form-builder`.
+- [x] `components/currency-converter`: **`lib-form-builder` NO se usó**
+      (hallazgo real): su contrato es "llenar formulario → submit →
+      `formSubmit`", sin ningún output de valores en vivo antes del
+      submit. El requisito de actualización automática con debounce en
+      `amount()` no encaja con ese patrón orientado a submit, ni
+      parcialmente (ni siquiera solo para el input numérico, ya que el
+      debounce es específicamente sobre tecleo en vivo). Se construyó
+      con controles nativos (`<input>`, dos `<select>`) + signals,
+      estilo Form Fields de `DESIGN.md` (Vellum, Hairline border).
+      **`CoinGeckoService` extendido** con `getSimplePrice(coinId,
+      vsCurrency)` (`/simple/price`, forma real confirmada contra la
+      API pública sin necesidad de la clave real: objeto anidado
+      `{ [coinId]: { [vsCurrency]: number } }`), mismo patrón de
+      caché/cola que los métodos existentes. `getSupportedCurrencies()`
+      ya existía y ya coincidía (63 monedas confirmadas de nuevo contra
+      la API real). Lista de "from": reusa `getMarkets()` (top 100 por
+      market cap, no las ~17.000 monedas que trackea CoinGecko, "lista
+      completa" leído como "mismo método que market-table", no
+      exhaustivo). Botón swap: la regla dada solo pedía chequear que el
+      symbol de `fromCoin` exista en `vs_currencies`, pero eso solo
+      garantiza una dirección; se extendió a chequear TAMBIÉN que
+      `toCurrency` mapee a un coin real en la lista (si no, el swap
+      "habilitado" no tendría a qué cambiar `fromCoin`, ej. bitcoin→usd
+      no habilita el swap ya que "usd" no es ninguna moneda de la
+      lista; bitcoin→eth sí, porque "eth" es ethereum).
+      **Retrofit posterior**: migrado a `lib-form-builder` en `mode
+      'live'` una vez esa capacidad existió (ver ítem de `form-builder`
+      en su propio ROADMAP). Los 3 campos nativos se reemplazaron por
+      una configuración declarativa (`FieldConfig<ConverterFormValue>`).
+      Swap ahora se logra reconstruyendo `fields()` con nuevos
+      `defaultValue` (form-builder no expone ningún `setValue` externo;
+      esto usa el mismo mecanismo documentado en su propio código para
+      "wizard swapping steps"). **Cambio de comportamiento real,
+      reportado, no silencioso**: el mensaje de error de `amount`
+      (antes visible con cada tecla) ahora solo aparece al hacer blur
+      del campo o al enviar, porque `form-builder` (sin modificar en
+      esta tarea) solo muestra errores cuando el control está `touched`
+      o el form fue `submitted` — comportamiento estándar de Angular
+      Reactive Forms, no un bug. La validación en sí (`required` +
+      `min: Number.EPSILON` para "mayor a 0" real, ya que
+      `Validators.min` es inclusivo) sigue bloqueando la conversión
+      igual que antes, solo cambia CUÁNDO se ve el mensaje.
 - [ ] `components/market-state`: franja de estadísticas globales del
       mercado (no un estado de carga), sobre `GET /global` ya
       investigado: dominancia BTC/ETH y del resto del top 10,

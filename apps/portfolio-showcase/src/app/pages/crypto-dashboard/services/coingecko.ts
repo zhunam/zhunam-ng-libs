@@ -136,6 +136,24 @@ export class CoinGeckoService {
     return this.request<string[]>('/simple/supported_vs_currencies');
   }
 
+  /**
+   * Real conversion rate of one coin into one vs_currency (e.g.
+   * `getSimplePrice('bitcoin', 'usd')` -> `77219`). Confirmed against
+   * the real endpoint: the raw response is nested by coin id, then by
+   * currency (`{ bitcoin: { usd: 77219 } }`), never a flat number.
+   */
+  async getSimplePrice(coinId: string, vsCurrency: string): Promise<number> {
+    const raw = await this.request<Record<string, Record<string, number>>>('/simple/price', {
+      ids: coinId,
+      vs_currencies: vsCurrency,
+    });
+    const rate = raw[coinId]?.[vsCurrency];
+    if (rate === undefined) {
+      throw new Error(`No conversion rate found for ${coinId} in ${vsCurrency}`);
+    }
+    return rate;
+  }
+
   private request<T>(path: string, params: Record<string, string> = {}): Promise<T> {
     const cacheKey = `${path}?${new URLSearchParams(params).toString()}`;
     const cached = this.cache.get(cacheKey);
