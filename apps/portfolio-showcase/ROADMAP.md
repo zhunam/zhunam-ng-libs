@@ -663,14 +663,74 @@ investigación real antes de escribir código)
         `/data-grid` conserva "MIT License" intacto, confirmado con
         Playwright.
 
-- **Auto-refresh de datos**: decidido como criterio general para todo
-  el dashboard (la app muestra valores que deben verse actualizados
-  sin que el visitante recargue la página manualmente), pero aplicado
-  primero solo en `market-ticker` (polling propio al método existente
-  de `CoinGeckoService`, respetando su TTL de caché de 45s). El
-  retrofit de `price-ticker`, `market-table`, y `trending-carousel`
-  con el mismo criterio queda pendiente como tarea separada, a definir
-  después (no implementado junto con `market-ticker`).
+- **Auto-refresh de datos — CERRADO, ambos retrofits pendientes
+  resueltos.** Decidido como criterio general para todo el dashboard,
+  aplicado primero solo en `market-ticker` (polling propio, `setInterval`
+  + `fetchCoins()` directo). Quedaban pendientes dos puntos relacionados,
+  cerrados juntos en la misma tarea:
+
+  1. **`price-ticker` eliminado, no retrofiteado.** Investigación previa
+     (arquitectura real de datos) confirmó que ya no se usaba en ningún
+     lado de `crypto-dashboard`: su función (nombre, precio, cambio 24h,
+     sparkline del coin destacado) había sido absorbida por el hero
+     durante el rediseño de esta misma sesión, dejándolo huérfano
+     (archivo completo, tests propios pasando, pero sin ningún
+     `<app-price-ticker>` en el árbol real). Decisión explícita con el
+     usuario: eliminar, no dejar código muerto ni retrofitearlo con un
+     timer que nadie iba a ver. Carpeta completa borrada
+     (`.ts`/`.html`/`.scss`/`.spec.ts`, 8 tests con ella). Confirmado con
+     grep en todo el repo: cero imports/referencias rotas; las únicas
+     menciones restantes son prosa histórica (comentarios explicando de
+     dónde salió una lección de testing, o el origen de la convención
+     Price Direction Indicator en DESIGN.md, actualizada para aclarar
+     que el componente ya no existe pero la convención sigue viva en
+     `market-table`/`trending-carousel`/`market-ticker`/`market-state`/
+     el hero). `utils/price-direction.ts` (el helper compartido, no el
+     componente) intacto y en uso por los 5 lugares recién listados.
+     `CHAT_PROMPT_CRYPTO.md` (raíz, documento histórico del prompt
+     original de esta fase) deliberadamente NO tocado: no es
+     documentación viva como DESIGN.md/ROADMAP.md, es un registro
+     histórico de cómo se planificó la fase, fuera del alcance pedido.
+
+  2. **Auto-refresh de `market-table` + `trending-carousel`, centralizado
+     en `crypto-dashboard.ts` (la página), no triplicado por
+     componente.** Confirmado en la investigación previa: ninguno de los
+     dos inyecta `CoinGeckoService`, ambos son puramente `input()`-driven
+     desde la página — agregarles su propio `setInterval` habría
+     cambiado ese contrato. En su lugar, un único `setInterval` en el
+     constructor de la página (mismo `REFRESH_INTERVAL_MS = 50_000` que
+     ya usaba `market-ticker`, duplicado como constante propia, mismo
+     criterio de no compartir constantes entre archivos ya aplicado en
+     el resto de esta app) re-dispara los mismos
+     `marketRetryTrigger`/`trendingRetryTrigger` que ya usaba el botón
+     Retry — no un mecanismo nuevo, una extensión de uno existente.
+     Limpieza vía `DestroyRef.onDestroy(() => clearInterval(...))`,
+     mismo patrón que `market-ticker`. `market-table.ts` y
+     `trending-carousel.ts` sin ningún cambio: siguen sin inyectar el
+     servicio.
+
+     **Verificado con evidencia real, no solo tests**: en WSL, 3 tests
+     nuevos (dispara de nuevo tras `REFRESH_INTERVAL_MS`, limpia el
+     intervalo al destruir, no duplica el intervalo si la página se
+     destruye y se recrea — mismo patrón de fake timers que
+     `market-ticker.spec.ts`, instalados ANTES de `createComponent()`).
+     Detalle real encontrado al escribir los tests, no asumido: el mock
+     compartido de `getMarkets` en `crypto-dashboard.spec.ts` mezcla
+     llamadas de 4 consumidores distintos del mismo servicio en esta
+     página (`market-ticker`, `market-state`, `currency-converter`, y la
+     página misma, cada uno con su propio parámetro de cantidad) — los
+     asserts de auto-refresh filtran por los parámetros específicos de
+     la página (`'usd', MARKET_TABLE_SIZE`) en vez de contar llamadas
+     crudas del spy compartido. Real en navegador (Playwright,
+     interceptando requests reales a `api.coingecko.com`, sin mockear
+     nada): `/coins/markets` (per_page=20) a los 2045ms y de nuevo a los
+     52050ms; `/search/trending` a los 3550ms y de nuevo a los 53549ms —
+     ambos gaps de ~50000ms, exactamente `REFRESH_INTERVAL_MS`, sin
+     recargar la página. Build y lint limpios. WSL: 5 fallos
+     preexistentes (mismo conteo confirmado en la tarea anterior, cero
+     nuevos), 121 tests totales (126 anteriores − 8 de `price-ticker` +
+     3 nuevos de auto-refresh = 121, cuenta exacta, no una regresión
+     oculta), 114 passed.
 
 - **Diagnóstico de rate limiting en carga inicial — CERRADO, cola
   confirmada correcta, no bug**: al verificar `/crypto-dashboard`
@@ -701,3 +761,46 @@ investigación real antes de escribir código)
   pruebas (`curl` + varias corridas de Playwright) contra la misma
   clave en la misma sesión, no algo que un visitante real con cuota
   fresca experimentaría. Sin acción pendiente sobre este punto.
+
+- [x] **Pestañas "Trending" / "Top Movers" en la sección Trending,
+      mismo `trending-carousel` reutilizado sin tocarlo.** Origen: el
+      usuario notó que `/search/trending` de CoinGecko devuelve lo más
+      *buscado* en su sitio (memecoins, novedades virales), no lo más
+      importante por capitalización — Bitcoin casi nunca aparece ahí.
+      Documentado en DESIGN.md ANTES de implementar (sección nueva
+      "Tabs", bajo Components): reutiliza la forma de pill ya definida
+      para Badges (activa = `badge-primary` relleno Signal Teal, ya
+      usado para el Live badge; inactiva = `badge-outline`, ya usado
+      para Coming Soon) en vez de inventar un control nuevo.
+      - **"Top Movers" no dispara ninguna llamada nueva a la API**:
+        ordena client-side (`computed()`) el mismo `marketCoins()` que
+        la página ya trae para `market-table` (top 20 por market cap),
+        por `|cambio 24h|` descendente, recortado a 10. Confirmado real
+        en navegador: cambiar de pestaña con datos ya cargados no
+        generó ningún request nuevo a `api.coingecko.com`.
+      - El retry del carrusel se redirige según la pestaña activa
+        (`onTrendingCarouselRetry()`): dispara `getTrending()` en
+        "Trending", `getMarkets()` en "Top Movers" — mismos triggers ya
+        existentes (`marketRetryTrigger`/`trendingRetryTrigger`), nada
+        nuevo.
+      - `trending-carousel.ts`/`.html` sin ningún cambio: solo varían
+        los inputs `coins`/`error`/`retry` que le pasa la página, el
+        componente sigue sin saber qué pestaña existe.
+      - Referencia visual de una imagen del usuario usada ÚNICAMENTE
+        para la mecánica (dos pills sobre el carrusel, alternan qué
+        muestra), no para sus colores (tema oscuro navy, ajeno a este
+        sistema) ni su contenido (traía un botón "Buy" que no se
+        replicó: la app no tiene funcionalidad de trading, y
+        `trending-carousel.spec.ts` ya tenía un test explícito
+        prohibiendo cualquier control de compra/venta/trade).
+      - Verificado: build y lint limpios. WSL con 5 fallos
+        preexistentes (mismo conteo, cero nuevos), 118 passed (+4
+        tests nuevos: pestaña por defecto, orden real de "Top Movers"
+        con coins de cambio conocido, ruteo del retry según pestaña,
+        `aria-pressed` correcto en ambos botones). Real en navegador:
+        "Top Movers" con datos reales en vivo mostró el orden correcto
+        (-2.62%, -2.11%, -1.81%, -0.65%, descendente por valor
+        absoluto); "Trending" verificado con datos simulados vía
+        interceptación de rutas, ya que la API real seguía con cuota
+        agotada por el volumen acumulado de pruebas de esta sesión
+        (mismo diagnóstico ya cerrado más arriba en este archivo).
