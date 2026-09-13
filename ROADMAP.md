@@ -189,10 +189,11 @@ promoted into the numbered sequence above.
   igual que CI. Cualquier `nx test` corrido nativo en Windows no es
   confiable como resultado, ni positivo ni negativo.
 
-- **`nx test portfolio-showcase` falla hoy en 5 de 6 archivos** (confirmado
-  en WSL 2026-08-25, no es un problema del entorno): `app.spec.ts`,
-  `home.spec.ts`, `data-grid-demo.spec.ts`, `form-builder-demo.spec.ts`, y
-  el nuevo `pdf-generator-demo.spec.ts`, todos con
+- **`nx test portfolio-showcase` falla hoy en 5 de 6 archivos — CERRADO,
+  ver fix real más abajo.** Diagnóstico original (confirmado en WSL
+  2026-08-25, no un problema del entorno): `app.spec.ts`, `home.spec.ts`,
+  `data-grid-demo.spec.ts`, `form-builder-demo.spec.ts`, y el nuevo
+  `pdf-generator-demo.spec.ts`, todos con
   `NG0201: No provider found for ActivatedRoute`. Causa: cualquier
   componente que usa `RouterLink` (`app.ts`, y cada página de demo vía su
   sidebar/breadcrumb) inyecta `ActivatedRoute` en su constructor, y
@@ -206,6 +207,34 @@ promoted into the numbered sequence above.
   investigado por qué ese caso puntual no dispara el mismo error. Pendiente
   de arreglo real (agregar `provideRouter([])` a los `TestBed` afectados),
   fuera del alcance de la tarea que lo detectó.
+
+  **Fix real aplicado 2026-09-13.** `provideRouter([])` agregado a los
+  `TestBed` de `calendar-demo.spec.ts`, `data-grid-demo.spec.ts`,
+  `form-builder-demo.spec.ts`, `pdf-generator-demo.spec.ts`, y al
+  primer `describe` de `home.spec.ts` (el segundo `describe` de ese
+  archivo ya lo tenía, agregado en una tarea anterior específicamente
+  para poder testear la sección Featured Project mientras este bug
+  seguía sin resolver). Mismo patrón exacto ya usado en
+  `auth-demo.spec.ts`/`crypto-dashboard.spec.ts`: un array vacío
+  alcanza, ninguno de estos tests navega a una ruta real.
+
+  **Dos detalles del diagnóstico original que ya no coinciden con el
+  estado real del repo, dejados anotados en vez de reescribir la
+  nota original**: (1) `app.spec.ts` ya no estaba en la lista de
+  fallos al empezar este fix — se corrigió como efecto secundario de
+  una tarea anterior (agregar `provideRouter(...)` al `TestBed` de
+  `app.spec.ts` para poder testear el footer condicional de
+  `/crypto-dashboard` arregló, sin buscarlo, el mismo NG0201 que
+  afectaba a ese archivo). (2) `auth-demo.spec.ts`, al releerlo ahora,
+  sí tiene `provideRouter([])` en su `TestBed` — contradice la
+  afirmación original de que "no provee nada especial"; no se
+  investigó cuándo se agregó, pero el archivo real hoy ya sigue el
+  patrón correcto.
+
+  Verificado: `nx run-many --target=test --all` en WSL — 6/6 proyectos
+  del monorepo en verde, cero regresión. `portfolio-showcase`:
+  17/17 archivos, **129 passed, 0 failed** (antes: 124 passed, 5
+  failed). Build y lint de `portfolio-showcase` limpios.
 
 - **`/tmp` de WSL puede llenarse con restos de `npm install` viejos**:
   el `tmpfs` de la instancia WSL usada para verificación es de 2GB:

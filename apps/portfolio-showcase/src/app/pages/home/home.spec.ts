@@ -9,6 +9,7 @@ describe('Home', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [Home],
+      providers: [provideRouter([])],
     }).compileComponents();
 
     fixture = TestBed.createComponent(Home);
@@ -21,13 +22,13 @@ describe('Home', () => {
   });
 });
 
-// Separate describe, with its own provideRouter([]) (same pattern
-// already used in auth-demo.spec.ts): the suite above hits the
-// preexisting NG0201/ActivatedRoute failure documented in the root
-// ROADMAP.md (Home uses RouterLink with no router provided in its
-// TestBed), left untouched here since fixing it is out of this task's
-// scope. This describe configures its own module correctly instead, so
-// the new Featured Project assertion is actually exercised.
+// Separate describe (not merged into the one above: that's a bigger
+// restructure than the narrow NG0201 fix this file needed, left alone
+// on purpose). Both configure the same provideRouter([]) now; this one
+// predates that fix and was added specifically to exercise the
+// Featured Project assertions while the suite above still hit the
+// preexisting NG0201/ActivatedRoute failure (documented, now fixed, in
+// the root ROADMAP.md's infrastructure lessons).
 describe('Home (Featured Project section)', () => {
   let fixture: ComponentFixture<Home>;
 
