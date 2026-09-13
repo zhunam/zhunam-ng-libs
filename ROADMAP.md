@@ -100,6 +100,22 @@ promoted into the numbered sequence above.
   copie por cuarta vez y calendar/chat-widget lo hagan crecer más.
   Detectado durante el relevamiento previo a la demo de pdf-generator.
 
+- **El `<footer>`, a diferencia del breadcrumb, NO está duplicado por
+  página: es un único elemento global en `app.html`** (fuera del
+  `<router-outlet>`), verificado antes de tocar nada al armar el
+  footer específico de `/crypto-dashboard`. Como consecuencia, mostrar
+  contenido distinto ahí según la ruta no se resuelve copiando markup
+  (como el breadcrumb), sino con detección de ruta en `App` (`app.ts`):
+  se agregó `isCryptoDashboard`, mismo patrón `toSignal(router.events...)`
+  que ya usaba `isHome` para el header transparente. Primera vez que el
+  footer diverge intencionalmente entre rutas (sin "MIT License" en
+  `/crypto-dashboard`, ya que esa pieza es `apps/*` y no una librería
+  publicable; con atribución real a CoinGecko y un disclaimer
+  financiero en su lugar) — una decisión documentada, no una
+  inconsistencia accidental. Cualquier futura página con necesidades de
+  footer distintas debería sumarse a este mismo `computed`/`toSignal`,
+  no reabrir la pregunta de si el footer está duplicado.
+
 - **`home.ts`/`home.html` no iteran las tarjetas de librería**: cada
   tarjeta (Data Grid, Form Builder, Auth) es una propiedad separada
   (`dataGridLibrary`, `formBuilderLibrary`, `authLibrary`) y un bloque

@@ -44,7 +44,18 @@
       class="mx-auto flex w-[90%] flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
     >
       <p class="text-sm text-slate-600">
-        <span translate="no">Zhunam</span> — Ariana Mora · {{ currentYear }} · MIT License
+        <span translate="no">Zhunam</span> — Ariana Mora · {{ currentYear }}
+        @if (isCryptoDashboard()) {
+          · Powered by
+          <a
+            href="https://www.coingecko.com/en/api/"
+            target="_blank"
+            rel="noopener"
+            class="underline hover:text-primary"
+          >CoinGecko API</a>. Informational only, not financial advice: verify any price before making decisions.
+        } @else {
+          · MIT License
+        }
       </p>
 
       <div class="flex items-center gap-4">

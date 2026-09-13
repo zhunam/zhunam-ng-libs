@@ -622,8 +622,46 @@ investigación real antes de escribir código)
         (touch real o mouse real), no un bug del componente sino una
         limitación real de cómo se puede simular touch sin backing
         genuino.
-
-## Notas de diseño pendientes
+- [x] **Footer específico de `/crypto-dashboard`, alcance acotado a esa
+      ruta.** El footer NO está duplicado por página como el
+      breadcrumb (ver nota en el ROADMAP raíz, junto a la de
+      duplicación del shell): es un único elemento global en
+      `app.html`. Se agregó `isCryptoDashboard` en `app.ts` (mismo
+      patrón `toSignal(router.events...)` que ya usaba `isHome`), y el
+      `<footer>` ahora condiciona su contenido según eso.
+      - **Investigación real de atribución de CoinGecko, no asumida**:
+        sus Términos de la API (sección 4.4,
+        https://www.coingecko.com/en/api_terms) exigen mostrar
+        textualmente "Powered by CoinGecko" en fuente legible, no menor
+        a tamaño 10, y aplica a TODOS los planes, incluido el tier
+        Demo/gratuito. Su guía de marca
+        (https://brand.coingecko.com/resources/attribution-guide) lista
+        "Powered by CoinGecko API" como formato aceptable, enlazando a
+        `coingecko.com` o `coingecko.com/en/api/`. Se implementó
+        exactamente ese formato (no una paráfrasis como "Data via..."
+        que se había escrito primero y se corrigió al confirmar el
+        texto real exigido), enlazando a
+        `https://www.coingecko.com/en/api/`. El footer de esta página
+        ya usa `text-sm` (14px), por encima del mínimo de 10px exigido.
+      - **Contenido**: se quitó "MIT License" (no aplica, `apps/*` no
+        es una librería publicable); se agregó el disclaimer
+        financiero ("Informational only, not financial advice: verify
+        any price before making decisions", en inglés por consistencia
+        con el resto del copy del sitio, la tarea lo pedía en español
+        como instrucción pero el significado se mantuvo); los links de
+        GitHub/LinkedIn quedaron con los mismos `href` de siempre, sin
+        tocar.
+      - Verificado: build y lint limpios. WSL con 5 fallos preexistentes
+        (no 6): el nuevo test de `app.spec.ts` necesitaba
+        `provideRouter(...)` para poder navegar entre rutas y testear
+        el footer condicional, y ese mismo provider arregló como efecto
+        secundario el test "should render the header brand link", que
+        antes fallaba por falta de `ActivatedRoute` — no se tocó nada
+        de ese test para lograrlo, fue consecuencia directa de lo que
+        esta tarea ya necesitaba agregar. 119 passed (+5 nuevos). Real
+        en navegador: `/crypto-dashboard` muestra el footer nuevo,
+        `/data-grid` conserva "MIT License" intacto, confirmado con
+        Playwright.
 
 - **Auto-refresh de datos**: decidido como criterio general para todo
   el dashboard (la app muestra valores que deben verse actualizados

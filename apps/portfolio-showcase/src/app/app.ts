@@ -29,6 +29,18 @@ export class App {
 
   protected readonly headerIsTransparent = computed(() => this.isHome() && !this.scrolled());
 
+  // The footer is one shared, global element (this component), not
+  // duplicated per page the way the breadcrumb is — so showing
+  // different footer content on /crypto-dashboard needs this same
+  // route-detection pattern as isHome above, not a per-page copy.
+  protected readonly isCryptoDashboard = toSignal(
+    this.router.events.pipe(
+      filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+      map((event) => event.urlAfterRedirects === '/crypto-dashboard'),
+    ),
+    { initialValue: this.router.url === '/crypto-dashboard' },
+  );
+
   @HostListener('window:scroll')
   protected onWindowScroll(): void {
     this.scrolled.set(window.scrollY > 8);
