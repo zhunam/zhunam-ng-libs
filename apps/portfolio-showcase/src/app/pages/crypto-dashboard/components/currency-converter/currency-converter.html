@@ -1,14 +1,13 @@
-<div class="flex flex-col gap-3 rounded-box border border-slate-200 bg-base-100 p-4">
+<div class="flex flex-col gap-3 rounded-box bg-base-100 p-4 shadow-[0_2px_10px_rgba(15,37,42,0.08)]">
   @if (listsError(); as errorMessage) {
     <app-coin-spinner variant="error" [message]="errorMessage" (retry)="onRetryListsClick()" />
   } @else if (coins().length === 0 || currencies().length === 0) {
     <app-coin-spinner variant="loading" />
   } @else {
-    <div class="flex items-end gap-2">
+    <div class="flex flex-col items-end gap-2">
       <lib-form-builder
-        class="flex-1"
+        class="w-full"
         [fields]="fieldsConfig()"
-        [columns]="3"
         mode="live"
         (valueChange)="onValueChange($event)"
       />

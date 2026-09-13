@@ -348,8 +348,162 @@ investigación real antes de escribir código)
       contra la misma clave esta sesión, NO un bug de la cola de
       `CoinGeckoService` — confirmado, no solo la explicación más
       probable.
-- [ ] `nx build portfolio-showcase --configuration=production` y
+- [x] Rediseño visual de `/crypto-dashboard` (solo layout/estilos de la
+      página contenedora y del contenedor propio de cada sección, cero
+      lógica de componente tocada). Nuevo registro **"Crypto Dashboard
+      (page-specific register)"** documentado en `DESIGN.md` ANTES de
+      implementarlo (excepción explícita y acotada a esta ruta, mismo
+      criterio que el hero de home): paneles con fondo tintado
+      `bg-primary/5` (reemplaza Vellum+Hairline solo en esta página),
+      `market-ticker` full-bleed real (100% viewport) inmediatamente
+      debajo del header, antes de cualquier texto, cancelando solo el
+      `py-12` de `<main>` (`-mt-12`, no `-mt-28` como el hero de home,
+      ya que esta ruta mantiene el header sólido, nunca transparente).
+      Hero propio compacto (`min-h-65` ≈ 260px) con el precio real de
+      BTC (`featuredCoin()`, ya disponible en la página, sin llamada
+      nueva) como elemento dominante, coloreado con `priceDirection()`
+      ya existente; el título del proyecto queda subordinado en tamaño.
+      Reordenado: ticker → hero → featured coin (`price-ticker`) →
+      stats globales → trending → market (ancho completo) → convertidor
+      (ancho completo, ya no comparte fila con nada). `currency-converter`
+      resuelto: el problema de legibilidad no era un estilo propio suyo
+      sino el ancho de 320px de la columna lateral anterior; al pasar a
+      ancho completo los 3 campos de `form-builder` (`Amount`/`From`/
+      `To`) se ven con texto normal, sin truncar, confirmado con
+      captura real. **Confirmado que ningún loading se juntó en un solo
+      bloque**: las capturas reales muestran secciones con datos ya
+      cargados conviviendo con `currency-converter` todavía en estado de
+      error/retry, prueba directa de que cada sección sigue progresando
+      de forma independiente tras el reordenamiento. **Sugerencia de
+      percepción de carga, no implementada** (de bajo riesgo pero no
+      trivial, requeriría tocar el orden interno de los efectos o
+      agregar prioridad a la cola de `CoinGeckoService`): alinear el
+      orden real de las llamadas en cola con el orden visual de
+      aparición en la página, para que lo que se ve primero cargue
+      primero de forma garantizada, no solo incidental al orden en que
+      Angular construye el árbol de componentes.
+- [x] **Corrección del rediseño visual, basada en mockups aprobados en
+      otra conversación — reemplaza la entrada anterior, no convive con
+      ella.** Alcance idéntico (solo layout/estilos de la página
+      contenedora y de los contenedores visuales de cada sección, cero
+      lógica de componente tocada; retrofits pendientes de auto-refresh
+      y `price-ticker`+`coin-spinner` sin tocar). Cambios reales sobre
+      el registro anterior:
+      - **Paneles** (`market-state`, `market-table`, `currency-converter`,
+        `trending-carousel`): de tinte `bg-primary/5` a **raised
+        surface** (`bg-base-100` blanco, sin borde, `shadow-[0_2px_10px_
+        rgba(15,37,42,0.08)]`, `rounded-box`), primer uso de ese patrón
+        de Elevación sobre paneles de contenido (antes solo botones/
+        Library Explorer). Ghost-Card Refusal verificado: ningún borde
+        conviviendo con el shadow.
+      - **Hero**: de un panel compacto tintado (`min-h-65`, claro) a un
+        hero full-bleed **oscuro** (`bg-base-content`/Ink, `min-h-85` ≈
+        340px), con 4 formas borrosas/rotadas (Signal Teal y su variante
+        on-dark) y 8 partículas punteadas decorativas (CSS puro, sin
+        imagen/SVG ilustrativo, mismo criterio que Background Glow), sin
+        badge "Live" (removido a propósito). Reutiliza el mismo
+        `featuredCoin()` y su `sparkline` real (sin llamada nueva a la
+        API); el path del sparkline se duplicó desde `trending-carousel`
+        (mismo cálculo, no extraído a helper compartido, ya que esta
+        tarea no permite tocar ese componente). El caso neutral de
+        `priceDirection()` se resolvió con `text-slate-300` en vez de
+        `text-slate-600` (el que usa el resto del sistema), ya que este
+        hero es la única superficie oscura de esta página y el tono
+        original no pasa contraste ahí; ver DESIGN.md.
+      - **"Featured coin" eliminada como sección aparte**: el hero ahora
+        cubre ese rol por sí solo; ya no se repite el precio de la misma
+        moneda en dos lugares. `price-ticker.ts`/`.html`/`.spec.ts` no se
+        tocaron, simplemente dejaron de importarse/renderizarse en esta
+        página.
+      - **`currency-converter` restaurado** a columna angosta junto a
+        `market-table` (no ancho completo), con sus 3 campos apilados
+        verticalmente. Nota real: el archivo tenía `[columns]="3"`
+        (grilla de 3 columnas lado a lado), lo cual contradecía la
+        premisa de la tarea de que el apilado "ya estaba correcto" en la
+        iteración anterior; se verificó contra el archivo real antes de
+        asumir, y se quitó ese input (default de la librería es `1`,
+        produce el apilado vertical real).
+      - **Gap real detectado, sin inventar dato**: el mockup pedía una
+        "descripción corta" del coin bajo el precio, pero `CryptoCoin`
+        (mapeado de `/coins/markets`) no tiene campo `description`.
+        Se usó una línea de copy honesto sobre la página misma ("Real,
+        live market data from the CoinGecko public API.") en vez de
+        fabricar una descripción por moneda, ver la regla de no
+        fabricar hechos en DESIGN.md.
+      - `crypto-dashboard.spec.ts` actualizado: se quitó la aserción de
+        `app-price-ticker` (sección eliminada) y se agregó una que
+        cubre el nombre/símbolo del coin ahora renderizado directo en
+        el hero de la página. Sin regresiones nuevas: mismos 6 fallos
+        preexistentes de siempre (no relacionados, `ActivatedRoute` en
+        otras demo pages), verificado en WSL.
+      - Verificado: `nx build portfolio-showcase --configuration=production`
+        limpio (sin el warning de `CoinSpinner` no usado tras sacarlo de
+        los imports de la página), `nx lint portfolio-showcase` limpio,
+        capturas reales de Playwright en desktop (1440×900) y mobile
+        (390×844) confirmando hero, formas/partículas, sparkline, raised
+        surface, y `currency-converter` apilado junto a `market-table`.
+- [x] `nx build portfolio-showcase --configuration=production` y
       `nx lint portfolio-showcase` limpios como cierre.
+- [x] **Dos ajustes puntuales sobre el hero, ya cerrado.** Alcance
+      acotado a: (1) gap visible entre `market-ticker` y el hero, (2)
+      botón Submit de `currency-converter` en azul en vez de Signal
+      Teal. Causas reales confirmadas antes de arreglar, no supuestas:
+      (1) el breadcrumb vivía en el DOM entre ambos elementos full-bleed,
+      espaciado por el `gap-8` del flex padre a ambos lados; el `-mt-12`
+      del hero solo cancelaba parte de ese espacio, dejando ~34px de
+      hueco y tapando casi todo el breadcrumb debajo del hero (medido
+      con bounding boxes reales, no estimado). Fix: ticker + hero
+      movidos a su propio wrapper sin gap; breadcrumb reubicado después
+      del hero. (2) `form-builder` expone `--fb-primary-color` como
+      variable CSS de personalización (mecanismo documentado en
+      AGENTS.md, no un hack), con default azul `#3b82f6` fijado en su
+      propio `:host`; ninguna página de `portfolio-showcase` la había
+      seteado nunca. Fix: `--fb-primary-color: #2c5f5d` en
+      `currency-converter.scss`, scoped a ese componente. Verificado con
+      `getComputedStyle` real: `rgb(44, 95, 93)` = `#2c5f5d`. Build y
+      lint limpios, mismos 6 fallos preexistentes en WSL, gap medido en
+      0px con Playwright.
+- [x] **Rediseño del sparkline del hero + remoción del breadcrumb en
+      esta página únicamente.** Documentado en DESIGN.md antes de
+      implementar. El sparkline pasó de ser un bloque acotado en la
+      esquina a un fondo ambiental full-bleed (`absolute inset-0`)
+      detrás de todo el hero, con dos desvanecidos independientes: uno
+      horizontal (SVG `<mask>` interno) que lo oculta del lado del
+      texto y lo deja visible del otro lado, y uno vertical (CSS
+      `mask-image` externo) que lo desvanece en los bordes superior/
+      inferior del hero. **Bug real encontrado y corregido durante la
+      verificación visual, no solo "quedó bien":** el trazo se veía
+      como una cinta gruesa sólida en vez de una línea fina, porque
+      `stroke-width` se escala junto con el viewBox al estirarlo de
+      100×32 unidades a ~1440×340px reales con `preserveAspectRatio=
+      "none"` (escala no uniforme en X/Y); solucionado con
+      `vector-effect="non-scaling-stroke"`, que mantiene el grosor
+      constante en píxeles de pantalla sin importar el estiramiento.
+      **Decisión de color documentada** (pedida explícitamente, la
+      tarea traía una contradicción real entre "línea fija en color
+      on-dark" y "debe venir de `priceDirection()`, no fijo"): el
+      relleno de área se mantiene en un gradiente Signal Teal neutro
+      fijo (textura atmosférica, mismo rol que las formas decorativas
+      del hero, nunca un color de estado per la propia regla de scope
+      del Price Direction Indicator), pero la línea del trazo sí sigue
+      `priceDirection()` (reutiliza `heroChangeColor()`, ya tunead para
+      esta superficie oscura). Zona de desvanecido horizontal ajustada
+      de 38-68% a 55-85% tras verificar en mobile real que la primera
+      dejaba las líneas del gráfico cruzando visualmente detrás del
+      precio (legible pero más ajustado de lo deseado); con el ajuste,
+      el texto queda completamente libre de líneas en mobile,
+      manteniendo un tramo amplio visible en desktop. Formas decoradas
+      existentes: opacidad recortada ~20% para convivir con el nuevo
+      gráfico más grande, sin cambios de posición/blur/conteo.
+      Breadcrumb removido ÚNICAMENTE en esta página (el hero ya
+      establece contexto por sí solo); confirmado con Playwright que
+      `/data-grid` (y por extensión cualquier otra demo, markup
+      duplicado por página, no un componente compartido) conserva el
+      suyo sin cambios. `crypto-dashboard.spec.ts` actualizado: el test
+      de breadcrumb ahora confirma su AUSENCIA en vez de su presencia.
+      Verificado: build y lint limpios, mismos 6 fallos preexistentes
+      en WSL (91 passed, sin regresión), capturas reales de Playwright
+      en desktop y mobile.
 
 ## Notas de diseño pendientes
 

@@ -1,10 +1,12 @@
-@if (error(); as errorMessage) {
-  <app-coin-spinner variant="error" [message]="errorMessage" (retry)="onRetryClick()" />
-} @else if (coins().length === 0) {
-  <app-coin-spinner variant="loading" />
-} @else {
-  <lib-data-grid [data]="coins()" [columns]="columns" />
-}
+<div class="rounded-box bg-base-100 p-4 shadow-[0_2px_10px_rgba(15,37,42,0.08)]">
+  @if (error(); as errorMessage) {
+    <app-coin-spinner variant="error" [message]="errorMessage" (retry)="onRetryClick()" />
+  } @else if (coins().length === 0) {
+    <app-coin-spinner variant="loading" />
+  } @else {
+    <lib-data-grid [data]="coins()" [columns]="columns" />
+  }
+</div>
 
 <ng-template #imageCell let-coin>
   <img [src]="coin.image" [alt]="coin.name" class="h-6 w-6 rounded-full" />

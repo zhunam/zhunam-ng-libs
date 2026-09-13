@@ -1,59 +1,61 @@
-@if (error(); as errorMessage) {
-  <app-coin-spinner variant="error" [message]="errorMessage" (retry)="onRetryClick()" />
-} @else if (coins().length === 0) {
-  <app-coin-spinner variant="loading" />
-} @else {
-  <div class="flex items-center gap-2">
-    <button
-      type="button"
-      aria-label="Previous"
-      class="btn btn-square btn-sm btn-outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-      [disabled]="atStart()"
-      (click)="scrollByCard(-1)"
-    >
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-      </svg>
-    </button>
+<div class="rounded-box bg-base-100 p-4 shadow-[0_2px_10px_rgba(15,37,42,0.08)]">
+  @if (error(); as errorMessage) {
+    <app-coin-spinner variant="error" [message]="errorMessage" (retry)="onRetryClick()" />
+  } @else if (coins().length === 0) {
+    <app-coin-spinner variant="loading" />
+  } @else {
+    <div class="flex items-center gap-2">
+      <button
+        type="button"
+        aria-label="Previous"
+        class="btn btn-square btn-sm btn-outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        [disabled]="atStart()"
+        (click)="scrollByCard(-1)"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+        </svg>
+      </button>
 
-    <div
-      #scrollContainer
-      class="flex flex-1 gap-3 overflow-x-auto scroll-smooth"
-      (scroll)="onScroll()"
-    >
-      @for (coin of coins(); track coin.id) {
-        <article class="flex w-48 shrink-0 flex-col gap-2 rounded-box border border-slate-200 bg-base-100 p-4">
-          <div class="flex items-center gap-2">
-            <img [src]="coin.image" [alt]="coin.name" class="h-6 w-6 rounded-full" />
-            <div class="flex min-w-0 flex-col">
-              <span class="truncate text-sm font-semibold text-base-content">{{ coin.name }}</span>
-              <span class="text-xs uppercase text-slate-600">{{ coin.symbol }}</span>
+      <div
+        #scrollContainer
+        class="flex flex-1 gap-3 overflow-x-auto scroll-smooth"
+        (scroll)="onScroll()"
+      >
+        @for (coin of coins(); track coin.id) {
+          <article class="flex w-48 shrink-0 flex-col gap-2 rounded-box border border-slate-200 bg-base-100 p-4">
+            <div class="flex items-center gap-2">
+              <img [src]="coin.image" [alt]="coin.name" class="h-6 w-6 rounded-full" />
+              <div class="flex min-w-0 flex-col">
+                <span class="truncate text-sm font-semibold text-base-content">{{ coin.name }}</span>
+                <span class="text-xs uppercase text-slate-600">{{ coin.symbol }}</span>
+              </div>
             </div>
-          </div>
 
-          <svg [attr.viewBox]="'0 0 100 32'" preserveAspectRatio="none" class="h-8 w-full" [class]="changeColorFor(coin)">
-            <path [attr.d]="areaPathFor(coin)" fill="currentColor" class="opacity-15" />
-            <path [attr.d]="linePathFor(coin)" fill="none" stroke="currentColor" stroke-width="2" />
-          </svg>
+            <svg [attr.viewBox]="'0 0 100 32'" preserveAspectRatio="none" class="h-8 w-full" [class]="changeColorFor(coin)">
+              <path [attr.d]="areaPathFor(coin)" fill="currentColor" class="opacity-15" />
+              <path [attr.d]="linePathFor(coin)" fill="none" stroke="currentColor" stroke-width="2" />
+            </svg>
 
-          <span class="text-sm font-semibold text-base-content">{{ coin.currentPrice | currency }}</span>
-          <span class="text-sm font-medium" [class]="changeColorFor(coin)">
-            {{ coin.changePercentage24h > 0 ? '+' : '' }}{{ coin.changePercentage24h | number: '1.2-2' }}%
-          </span>
-        </article>
-      }
+            <span class="text-sm font-semibold text-base-content">{{ coin.currentPrice | currency }}</span>
+            <span class="text-sm font-medium" [class]="changeColorFor(coin)">
+              {{ coin.changePercentage24h > 0 ? '+' : '' }}{{ coin.changePercentage24h | number: '1.2-2' }}%
+            </span>
+          </article>
+        }
+      </div>
+
+      <button
+        type="button"
+        aria-label="Next"
+        class="btn btn-square btn-sm btn-outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        [disabled]="atEnd()"
+        (click)="scrollByCard(1)"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
     </div>
-
-    <button
-      type="button"
-      aria-label="Next"
-      class="btn btn-square btn-sm btn-outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-      [disabled]="atEnd()"
-      (click)="scrollByCard(1)"
-    >
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-      </svg>
-    </button>
-  </div>
-}
+  }
+</div>

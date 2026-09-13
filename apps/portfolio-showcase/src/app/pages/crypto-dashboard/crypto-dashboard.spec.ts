@@ -71,12 +71,17 @@ describe('CryptoDashboard', () => {
     expect(nativeElement.querySelector('app-market-state')).toBeTruthy();
     expect(nativeElement.querySelector('app-trending-carousel')).toBeTruthy();
     expect(nativeElement.querySelector('app-market-table')).toBeTruthy();
-    expect(nativeElement.querySelector('app-price-ticker')).toBeTruthy();
     expect(nativeElement.querySelector('app-currency-converter')).toBeTruthy();
   });
 
-  it('has a real breadcrumb link back to home, not a placeholder', () => {
-    const homeLink = (fixture.nativeElement as HTMLElement).querySelector('a[href="/"]');
-    expect(homeLink).toBeTruthy();
+  it('renders no breadcrumb (deliberate exception for this page, see DESIGN.md)', () => {
+    const nativeElement = fixture.nativeElement as HTMLElement;
+    expect(nativeElement.querySelector('nav[aria-label="Breadcrumb"]')).toBeNull();
+  });
+
+  it('renders the featured coin\'s name and price directly in the hero', () => {
+    const nativeElement = fixture.nativeElement as HTMLElement;
+    expect(nativeElement.textContent).toContain('Bitcoin');
+    expect(nativeElement.textContent).toContain('BTC');
   });
 });
