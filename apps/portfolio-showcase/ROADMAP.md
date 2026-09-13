@@ -318,10 +318,36 @@ investigación real antes de escribir código)
       entorno), no `environment.ts`, y ese archivo no existe en el
       checkout nativo de WSL — mecanismo distinto, no relacionado con
       este reemplazo.
-- [ ] Demo real en el sidebar de `apps/portfolio-showcase` (mismo
-      shell que las demás páginas, entrada real, nunca "Coming Soon"
-      residual), verificación manual de que la interacción funciona
-      contra la API real, no solo que compila.
+- [x] Entrada real en home + página del dashboard: no sigue el patrón
+      "Library Explorer"/"Package Identifier Label" (no es una
+      librería). Nueva sección **"Featured Project"** documentada en
+      `DESIGN.md` antes de construirla (tarjeta única, más grande que
+      las de Library Explorer, badge `Live` activado por primera vez
+      de forma honesta ya que esta pieza sí consume datos en vivo).
+      Ruta `/crypto-dashboard` (lazy, mismo patrón que `/calendar`),
+      página propia con encabezado simple (sin mono/package label) y
+      ensamblando ÚNICAMENTE componentes ya cerrados: `market-ticker`
+      (recién conectado por primera vez, ver nota de ese ítem más
+      arriba), `market-state`, `trending-carousel`, `market-table`,
+      `price-ticker` (reusa el primer coin de la lista de
+      `market-table` en vez de una llamada redundante), y
+      `currency-converter`. Cero lógica nueva en ningún componente.
+      **Hallazgo real durante la verificación manual, diagnóstico
+      confirmado con evidencia de timing real** (ver ítem separado más
+      abajo, "Diagnóstico de rate limiting en carga inicial — CERRADO,
+      cola confirmada correcta"): con datos reales, en carga inicial la
+      página dispara ~6-8 llamadas reales independientes a CoinGecko
+      (una o más por componente/sección autocontenida). Confirmado con
+      Playwright real (`localhost:4200`, el puerto real de `nx serve`)
+      que los datos reales SÍ cargan y se ven correctamente cuando la
+      API responde (precios BTC/ETH/etc. reales en el marquee, stats de
+      `/global`, lista de monedas). Las fallas intermitentes
+      ("Could not load..." con su Retry, cada sección ya lo maneja bien
+      vía `coin-spinner`, degradación controlada, no un crash) fueron
+      agotamiento real de cuota por mis propias pruebas repetidas
+      contra la misma clave esta sesión, NO un bug de la cola de
+      `CoinGeckoService` — confirmado, no solo la explicación más
+      probable.
 - [ ] `nx build portfolio-showcase --configuration=production` y
       `nx lint portfolio-showcase` limpios como cierre.
 
@@ -335,3 +361,33 @@ investigación real antes de escribir código)
   retrofit de `price-ticker`, `market-table`, y `trending-carousel`
   con el mismo criterio queda pendiente como tarea separada, a definir
   después (no implementado junto con `market-ticker`).
+
+- **Diagnóstico de rate limiting en carga inicial — CERRADO, cola
+  confirmada correcta, no bug**: al verificar `/crypto-dashboard`
+  manualmente, se vieron fallas intermitentes ("Could not load...")
+  en algunas secciones. Dos hipótesis a distinguir: (1) ruido de mis
+  propias pruebas de `curl` de la sesión, que ya habían consumido
+  cuota real antes de probar; (2) un problema real de coordinación en
+  la cola de espaciado de `CoinGeckoService` (`MIN_REQUEST_SPACING_MS`
+  = 1.5s) al recibir pedidos casi simultáneos desde 6 componentes
+  independientes, cada uno con su propia inyección del servicio
+  singleton (`providedIn: 'root'`).
+
+  **Confirmado con evidencia real de timing, no suposición**: con
+  Playwright, interceptando cada request real saliente hacia
+  `api.coingecko.com` (sin ningún `curl` previo en esa misma
+  ejecución) y midiendo el timestamp exacto de cada una, las 8
+  llamadas reales de una carga completa de la página mostraron gaps
+  consecutivos de **1500–1514ms entre cada una, sin excepción** —
+  exactamente el `MIN_REQUEST_SPACING_MS` configurado, sin ninguna
+  ráfaga ni llamadas simultáneas sin espaciar. Una ejecución limpia
+  con esa cuota aún disponible completó las 8 con `HTTP 200` reales.
+  **Diagnóstico: opción 1 confirmada, no opción 2.** La cola de
+  `CoinGeckoService` coordina correctamente entre múltiples
+  componentes que la consumen en paralelo desde inyecciones
+  independientes del mismo singleton; no hace falta ningún cambio en
+  su lógica. Las fallas intermitentes vistas durante la verificación
+  fueron cuota real agotada por el volumen acumulado de mis propias
+  pruebas (`curl` + varias corridas de Playwright) contra la misma
+  clave en la misma sesión, no algo que un visitante real con cuota
+  fresca experimentaría. Sin acción pendiente sobre este punto.

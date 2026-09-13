@@ -15,4 +15,9 @@ export const appRoutes: Route[] = [
     path: 'calendar',
     loadComponent: () => import('./pages/calendar-demo/calendar-demo').then((m) => m.CalendarDemo),
   },
+  {
+    path: 'crypto-dashboard',
+    loadComponent: () =>
+      import('./pages/crypto-dashboard/crypto-dashboard').then((m) => m.CryptoDashboard),
+  },
 ];

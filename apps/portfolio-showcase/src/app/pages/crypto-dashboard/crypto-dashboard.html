@@ -1,0 +1,47 @@
+<div class="flex flex-col gap-8">
+  <nav aria-label="Breadcrumb" class="text-sm text-slate-500">
+    <a routerLink="/" class="hover:text-primary"><span translate="no">Home</span></a>
+    <span class="mx-1.5">/</span>
+    <span class="text-base-content">Crypto Market Dashboard</span>
+  </nav>
+
+  <header class="flex flex-col gap-3">
+    <span class="badge badge-primary w-fit text-xs">Live</span>
+    <h1 class="text-lg font-bold tracking-tight text-balance text-base-content">Crypto Market Dashboard</h1>
+    <p class="max-w-prose text-slate-600">
+      Real, live market data from the CoinGecko public API: prices, trends, conversion, and global stats.
+    </p>
+  </header>
+
+  <app-market-ticker />
+
+  <app-market-state />
+
+  <section class="flex flex-col gap-3">
+    <h2 class="text-sm font-semibold text-base-content">Trending</h2>
+    <app-trending-carousel
+      [coins]="trendingCoins()"
+      [error]="trendingError()"
+      (retry)="onTrendingRetry()"
+    />
+  </section>
+
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
+    <section class="flex flex-col gap-3">
+      <h2 class="text-sm font-semibold text-base-content">Market</h2>
+      <app-market-table [coins]="marketCoins()" [error]="marketError()" (retry)="onMarketRetry()" />
+    </section>
+
+    <div class="flex flex-col gap-6">
+      @if (marketError(); as errorMessage) {
+        <app-coin-spinner variant="error" [message]="errorMessage" (retry)="onMarketRetry()" />
+      } @else if (featuredCoin(); as coin) {
+        <app-price-ticker [coin]="coin" />
+      } @else {
+        <app-coin-spinner variant="loading" />
+      }
+
+      <app-currency-converter />
+    </div>
+  </div>
+</div>
