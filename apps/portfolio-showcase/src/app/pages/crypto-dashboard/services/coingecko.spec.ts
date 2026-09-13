@@ -121,6 +121,7 @@ describe('CoinGeckoService (unit, mocked fetch)', () => {
           total_volume: { usd: 107_207_728_882.8, eur: 92_422_496_577.1 },
           market_cap_percentage: { btc: 58.17, eth: 11.65 },
           market_cap_change_percentage_24h_usd: -2.43,
+          volume_change_percentage_24h_usd: 5.12,
         },
       }),
     );
@@ -131,6 +132,7 @@ describe('CoinGeckoService (unit, mocked fetch)', () => {
       totalMarketCapByCurrency: { usd: 2_654_490_015_954.5, eur: 2_288_403_988_874.2 },
       totalVolumeByCurrency: { usd: 107_207_728_882.8, eur: 92_422_496_577.1 },
       marketCapChangePercentage24hUsd: -2.43,
+      volumeChangePercentage24hUsd: 5.12,
       dominanceByCoin: { btc: 58.17, eth: 11.65 },
       activeCryptocurrencies: 21084,
     });

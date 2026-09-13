@@ -279,17 +279,45 @@ investigación real antes de escribir código)
       `min: Number.EPSILON` para "mayor a 0" real, ya que
       `Validators.min` es inclusivo) sigue bloqueando la conversión
       igual que antes, solo cambia CUÁNDO se ve el mensaje.
-- [ ] `components/market-state`: franja de estadísticas globales del
-      mercado (no un estado de carga), sobre `GET /global` ya
-      investigado: dominancia BTC/ETH y del resto del top 10,
-      capitalización total, cambio 24h, cantidad de criptomonedas
-      activas. Ver "Decisiones de arquitectura" para qué campos leer
-      directo del mismo response al cambiar de moneda, y cuáles
-      quedan fijos en USD.
-- [ ] Reemplazar `REPLACE_WITH_REAL_COINGECKO_DEMO_API_KEY` en
+- [x] `components/market-state`: selector de moneda con `<select>`
+      nativo (evaluado explícitamente contra `lib-form-builder` y
+      descartado: un solo campo sin validación no justifica la
+      librería), estado independiente del selector de
+      `currency-converter`. `totalMarketCap`/`totalVolume` derivados
+      con `computed()` leyendo la clave de moneda correcta del MISMO
+      `GlobalMarketStats` ya cacheado (cambiar de moneda nunca dispara
+      una llamada nueva, confirmado con test explícito). Cambio 24h de
+      cap/volumen mostrado siempre en USD con esa etiqueta explícita,
+      pese al selector (coloreado vía `priceDirection()` ya existente).
+      **Gap real encontrado y corregido**: `volume_change_percentage_
+      24h_usd` ya estaba investigado y documentado en este ROADMAP,
+      pero nunca se había agregado a `GlobalMarketStats`/
+      `CoinGeckoService.getGlobalStats()` cuando se escribió
+      originalmente; se agregó ahora (`RawGlobalResponse` y el mapeo).
+      No se creó ningún método "compartido" nuevo para la lista de
+      `vs_currencies`: el caché de 45s ya existente en
+      `CoinGeckoService` (por endpoint, sin params en este caso)
+      deduplica automáticamente la llamada entre `currency-converter` y
+      `market-state`, sin necesidad de coordinación adicional.
+- [x] Reemplazar `REPLACE_WITH_REAL_COINGECKO_DEMO_API_KEY` en
       `environments/environment.ts`/`environment.production.ts` por
       la clave real (el usuario la pega directamente, nunca generada
-      ni vista por el agente en el reporte).
+      ni vista por el agente en el reporte). **Verificado**: mismo
+      valor confirmado en ambos archivos (comparación por hash, nunca
+      impreso), `fileReplacements` de `project.json` sigue apuntando
+      correctamente a los dos, `nx build --configuration=production`
+      exitoso, y el placeholder confirmado ausente del bundle
+      compilado. Conectividad real confirmada (`HTTP 200` contra
+      `/simple/price` y `/ping` con la clave real, vía `curl`, sin
+      imprimir su valor). Nota real: el tier Demo/público de CoinGecko
+      no rechaza claves inválidas en estos endpoints (un valor
+      inventado también da 200), así que esto confirma alcance/formato
+      correcto, no una validación criptográfica de la clave en sí. Los
+      2 tests de integración de `coingecko.spec.ts` (`skipIf`) siguen
+      saltándose en WSL: buscan un `.env` separado (variable de
+      entorno), no `environment.ts`, y ese archivo no existe en el
+      checkout nativo de WSL — mecanismo distinto, no relacionado con
+      este reemplazo.
 - [ ] Demo real en el sidebar de `apps/portfolio-showcase` (mismo
       shell que las demás páginas, entrada real, nunca "Coming Soon"
       residual), verificación manual de que la interacción funciona

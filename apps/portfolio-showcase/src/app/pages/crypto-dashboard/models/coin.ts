@@ -25,6 +25,8 @@ export interface GlobalMarketStats {
   totalVolumeByCurrency: Record<string, number>;
   /** Fixed in USD by CoinGecko, there is no per-currency variant. */
   marketCapChangePercentage24hUsd: number;
+  /** Fixed in USD by CoinGecko, there is no per-currency variant. */
+  volumeChangePercentage24hUsd: number;
   /** Market cap share per coin symbol (e.g. `btc: 58.17`), up to 10 coins. */
   dominanceByCoin: Record<string, number>;
   activeCryptocurrencies: number;

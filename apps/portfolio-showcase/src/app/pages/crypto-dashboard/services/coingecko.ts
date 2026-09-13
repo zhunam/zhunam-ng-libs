@@ -24,6 +24,7 @@ interface RawGlobalResponse {
     total_volume: Record<string, number>;
     market_cap_percentage: Record<string, number>;
     market_cap_change_percentage_24h_usd: number;
+    volume_change_percentage_24h_usd: number;
   };
 }
 
@@ -99,6 +100,7 @@ export class CoinGeckoService {
       totalMarketCapByCurrency: raw.data.total_market_cap,
       totalVolumeByCurrency: raw.data.total_volume,
       marketCapChangePercentage24hUsd: raw.data.market_cap_change_percentage_24h_usd,
+      volumeChangePercentage24hUsd: raw.data.volume_change_percentage_24h_usd,
       dominanceByCoin: raw.data.market_cap_percentage,
       activeCryptocurrencies: raw.data.active_cryptocurrencies,
     };

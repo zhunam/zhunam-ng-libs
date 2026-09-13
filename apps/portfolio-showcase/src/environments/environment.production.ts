@@ -13,6 +13,6 @@ export const environment = {
     // fix is rotating the key in the CoinGecko dashboard, not treating
     // this as a security incident.
     // REPLACE with the real key before this app is actually usable:
-    apiKey: 'REPLACE_WITH_REAL_COINGECKO_DEMO_API_KEY',
+    apiKey: 'CG-y8TqggJnC7uU5DPW77v16zDY',
   },
 };
