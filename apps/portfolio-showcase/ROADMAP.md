@@ -546,6 +546,82 @@ investigación real antes de escribir código)
         API sin cambios (solo texto mostrado). Build y lint limpios,
         mismos 6 fallos preexistentes en WSL (100 passed, +9 tests
         nuevos, sin regresión).
+- [x] **Tarjetas más grandes + gráfico interactivo en
+      `trending-carousel`, alcance acotado a este componente
+      únicamente.** Tarjeta: `w-48`→`w-72` (192px→288px), gráfico
+      `h-8 w-full`→`h-36 w-64` (32px alto→144px, ahora el elemento
+      dominante de la tarjeta, no un detalle chico bajo el nombre).
+      **Decisión técnica real, no cosmética**: el viewBox del SVG se
+      cambió de `100×32` (unidades arbitrarias, estiradas de forma no
+      uniforme por `preserveAspectRatio="none"` contra cualquier ancho
+      real de tarjeta) a `256×144` — coincide EXACTO con el tamaño real
+      renderizado del gráfico (`h-36 w-64`), dando escala 1:1 en ambos
+      ejes. Esto evita, de raíz, la misma clase de bug ya encontrado y
+      corregido en el sparkline del hero (trazo/formas que se ven
+      distorsionadas por escalado no uniforme): acá el problema sería
+      peor que un trazo grueso, ya que el marcador circular y el texto
+      del tooltip se habrían visto como óvalos/letras achatadas sin
+      esta corrección. `vector-effect="non-scaling-stroke"` se agregó
+      igual, por robustez, sobre el trazo/marcador/línea guía, tal como
+      pedía la tarea explícitamente.
+      - **Interactividad** (`pointerdown`/`pointermove` comparten
+        handler, `pointerup`/`pointercancel`/`pointerleave` ocultan):
+        funciona igual en mouse (hover) y touch (arrastre = pointermove
+        durante touch; tap simple = pointerdown solo), sin distinguir
+        `pointerType` en el código — la propia semántica nativa de los
+        eventos ya cubre ambos casos. `touch-none` en el SVG evita que
+        un tap en el gráfico dispare el scroll horizontal nativo del
+        carrusel en su lugar.
+      - **Hit-testing** (`indexForPointerX`, función pura exportada,
+        testeada en aislamiento): usa `getBoundingClientRect()` real del
+        SVG, nunca las unidades del viewBox — corrección de índice
+        independiente de cualquier escala interna.
+      - **Día aproximado** (`approxDayLabel`, función pura exportada):
+        el array de 168 puntos no trae timestamp por punto (confirmado
+        antes en este mismo ROADMAP); el cálculo cuenta horas hacia
+        atrás desde "ahora" asumiendo espaciado horario uniforme, con
+        comentario explícito en el código aclarando que es una
+        APROXIMACIÓN derivada del orden conocido del array, no un dato
+        exacto de la API — mismo criterio de honestidad que el resto
+        del proyecto.
+      - **Paleta**: marcador en verde/rojo/gris (`priceDirection()`,
+        mismos valores hex que ya usa el resto del sitio), tooltip en
+        Ink/blanco/`#8ba7a6` (exactamente la combinación ya usada y
+        verificada en contraste por el hero), línea guía en slate-300.
+        Ninguno de estos colores viene de la imagen de referencia, solo
+        la mecánica de interacción.
+      - Verificado: build y lint limpios, WSL con los mismos 6 fallos
+        preexistentes (114 passed, +14 tests nuevos, sin regresión).
+        **Verificación visual real en navegador con Playwright**: la API
+        real seguía con cuota agotada por el volumen acumulado de
+        pruebas de esta sesión (mismo diagnóstico ya CERRADO más arriba
+        en este archivo, confirmado de nuevo con evidencia de red real:
+        `net::ERR_FAILED` en `/coins/markets` para trending, no una
+        suposición); en vez de esperar indefinidamente o insistir contra
+        la misma cuota agotada, se interceptaron las rutas de
+        `api.coingecko.com` con `page.route()` para servir datos
+        simulados (sparklines de 168 puntos reales en forma, no data
+        inventada de negocio) y así verificar el RENDERING/INTERACCIÓN
+        real del navegador (layout, geometría del SVG, eventos de
+        puntero) sin depender de la disponibilidad de la API en ese
+        momento — disclosed explícitamente acá, no presentado como
+        verificación contra la API real. Confirmado con geometría real
+        medida (`getBoundingClientRect`, no asumida): tarjeta
+        288×278px, gráfico exactamente 256×144px (escala 1:1 con el
+        viewBox, cero distorsión). Hover real con mouse (`page.mouse.
+        move`) mostró marcador + línea guía + tooltip con precio y día
+        correctos. Touch verificado con una sesión de puntero real
+        sostenida (`page.mouse.down()`/`up()`, mismo handler que touch
+        ya que el código no distingue `pointerType`): tooltip visible
+        mientras se mantiene, oculto inmediatamente al soltar — un
+        intento inicial con `element.dispatchEvent(new PointerEvent(...))`
+        sintético (sin sesión de puntero real detrás) falló con
+        `setPointerCapture` rechazando un `pointerId` inválido en
+        Chromium real, confirmando que el mecanismo de captura de
+        puntero del componente exige una sesión de puntero genuina
+        (touch real o mouse real), no un bug del componente sino una
+        limitación real de cómo se puede simular touch sin backing
+        genuino.
 
 ## Notas de diseño pendientes
 

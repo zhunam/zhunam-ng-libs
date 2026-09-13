@@ -19,11 +19,11 @@
 
       <div
         #scrollContainer
-        class="flex flex-1 gap-3 overflow-x-auto scroll-smooth"
+        class="hide-scrollbar flex flex-1 gap-3 overflow-x-auto scroll-smooth"
         (scroll)="onScroll()"
       >
         @for (coin of coins(); track coin.id) {
-          <article class="flex w-48 shrink-0 flex-col gap-2 rounded-box border border-slate-200 bg-base-100 p-4">
+          <article class="flex w-72 shrink-0 flex-col gap-2 rounded-box border border-slate-200 bg-base-100 p-4">
             <div class="flex items-center gap-2">
               <img [src]="coin.image" [alt]="coin.name" class="h-6 w-6 rounded-full" />
               <div class="flex min-w-0 flex-col">
@@ -32,9 +32,54 @@
               </div>
             </div>
 
-            <svg [attr.viewBox]="'0 0 100 32'" preserveAspectRatio="none" class="h-8 w-full" [class]="changeColorFor(coin)">
+            <!-- Dominant element of the card, per DESIGN.md's crypto-dashboard
+                 register: the chart, not the coin name, is what the card is
+                 for. viewBox matches this box's own real h-36/w-64 pixel size
+                 exactly (see trending-carousel.ts's SPARKLINE_WIDTH/HEIGHT
+                 comment): a 1:1 scale, so the marker/tooltip geometry below
+                 never distorts into an oval/ribbon the way a mismatched,
+                 non-uniformly stretched viewBox would (same class of bug
+                 already found and fixed in the hero's own sparkline). -->
+            <svg
+              [attr.viewBox]="'0 0 ' + sparklineWidth + ' ' + sparklineHeight"
+              preserveAspectRatio="none"
+              class="h-36 w-64 touch-none"
+              [class]="changeColorFor(coin)"
+              (pointerdown)="onPointerActive($event, coin)"
+              (pointermove)="onPointerActive($event, coin)"
+              (pointerup)="onPointerInactive(coin)"
+              (pointercancel)="onPointerInactive(coin)"
+              (pointerleave)="onPointerInactive(coin)"
+            >
               <path [attr.d]="areaPathFor(coin)" fill="currentColor" class="opacity-15" />
-              <path [attr.d]="linePathFor(coin)" fill="none" stroke="currentColor" stroke-width="2" />
+              <path [attr.d]="linePathFor(coin)" fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke" />
+
+              @if (hoverInfoFor(coin); as info) {
+                <g class="pointer-events-none">
+                  <line
+                    [attr.x1]="info.pointX"
+                    [attr.y1]="info.pointY"
+                    [attr.x2]="info.pointX"
+                    [attr.y2]="sparklineHeight"
+                    stroke="#cbd5e1"
+                    stroke-width="1"
+                    stroke-dasharray="2,2"
+                    vector-effect="non-scaling-stroke"
+                  />
+                  <circle
+                    [attr.cx]="info.pointX"
+                    [attr.cy]="info.pointY"
+                    r="3.5"
+                    [attr.fill]="info.markerColor"
+                    stroke="#ffffff"
+                    stroke-width="1.5"
+                    vector-effect="non-scaling-stroke"
+                  />
+                  <rect [attr.x]="info.boxX" [attr.y]="info.boxY" [attr.width]="tooltipWidth" [attr.height]="tooltipHeight" rx="4" fill="#0F252A" />
+                  <text [attr.x]="info.textCenterX" [attr.y]="info.priceTextY" text-anchor="middle" font-size="11" font-weight="700" fill="#ffffff">{{ info.price | currency }}</text>
+                  <text [attr.x]="info.textCenterX" [attr.y]="info.dayTextY" text-anchor="middle" font-size="9" fill="#8ba7a6">{{ info.dayLabel }}</text>
+                </g>
+              }
             </svg>
 
             <span class="text-sm font-semibold text-base-content">{{ coin.currentPrice | currency }}</span>
