@@ -1,6 +1,7 @@
 import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
-import { provideRouter, withInMemoryScrolling } from '@angular/router';
+import { provideRouter, TitleStrategy, withInMemoryScrolling } from '@angular/router';
 import { appRoutes } from './app.routes';
+import { AppTitleStrategy } from './app-title-strategy';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -12,5 +13,6 @@ export const appConfig: ApplicationConfig = {
         anchorScrolling: 'enabled',
       }),
     ),
+    { provide: TitleStrategy, useClass: AppTitleStrategy },
   ]
 };
