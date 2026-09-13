@@ -33,10 +33,17 @@ la fase 6 para que `market-table` pueda mostrar imagen y color por
 celda; ver `libs/data-grid/CHANGELOG.md` → `[Unreleased]`). Sigue en
 `1.1.0` en npm. No bloquea el desarrollo local (`portfolio-showcase`
 importa el código fuente directo vía path mapping, no el paquete
-publicado), pero falta bump a `1.2.0` (minor, aditivo) y `npm publish`
-antes de que un consumidor externo pueda usar esta capacidad. Plan:
-publicar al cerrar la fase 6 completa, no ahora mismo, para no
-republicar varias veces por cambios sueltos.
+publicado), pero falta bump a `2.0.0` (**major**, no minor: agrega
+`@angular/common` como peer dependency nueva y requerida, sin marcarla
+opcional en `peerDependenciesMeta`; ver `libs/data-grid/CHANGELOG.md` →
+`[Unreleased]` sección "Changed") y `npm publish` antes de que un
+consumidor externo pueda usar esta capacidad. Esta nota decía
+originalmente "minor, aditivo": era un error de redacción del propio
+commit que la introdujo (`0f7bceec2`, `feat(data-grid)!:` ya usaba el
+marcador de breaking change en el asunto), corregido 2026-09-14 tras
+una verificación cruzada con `git log`/`git blame` y el CHANGELOG
+completo. Plan: publicar al cerrar la fase 6 completa, no ahora mismo,
+para no republicar varias veces por cambios sueltos.
 
 **`@zhunam/form-builder` en la misma situación**: `mode: input<'submit'
 | 'live'>('submit')` + `valueChange: output<T>` agregados durante la
