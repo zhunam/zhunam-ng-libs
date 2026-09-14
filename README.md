@@ -59,6 +59,9 @@ zhunam-ng-libs/
 
 ## Running locally
 
+`portfolio-showcase`'s crypto dashboard needs `COINGECKO_API_KEY` set
+first, see [Environment variables](#environment-variables) below.
+
 ```sh
 npm install
 npx nx serve portfolio-showcase
@@ -68,9 +71,58 @@ npx nx serve portfolio-showcase
 # production build
 npx nx build portfolio-showcase --configuration=production
 
-# tests for any project (a library or the app)
+# tests for any project (a library or the app), never needs COINGECKO_API_KEY
 npx nx test <project-name>
 ```
+
+## Environment variables
+
+`portfolio-showcase` needs one build-time environment variable:
+
+| Variable | Where to get it | Required for |
+| --- | --- | --- |
+| `COINGECKO_API_KEY` | [coingecko.com](https://www.coingecko.com/en/api/pricing) free Demo plan | `nx build`, `nx serve` (not `nx test`, which never calls the real API) |
+
+It's injected at build time, never committed in source. A pre-build
+script (`apps/portfolio-showcase/scripts/generate-env.mjs`, wired via
+`dependsOn` in `apps/portfolio-showcase/project.json`) reads it from
+`process.env`, falling back to a `.env` file one level above the repo
+root (see below), and generates a gitignored
+`environments/environment.generated.ts`. `nx build`/`nx serve` fail
+with a clear error if it isn't set anywhere; `nx test` runs fine
+without it (writes a harmless placeholder instead, since no test calls
+the real API). See `apps/portfolio-showcase/ROADMAP.md` for the full
+rationale behind this, including the earlier, now-replaced approach.
+
+**Local development, option A (persistent, recommended):** add a
+`COINGECKO_API_KEY=your-key` line to the `.env` file one level above
+this repo's root (`../.env` from the repo root), per this repo's own
+convention for local secrets (see `AGENTS.md` > "Environment variables
+and secrets"). Picked up automatically, no need to export anything in
+each new terminal:
+
+```sh
+npx nx serve portfolio-showcase
+```
+
+**Local development, option B (per-terminal session):**
+
+```sh
+# bash / WSL
+export COINGECKO_API_KEY=your-key
+npx nx serve portfolio-showcase
+```
+
+```powershell
+# PowerShell
+$env:COINGECKO_API_KEY = "your-key"
+npx nx serve portfolio-showcase
+```
+
+**Vercel:** Project Settings → Environment Variables → add
+`COINGECKO_API_KEY` with the real value, applied to both Production and
+Preview environments. Vercel injects it into the build's `process.env`
+automatically, no other configuration needed.
 
 ## Deployment
 

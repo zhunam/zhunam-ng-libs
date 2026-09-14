@@ -6,8 +6,21 @@
   "sourceRoot": "apps/portfolio-showcase/src",
   "tags": ["type:app"],
   "targets": {
+    "generate-env": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node apps/portfolio-showcase/scripts/generate-env.mjs"
+      }
+    },
+    "generate-env-optional": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node apps/portfolio-showcase/scripts/generate-env.mjs --optional"
+      }
+    },
     "build": {
       "executor": "@angular/build:application",
+      "dependsOn": ["^build", "generate-env"],
       "outputs": [
         "{options.outputPath}"
       ],
@@ -60,6 +73,7 @@
     "serve": {
       "continuous": true,
       "executor": "@angular/build:dev-server",
+      "dependsOn": ["generate-env"],
       "defaultConfiguration": "development",
       "configurations": {
         "production": {
@@ -75,6 +89,7 @@
     },
     "test": {
       "executor": "@angular/build:unit-test",
+      "dependsOn": ["generate-env-optional"],
       "options": {
         "watch": false
       }

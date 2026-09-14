@@ -13,13 +13,12 @@ sobre datos de mercado reales y en vivo, no datos de muestra estáticos.
 
 ## Fuente de datos
 
-API pública de CoinGecko (tier Demo), sin backend propio. La clave del
-tier Demo va commiteada en `environments/environment.ts` y
-`environment.production.ts`: es un identificador público de tier
-gratuito, no un secreto de pago, mismo criterio ya aplicado al OAuth
-Client ID de `libs/calendar` (ver su README: "a public OAuth Client ID,
-not a secret"). Detalle completo del trade-off en el
-[ROADMAP.md](../../../../ROADMAP.md) de esta app.
+API pública de CoinGecko (tier Demo), sin backend propio. La clave se
+inyecta en tiempo de build desde la variable de entorno
+`COINGECKO_API_KEY` (nunca commiteada en texto plano); ver el
+`README.md` raíz para cómo configurarla en Vercel y localmente, y el
+[ROADMAP.md](../../../../ROADMAP.md) de esta app para el detalle
+completo del cambio de arquitectura y por qué.
 
 ## Arquitectura, en breve
 

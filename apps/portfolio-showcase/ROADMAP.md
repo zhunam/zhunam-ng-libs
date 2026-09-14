@@ -39,15 +39,27 @@ investigación real antes de escribir código)
   Confirmado con una llamada real vía `fetch()` desde un origen real
   (`http://localhost:4300`), no solo `curl`: CORS permite el header
   custom sin romper el preflight.
-- **La clave Demo va commiteada en `environments/environment.ts` y
-  `environment.production.ts`, con el mismo valor en ambos.** Es un
-  identificador público de tier gratuito, no un secreto de pago,
-  mismo criterio ya aplicado al Client ID de OAuth de Google en
-  `libs/calendar` (ver su README: "a public OAuth Client ID, not a
-  secret"). Trade-off real, no bloqueante: al estar commiteada,
-  cualquiera puede copiarla y consumir la cuota gratuita compartida.
-  Mitigación si pasa: rotar la clave en el dashboard de CoinGecko, no
-  es un incidente de seguridad.
+- **La clave Demo ya NO va commiteada.** Decisión original (hasta
+  2026-09-13): iba en texto plano en `environments/environment.ts` y
+  `environment.production.ts`, con el mismo valor en ambos, evaluada
+  como un identificador público de tier gratuito, no un secreto de
+  pago, mismo criterio ya aplicado al Client ID de OAuth de Google en
+  `libs/calendar`. Esa evaluación de riesgo técnico sigue siendo
+  correcta hoy (la clave Demo real nunca fue, técnicamente, un secreto
+  que comprometiera nada si se filtra). El cambio (2026-09-14) es por
+  otro motivo: antes de hacer este repositorio público, mostrar
+  cualquier clave en texto plano en el código fuente, aunque sea de
+  bajo riesgo real, lee mal frente a reclutadores/visitantes que
+  auditan el repo, y no comunica la práctica que se espera de un
+  desarrollador senior. Ahora se inyecta en tiempo de build desde la
+  variable de entorno `COINGECKO_API_KEY` (`scripts/generate-env.mjs`,
+  disparado vía `dependsOn` en `project.json` antes de `build`/`serve`/
+  `test`), generando `environments/environment.generated.ts`
+  (gitignored, nunca commiteado). Detalle completo del mecanismo y
+  cómo configurarlo en Vercel y localmente: ver `README.md` raíz.
+  Mitigación si la clave real se filtra igual (por otro medio): rotarla
+  en el dashboard de CoinGecko, sigue sin ser un incidente de
+  seguridad, el trade-off técnico de fondo no cambió.
 - **Límite real de historial: 365 días, no 2 años.** La documentación
   de CoinGecko dice "restricted to the past 2 years", pero el error
   real del servidor (`error_code: 10012`, HTTP 401, probado con

@@ -54,6 +54,9 @@ __screenshots__/
 .env
 .env.local
 
+# Generated at build time from COINGECKO_API_KEY, never commit a real key
+apps/portfolio-showcase/src/environments/environment.generated.ts
+
 
 .vercel
 .env*
