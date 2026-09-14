@@ -1,138 +1,99 @@
-# ZhunamNgLibs
+# zhunam-ng-libs
 
-<a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
+<img src="apps/portfolio-showcase/public/apple-touch-icon.png" alt="zhunam logo" width="72">
 
-✨ Your new, shiny [Nx workspace](https://nx.dev) is ready ✨.
+Angular frontend developer portfolio, built as an Nx monorepo. Every
+piece under `libs/*` is a real, independently published npm package,
+not just a demo: each one can be installed in a third-party Angular
+project on its own. `apps/portfolio-showcase` is the one piece that
+isn't published: it consumes and demonstrates the libraries together,
+over real use cases and real data.
 
-[Learn more about this workspace setup and its capabilities](https://nx.dev/getting-started/tutorials/angular-monorepo-tutorial?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects) or run `npx nx graph` to visually explore what was created. Now, let's get you up to speed!
+Live site: **https://zhunam-dev.vercel.app**
 
-## Run tasks
+## Featured: Crypto Market Dashboard
 
-To run the dev server for your app, use:
+The most recent piece, and the one that ties the other libraries
+together: a live crypto market dashboard (real data from the CoinGecko
+public API, no backend of its own) that uses `@zhunam/data-grid`,
+`@zhunam/form-builder`, and `@zhunam/pdf-generator` in one page. See its
+own
+[README.md](apps/portfolio-showcase/src/app/pages/crypto-dashboard/README.md)
+for which API of each library it consumes and why.
+
+## Libraries
+
+| Library | Package | Version | What it does |
+| --- | --- | --- | --- |
+| Data Grid | [`@zhunam/data-grid`](https://www.npmjs.com/package/@zhunam/data-grid) | 1.1.0 | Table with column sorting, pagination, and row selection. |
+| Form Builder | [`@zhunam/form-builder`](https://www.npmjs.com/package/@zhunam/form-builder) | 1.1.0 | Dynamic reactive forms from a declarative field configuration. |
+| Auth | [`@zhunam/auth`](https://www.npmjs.com/package/@zhunam/auth) | 1.0.0 | Unified wrapper over Firebase Auth and Supabase Auth, with a route guard and ready-made forms. |
+| PDF Generator | [`@zhunam/pdf-generator`](https://www.npmjs.com/package/@zhunam/pdf-generator) | 1.1.0 | Client-side PDF documents from a declarative, typed template, with a live preview component. |
+| Calendar | [`@zhunam/calendar`](https://www.npmjs.com/package/@zhunam/calendar) | 1.0.0 | Signal-based event store with real RRULE recurrence, an optional Google Calendar connector, and a month/week/day UI component. |
+
+Each library has its own `README.md` (installation, usage example, full
+API table) linked from its row above, and its own `CHANGELOG.md` with
+its release history.
+
+## Stack
+
+Angular (Nx monorepo), TypeScript, Signals interoperable with RxJS.
+Libraries under `libs/*` ship encapsulated SCSS with no utility
+framework dependency, so they don't require the consumer to have
+Tailwind or Bootstrap installed. `apps/portfolio-showcase` itself is
+free to use Tailwind + DaisyUI, since it's never published.
+
+## Repository structure
+
+```
+zhunam-ng-libs/
+  apps/
+    portfolio-showcase/   # consumes the libraries, not published
+  libs/
+    data-grid/
+    form-builder/
+    auth/
+    pdf-generator/
+    calendar/
+```
+
+## Running locally
 
 ```sh
+npm install
 npx nx serve portfolio-showcase
 ```
 
-To create a production bundle:
-
 ```sh
-npx nx build portfolio-showcase
+# production build
+npx nx build portfolio-showcase --configuration=production
+
+# tests for any project (a library or the app)
+npx nx test <project-name>
 ```
 
-To see all available targets to run for a project, run:
+## Deployment
 
-```sh
-npx nx show project portfolio-showcase
-```
-
-These targets are either [inferred automatically](https://nx.dev/concepts/inferred-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or defined in the `project.json` or `package.json` files.
-
-[More about running tasks in the docs &raquo;](https://nx.dev/features/run-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Add new projects
-
-While you could add new projects to your workspace manually, you might want to leverage [Nx plugins](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) and their [code generation](https://nx.dev/features/generate-code?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) feature.
-
-Use the plugin's generator to create new projects.
-
-To generate a new application, use:
-
-```sh
-npx nx g @nx/angular:app demo
-```
-
-To generate a new library, use:
-
-```sh
-npx nx g @nx/angular:lib mylib
-```
-
-You can use `npx nx list` to get a list of installed plugins. Then, run `npx nx list <plugin-name>` to learn about more specific capabilities of a particular plugin. Alternatively, [install Nx Console](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) to browse plugins and generators in your IDE.
-
-[Learn more about Nx plugins &raquo;](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) | [Browse the plugin registry &raquo;](https://nx.dev/plugin-registry?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Set up CI!
-
-### Step 1
-
-To connect to Nx Cloud, run the following command:
-
-```sh
-npx nx connect
-```
-
-Connecting to Nx Cloud ensures a [fast and scalable CI](https://nx.dev/ci/intro/why-nx-cloud?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) pipeline. It includes features such as:
-
-- [Remote caching](https://nx.dev/ci/features/remote-cache?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Task distribution across multiple machines](https://nx.dev/ci/features/distribute-task-execution?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Automated e2e test splitting](https://nx.dev/ci/features/split-e2e-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Task flakiness detection and rerunning](https://nx.dev/ci/features/flaky-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-### Step 2
-
-Use the following command to configure a CI workflow for your workspace:
-
-```sh
-npx nx g ci-workflow
-```
-
-[Learn more about Nx on CI](https://nx.dev/ci/intro/ci-with-nx#ready-get-started-with-your-provider?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Install Nx Console
-
-Nx Console is an editor extension that enriches your developer experience. It lets you run tasks, generate code, and improves code autocompletion in your IDE. It is available for VSCode and IntelliJ.
-
-[Install Nx Console &raquo;](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Useful links
-
-Learn more:
-
-- [Learn more about this workspace setup](https://nx.dev/getting-started/tutorials/angular-monorepo-tutorial?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects)
-- [Learn about Nx on CI](https://nx.dev/ci/intro/ci-with-nx?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Releasing Packages with Nx release](https://nx.dev/features/manage-releases?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [What are Nx plugins?](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-And join the Nx community:
-- [Discord](https://go.nx.dev/community)
-- [Follow us on X](https://twitter.com/nxdevtools) or [LinkedIn](https://www.linkedin.com/company/nrwl)
-- [Our Youtube channel](https://www.youtube.com/@nxdevtools)
-- [Our blog](https://nx.dev/blog?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Portfolio
-
-Este monorepo es un portfolio de desarrollo frontend Angular: cada
-pieza en `libs/*` es una librería real, instalable de forma
-independiente en otros proyectos, no solo una demo. `apps/portfolio-showcase`
-es la única pieza que no se publica: consume y demuestra las
-librerías del repo funcionando juntas sobre casos de uso reales.
-
-La pieza más reciente es **Crypto Market Dashboard**
-(`apps/portfolio-showcase/src/app/pages/crypto-dashboard`): integra
-`@zhunam/data-grid`, `@zhunam/form-builder`, y `@zhunam/pdf-generator`
-sobre datos de mercado reales y en vivo (API de CoinGecko), no datos
-de muestra estáticos. Ver su propio
-[README.md](apps/portfolio-showcase/src/app/pages/crypto-dashboard/README.md)
-para el detalle de qué API de cada librería usa y por qué.
-
-## Despliegue
-
-`portfolio-showcase` se despliega automáticamente a Vercel en cada
-push a `master`, vía `.github/workflows/deploy.yml`. Sitio en vivo:
+`portfolio-showcase` deploys automatically to Vercel on every push to
+`master`, via `.github/workflows/deploy.yml`. Live site:
 https://zhunam-dev.vercel.app
 
-El build corre con `nx build portfolio-showcase --configuration=production`
-(no el build nativo de Vercel, que no conoce las dependencias entre
-librerías de este monorepo), configurado en `vercel.json` mediante
-`buildCommand`/`outputDirectory` explícitos.
+The build runs with `nx build portfolio-showcase --configuration=production`
+(not Vercel's native build, which doesn't know about the dependencies
+between libraries in this monorepo), configured in `vercel.json` via
+explicit `buildCommand`/`outputDirectory`.
 
-Nota real de troubleshooting: los tokens de acceso de Vercel con scope
-limitado a un solo proyecto (`Project`) tienen un bug conocido a la
-fecha de este despliegue (confirmado en el foro de comunidad de
-Vercel) que los hace fallar con "User not found" en `whoami`/`pull`/
-`deploy`. El secreto `VERCEL_TOKEN` de este repo usa scope de `Team`
-en su lugar, no `Project`, hasta que Vercel resuelva ese bug.
+Real troubleshooting note: Vercel access tokens scoped to a single
+project (`Project` scope) have a known bug as of this deployment
+(confirmed on Vercel's own community forum) that makes them fail with
+"User not found" on `whoami`/`pull`/`deploy`. This repo's `VERCEL_TOKEN`
+secret uses `Team` scope instead, not `Project`, until Vercel fixes
+that bug.
+
+## License
+
+MIT, both this repository and every package under `libs/*`. See
+[LICENSE](LICENSE).
 
 ## About
 
