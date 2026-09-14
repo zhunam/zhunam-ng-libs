@@ -1,3 +1,4 @@
+import { provideRouter } from '@angular/router';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { PdfGeneratorDemo } from './pdf-generator-demo';
 
@@ -8,6 +9,7 @@ describe('PdfGeneratorDemo', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [PdfGeneratorDemo],
+      providers: [provideRouter([])],
     }).compileComponents();
 
     fixture = TestBed.createComponent(PdfGeneratorDemo);

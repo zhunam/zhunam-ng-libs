@@ -26,6 +26,16 @@ const fields: FieldConfig<User>[] = [
 <lib-form-builder [fields]="fields" (formSubmit)="onSubmit($event)" />
 ```
 
+### Live mode
+
+For a calculator-style form (no submit action, values used as you type):
+
+```html
+<lib-form-builder [fields]="fields" mode="live" (valueChange)="onValueChange($event)" />
+```
+
+`formSubmit` stays available in `'live'` mode too; most `'live'` consumers just won't use it.
+
 ## API
 
 ### `FormBuilder<T>`
@@ -37,6 +47,8 @@ const fields: FieldConfig<User>[] = [
 | `columns`              | `input<number>`                              | `1`          | Number of grid columns fields are laid out in on desktop; always collapses to 1 column on mobile. |
 | `serverErrors`         | `input<Partial<Record<keyof T, string>>>`    | `{}`         | Errors returned by the backend after a submit, keyed by field; auto-clears once the user edits that field. |
 | `formSubmit`           | `output<T>`                                  | N/A          | Emitted with the typed form values, only when the native form and every `crossFieldValidators` check pass. |
+| `mode`                 | `input<'submit' \| 'live'>`                  | `'submit'`   | `'submit'`: only `formSubmit` fires, on submit. `'live'`: `valueChange` also fires continuously as the user edits, in addition to `formSubmit` staying available. |
+| `valueChange`          | `output<T>`                                  | N/A          | Emitted with the typed, valid values on every change, only when `mode` is `'live'`. Fires once immediately if the form starts valid with its defaults. |
 
 ### `FieldConfig<T>`
 

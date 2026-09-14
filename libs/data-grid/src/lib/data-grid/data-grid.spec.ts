@@ -1,3 +1,4 @@
+import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DataGrid } from './data-grid';
 import { ColumnConfig } from '../models/column-config';
@@ -57,6 +58,35 @@ function getPageInfo(fixture: ComponentFixture<DataGrid<TestRow>>): string {
 
 function getPageButtons(fixture: ComponentFixture<DataGrid<TestRow>>): HTMLButtonElement[] {
   return Array.from(root(fixture).querySelectorAll<HTMLButtonElement>('.dg-page-btn'));
+}
+
+@Component({
+  template: `
+    <ng-template #customCell let-row>
+      <span class="custom-name">{{ row.name }}</span>
+    </ng-template>
+    <lib-data-grid [data]="data" [columns]="columns" />
+  `,
+  imports: [DataGrid],
+})
+class HostWithCustomCell implements OnInit {
+  @ViewChild('customCell', { static: true })
+  customCell!: TemplateRef<{ $implicit: TestRow }>;
+
+  data = unsortedRows;
+  columns: ColumnConfig<TestRow>[] = [];
+
+  ngOnInit(): void {
+    this.columns = [
+      {
+        key: 'name',
+        label: 'Name',
+        cellTemplate: this.customCell,
+        cellClass: (row) => (row.age >= 30 ? 'is-senior' : 'is-junior'),
+      },
+      { key: 'age', label: 'Age' },
+    ];
+  }
 }
 
 function clickHeader(fixture: ComponentFixture<DataGrid<TestRow>>, index: number): void {
@@ -277,6 +307,57 @@ describe('DataGrid', () => {
       const fixture = createFixture([]);
       expect(getRowCount(fixture)).toBe(0);
       expect(getPageInfo(fixture)).toBe('Página 1 de 1');
+    });
+  });
+
+  describe('custom cell rendering', () => {
+    it('renders row[key] as plain text when no cellTemplate/cellClass is set (unchanged default)', () => {
+      const fixture = createFixture(unsortedRows);
+      const cell = root(fixture).querySelector('tbody tr td') as HTMLElement;
+
+      expect(cell.textContent?.trim()).toBe('Charlie');
+      expect(cell.className).toBe('');
+    });
+  });
+
+  describe('custom cell rendering with cellTemplate and cellClass', () => {
+    let hostFixture: ComponentFixture<HostWithCustomCell>;
+
+    beforeEach(async () => {
+      await TestBed.configureTestingModule({
+        imports: [HostWithCustomCell],
+      }).compileComponents();
+
+      hostFixture = TestBed.createComponent(HostWithCustomCell);
+      hostFixture.detectChanges();
+    });
+
+    it('renders the cellTemplate content instead of plain row[key] text', () => {
+      const nativeElement = hostFixture.nativeElement as HTMLElement;
+      const customNameEl = nativeElement.querySelector('.custom-name');
+
+      expect(customNameEl).toBeTruthy();
+      expect(customNameEl?.textContent?.trim()).toBe('Charlie');
+      // The plain-text fallback must not also render for this column.
+      const firstCell = nativeElement.querySelector('tbody tr td:first-child') as HTMLElement;
+      expect(firstCell.textContent?.trim()).toBe('Charlie');
+    });
+
+    it('applies cellClass per row based on that row\'s own data', () => {
+      const nativeElement = hostFixture.nativeElement as HTMLElement;
+      const cells = Array.from(nativeElement.querySelectorAll('tbody tr td:first-child'));
+
+      // unsortedRows: Charlie(30) senior, Alice(25) junior, Bob(40) senior
+      expect(cells[0].className).toContain('is-senior');
+      expect(cells[1].className).toContain('is-junior');
+      expect(cells[2].className).toContain('is-senior');
+    });
+
+    it('leaves a column without cellTemplate rendering plain text as before', () => {
+      const nativeElement = hostFixture.nativeElement as HTMLElement;
+      const ageCell = nativeElement.querySelector('tbody tr td:nth-child(2)') as HTMLElement;
+
+      expect(ageCell.textContent?.trim()).toBe('30');
     });
   });
 });

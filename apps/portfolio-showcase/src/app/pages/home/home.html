@@ -266,6 +266,22 @@
     </div>
   </section>
 
+  <!-- Featured Project: a separate, larger section from Library Explorer —
+       this is an apps/* portfolio piece, not a published library, see
+       DESIGN.md "Featured Project" under Components. -->
+  <section class="flex flex-col gap-4">
+    <span class="text-sm font-semibold text-base-content">Featured Project</span>
+
+    <a
+      [routerLink]="cryptoDashboard.route"
+      class="flex flex-col gap-3 rounded-box border border-slate-200 p-8 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+    >
+      <span class="badge badge-primary w-fit text-xs">Live</span>
+      <h3 class="text-xl font-semibold text-base-content">{{ cryptoDashboard.name }}</h3>
+      <p class="max-w-prose text-slate-600">{{ cryptoDashboard.description }}</p>
+    </a>
+  </section>
+
   <!-- FAQ -->
   <section class="flex flex-col gap-6">
     <div class="flex flex-col gap-2">

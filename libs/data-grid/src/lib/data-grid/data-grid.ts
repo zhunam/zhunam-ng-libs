@@ -8,6 +8,7 @@ import {
   signal,
   ViewEncapsulation,
 } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { ColumnConfig } from '../models/column-config';
 
 type SortDirection = 'asc' | 'desc';
@@ -19,7 +20,7 @@ interface SortState<T> {
 
 @Component({
   selector: 'lib-data-grid',
-  imports: [],
+  imports: [NgTemplateOutlet],
   templateUrl: './data-grid.html',
   styleUrl: './data-grid.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

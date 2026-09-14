@@ -1,0 +1,16 @@
+:host {
+  display: block;
+}
+
+.market-ticker__track {
+  animation: market-ticker-scroll 30s linear infinite;
+}
+
+@keyframes market-ticker-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}

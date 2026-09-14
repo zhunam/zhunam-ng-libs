@@ -1,0 +1,61 @@
+<div class="flex flex-col gap-3 rounded-box bg-base-100 p-4 shadow-[0_2px_10px_rgba(15,37,42,0.08)]">
+  @if (error(); as errorMessage) {
+    <app-coin-spinner variant="error" [message]="errorMessage" (retry)="onRetryClick()" />
+  } @else if (stats() === null || currencies().length === 0) {
+    <app-coin-spinner variant="loading" />
+  } @else {
+    <div class="flex items-center justify-between gap-2">
+      <span class="text-sm font-semibold text-base-content">Global market stats</span>
+      <select
+        aria-label="Reference currency"
+        [value]="currency()"
+        (change)="onCurrencyChange($event)"
+        class="rounded-field border border-slate-200 bg-base-100 p-1 text-sm text-base-content"
+      >
+        @for (option of currencyOptions(); track option.code) {
+          <option [value]="option.code">{{ option.label }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div>
+        <span class="block text-xs text-slate-600">Market cap ({{ currency().toUpperCase() }})</span>
+        <span class="text-sm font-semibold text-base-content">{{ totalMarketCap() | number: '1.0-0' }}</span>
+      </div>
+      <div>
+        <span class="block text-xs text-slate-600">24h change (USD)</span>
+        <span class="text-sm font-medium" [class]="marketCapChangeColor()">
+          {{ stats()!.marketCapChangePercentage24hUsd > 0 ? '+' : '' }}{{ stats()!.marketCapChangePercentage24hUsd | number: '1.2-2' }}%
+        </span>
+      </div>
+      <div>
+        <span class="block text-xs text-slate-600">Volume ({{ currency().toUpperCase() }})</span>
+        <span class="text-sm font-semibold text-base-content">{{ totalVolume() | number: '1.0-0' }}</span>
+      </div>
+      <div>
+        <span class="block text-xs text-slate-600">24h change (USD)</span>
+        <span class="text-sm font-medium" [class]="volumeChangeColor()">
+          {{ stats()!.volumeChangePercentage24hUsd > 0 ? '+' : '' }}{{ stats()!.volumeChangePercentage24hUsd | number: '1.2-2' }}%
+        </span>
+      </div>
+    </div>
+
+    <div>
+      <span class="block text-xs text-slate-600">Active cryptocurrencies</span>
+      <span class="text-sm font-semibold text-base-content">{{ stats()!.activeCryptocurrencies | number }}</span>
+    </div>
+
+    <div>
+      <span class="block text-xs text-slate-600">Market cap dominance</span>
+      <div class="flex flex-wrap gap-x-3 gap-y-1">
+        @for (entry of dominanceEntries(); track entry[0]) {
+          <span class="text-sm text-base-content">
+            <span class="font-semibold uppercase">{{ entry[0] }}</span>
+            {{ entry[1] | number: '1.2-2' }}%
+          </span>
+        }
+      </div>
+    </div>
+  }
+</div>

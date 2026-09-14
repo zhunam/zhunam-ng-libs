@@ -1,0 +1,16 @@
+// Same ring-border spin technique (and now the same colors too:
+// border-slate-200/border-t-primary) as coin-spinner.scss's own
+// .coin-spinner__ring, scaled down for inline use inside the Export
+// PDF button (that component's own spinner is a full p-6 block, not
+// meant for an inline button context). The button's background is
+// white (raised-surface pill, see DESIGN.md), the same light context
+// coin-spinner's own ring was already tuned for.
+.pdf-export-spinner {
+  animation: pdf-export-spin 800ms linear infinite;
+}
+
+@keyframes pdf-export-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

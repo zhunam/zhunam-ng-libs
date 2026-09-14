@@ -1,0 +1,15 @@
+:host {
+  display: block;
+}
+
+// The carousel still scrolls (arrow buttons call scrollBy(), and
+// trackpad/touch swipe still works) — only the native scrollbar chrome
+// is hidden, so the arrows read as the intended way to navigate.
+.hide-scrollbar {
+  scrollbar-width: none; // Firefox
+  -ms-overflow-style: none; // legacy Edge
+
+  &::-webkit-scrollbar {
+    display: none; // Chrome, Safari, other WebKit/Blink browsers
+  }
+}

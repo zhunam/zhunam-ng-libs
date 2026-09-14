@@ -1,0 +1,106 @@
+<div class="rounded-box bg-base-100 p-4 shadow-[0_2px_10px_rgba(15,37,42,0.08)]">
+  @if (error(); as errorMessage) {
+    <app-coin-spinner variant="error" [message]="errorMessage" (retry)="onRetryClick()" />
+  } @else if (coins().length === 0) {
+    <app-coin-spinner variant="loading" />
+  } @else {
+    <div class="flex items-center gap-2">
+      <button
+        type="button"
+        aria-label="Previous"
+        class="btn btn-square btn-sm btn-outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        [disabled]="atStart()"
+        (click)="scrollByCard(-1)"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+        </svg>
+      </button>
+
+      <div
+        #scrollContainer
+        class="hide-scrollbar flex flex-1 gap-3 overflow-x-auto scroll-smooth"
+        (scroll)="onScroll()"
+      >
+        @for (coin of coins(); track coin.id) {
+          <article class="flex w-72 shrink-0 flex-col gap-2 rounded-box border border-slate-200 bg-base-100 p-4">
+            <div class="flex items-center gap-2">
+              <img [src]="coin.image" [alt]="coin.name" class="h-6 w-6 rounded-full" />
+              <div class="flex min-w-0 flex-col">
+                <span class="truncate text-sm font-semibold text-base-content">{{ coin.name }}</span>
+                <span class="text-xs uppercase text-slate-600">{{ coin.symbol }}</span>
+              </div>
+            </div>
+
+            <!-- Dominant element of the card, per DESIGN.md's crypto-dashboard
+                 register: the chart, not the coin name, is what the card is
+                 for. viewBox matches this box's own real h-36/w-64 pixel size
+                 exactly (see trending-carousel.ts's SPARKLINE_WIDTH/HEIGHT
+                 comment): a 1:1 scale, so the marker/tooltip geometry below
+                 never distorts into an oval/ribbon the way a mismatched,
+                 non-uniformly stretched viewBox would (same class of bug
+                 already found and fixed in the hero's own sparkline). -->
+            <svg
+              [attr.viewBox]="'0 0 ' + sparklineWidth + ' ' + sparklineHeight"
+              preserveAspectRatio="none"
+              class="h-36 w-64 touch-none"
+              [class]="changeColorFor(coin)"
+              (pointerdown)="onPointerActive($event, coin)"
+              (pointermove)="onPointerActive($event, coin)"
+              (pointerup)="onPointerInactive(coin)"
+              (pointercancel)="onPointerInactive(coin)"
+              (pointerleave)="onPointerInactive(coin)"
+            >
+              <path [attr.d]="areaPathFor(coin)" fill="currentColor" class="opacity-15" />
+              <path [attr.d]="linePathFor(coin)" fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke" />
+
+              @if (hoverInfoFor(coin); as info) {
+                <g class="pointer-events-none">
+                  <line
+                    [attr.x1]="info.pointX"
+                    [attr.y1]="info.pointY"
+                    [attr.x2]="info.pointX"
+                    [attr.y2]="sparklineHeight"
+                    stroke="#cbd5e1"
+                    stroke-width="1"
+                    stroke-dasharray="2,2"
+                    vector-effect="non-scaling-stroke"
+                  />
+                  <circle
+                    [attr.cx]="info.pointX"
+                    [attr.cy]="info.pointY"
+                    r="3.5"
+                    [attr.fill]="info.markerColor"
+                    stroke="#ffffff"
+                    stroke-width="1.5"
+                    vector-effect="non-scaling-stroke"
+                  />
+                  <rect [attr.x]="info.boxX" [attr.y]="info.boxY" [attr.width]="tooltipWidth" [attr.height]="tooltipHeight" rx="4" fill="#0F252A" />
+                  <text [attr.x]="info.textCenterX" [attr.y]="info.priceTextY" text-anchor="middle" font-size="11" font-weight="700" fill="#ffffff">{{ info.price | currency }}</text>
+                  <text [attr.x]="info.textCenterX" [attr.y]="info.dayTextY" text-anchor="middle" font-size="9" fill="#8ba7a6">{{ info.dayLabel }}</text>
+                </g>
+              }
+            </svg>
+
+            <span class="text-sm font-semibold text-base-content">{{ coin.currentPrice | currency }}</span>
+            <span class="text-sm font-medium" [class]="changeColorFor(coin)">
+              {{ coin.changePercentage24h > 0 ? '+' : '' }}{{ coin.changePercentage24h | number: '1.2-2' }}%
+            </span>
+          </article>
+        }
+      </div>
+
+      <button
+        type="button"
+        aria-label="Next"
+        class="btn btn-square btn-sm btn-outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        [disabled]="atEnd()"
+        (click)="scrollByCard(1)"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
+    </div>
+  }
+</div>

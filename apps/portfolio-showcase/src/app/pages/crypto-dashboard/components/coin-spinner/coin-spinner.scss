@@ -1,0 +1,13 @@
+:host {
+  display: block;
+}
+
+.coin-spinner__ring {
+  animation: coin-spinner-spin 800ms linear infinite;
+}
+
+@keyframes coin-spinner-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

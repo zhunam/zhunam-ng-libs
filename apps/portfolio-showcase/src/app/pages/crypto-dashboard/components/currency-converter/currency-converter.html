@@ -1,0 +1,38 @@
+<div class="flex flex-col gap-3 rounded-box bg-base-100 p-4 shadow-[0_2px_10px_rgba(15,37,42,0.08)]">
+  @if (listsError(); as errorMessage) {
+    <app-coin-spinner variant="error" [message]="errorMessage" (retry)="onRetryListsClick()" />
+  } @else if (coins().length === 0 || currencies().length === 0) {
+    <app-coin-spinner variant="loading" />
+  } @else {
+    <div class="flex flex-col items-end gap-2">
+      <lib-form-builder
+        class="w-full"
+        [fields]="fieldsConfig()"
+        mode="live"
+        (valueChange)="onValueChange($event)"
+      />
+
+      <button
+        type="button"
+        aria-label="Swap currencies"
+        class="btn btn-square btn-sm btn-primary mb-1"
+        [disabled]="!canSwap()"
+        (click)="onSwapClick()"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4M16 17H4m0 0l4 4m-4-4l4-4" />
+        </svg>
+      </button>
+    </div>
+
+    @if (conversionError(); as errorMessage) {
+      <app-coin-spinner variant="error" [message]="errorMessage" (retry)="onRetryConversionClick()" />
+    } @else if (conversionLoading()) {
+      <app-coin-spinner variant="loading" />
+    } @else if (result(); as value) {
+      <p class="text-lg font-semibold text-base-content">
+        {{ resultFor()?.amount }} {{ resultForCoin()?.symbol?.toUpperCase() }} = {{ value | number: '1.2-6' }} {{ resultFor()?.toCurrency?.toUpperCase() }}
+      </p>
+    }
+  }
+</div>

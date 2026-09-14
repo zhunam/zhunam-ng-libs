@@ -22,6 +22,7 @@ function createFixture(
     crossFieldValidators?: CrossFieldValidator<TestModel>[];
     columns?: number;
     serverErrors?: Partial<Record<keyof TestModel, string>>;
+    mode?: 'submit' | 'live';
   } = {},
 ): ComponentFixture<FormBuilder<TestModel>> {
   const fixture = TestBed.createComponent(FormBuilder<TestModel>);
@@ -34,6 +35,9 @@ function createFixture(
   }
   if (options.serverErrors) {
     fixture.componentRef.setInput('serverErrors', options.serverErrors);
+  }
+  if (options.mode) {
+    fixture.componentRef.setInput('mode', options.mode);
   }
   fixture.detectChanges();
   return fixture;
@@ -642,6 +646,150 @@ describe('FormBuilder', () => {
       // would be a false positive: it'd also match safely inside this
       // attribute, which never executes).
       expect(getInput(fixture, 'text').getAttribute('placeholder')).toBe(malicious);
+    });
+  });
+
+  describe('mode / valueChange output', () => {
+    it('regression: with the default mode (never set), valueChange never emits and formSubmit behaves exactly as before', () => {
+      const fixture = createFixture([
+        { key: 'name', label: 'Name', type: 'text', validators: { required: true } },
+        { key: 'age', label: 'Age', type: 'number' },
+      ]);
+
+      const liveEmitted: TestModel[] = [];
+      fixture.componentInstance.valueChange.subscribe((value) => liveEmitted.push(value));
+
+      setValue(getInput(fixture, 'text'), 'Ada', fixture);
+      setValue(getInput(fixture, 'number'), '30', fixture);
+      expect(liveEmitted).toEqual([]); // no live emission from typing alone
+
+      const submitEmitted: TestModel[] = [];
+      fixture.componentInstance.formSubmit.subscribe((value) => submitEmitted.push(value));
+      submitForm(fixture);
+
+      expect(submitEmitted).toEqual([{ name: 'Ada', age: 30 }]);
+      expect(liveEmitted).toEqual([]); // still nothing, even after a real submit
+    });
+
+    it('mode "live" emits the initial value immediately when the form starts valid with its defaults', async () => {
+      const fields: FieldConfig<TestModel>[] = [
+        { key: 'name', label: 'Name', type: 'text', defaultValue: 'Ada' },
+      ];
+      const fixture = TestBed.createComponent(FormBuilder<TestModel>);
+      fixture.componentRef.setInput('fields', fields);
+      fixture.componentRef.setInput('mode', 'live');
+
+      const emitted: TestModel[] = [];
+      // Subscribed before the first detectChanges(), so this is guaranteed
+      // to catch the initial emission wherever in that cycle it fires.
+      fixture.componentInstance.valueChange.subscribe((value) => emitted.push(value));
+
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(emitted).toEqual([{ name: 'Ada' }]);
+    });
+
+    it('mode "live" emits the coerced, typed value on every valid field change', () => {
+      const fixture = createFixture(
+        [
+          { key: 'name', label: 'Name', type: 'text', validators: { required: true } },
+          { key: 'age', label: 'Age', type: 'number' },
+        ],
+        { mode: 'live' },
+      );
+
+      const emitted: TestModel[] = [];
+      fixture.componentInstance.valueChange.subscribe((value) => emitted.push(value));
+
+      setValue(getInput(fixture, 'text'), 'Ada', fixture);
+      setValue(getInput(fixture, 'number'), '30', fixture);
+
+      expect(emitted[emitted.length - 1]).toEqual({ name: 'Ada', age: 30 });
+      expect(emitted.length).toBeGreaterThanOrEqual(2); // one per valid keystroke-triggered change
+    });
+
+    it('mode "live" does not emit while the form is invalid', () => {
+      const fixture = createFixture(
+        [{ key: 'name', label: 'Name', type: 'text', validators: { required: true } }],
+        { mode: 'live' },
+      );
+
+      const emitted: TestModel[] = [];
+      fixture.componentInstance.valueChange.subscribe((value) => emitted.push(value));
+      emitted.length = 0; // discard the initial emission, if the empty required field allowed one
+
+      setValue(getInput(fixture, 'text'), 'A', fixture);
+      setValue(getInput(fixture, 'text'), '', fixture); // back to invalid (required)
+
+      expect(emitted[emitted.length - 1]).toEqual({ name: 'A' }); // last emission is the valid one, not the empty one
+    });
+
+    it('mode "live" respects crossFieldValidators, not just native FormGroup validity', () => {
+      const fixture = createFixture(
+        [
+          { key: 'password', label: 'Password', type: 'password' },
+          { key: 'confirmPassword', label: 'Confirm', type: 'password' },
+        ],
+        {
+          mode: 'live',
+          crossFieldValidators: [
+            {
+              validate: (value) =>
+                value.password !== value.confirmPassword
+                  ? { confirmPassword: 'Must match' }
+                  : null,
+            },
+          ],
+        },
+      );
+      const [passwordInput, confirmInput] = Array.from(
+        root(fixture).querySelectorAll('input[type="password"]'),
+      ) as HTMLInputElement[];
+
+      const emitted: TestModel[] = [];
+      fixture.componentInstance.valueChange.subscribe((value) => emitted.push(value));
+      emitted.length = 0;
+
+      setValue(passwordInput, 'secret', fixture);
+      setValue(confirmInput, 'different', fixture); // native-valid, but cross-field mismatch
+
+      expect(emitted).toEqual([]); // never emitted a mismatched pair
+    });
+
+    it('leaves the submit button visible and functional in mode "live" (no conditional hiding)', () => {
+      const fixture = createFixture(
+        [{ key: 'name', label: 'Name', type: 'text', validators: { required: true } }],
+        { mode: 'live' },
+      );
+
+      expect(getSubmitButton(fixture)).toBeTruthy();
+
+      setValue(getInput(fixture, 'text'), 'Ada', fixture);
+      const submitEmitted: TestModel[] = [];
+      fixture.componentInstance.formSubmit.subscribe((value) => submitEmitted.push(value));
+      submitForm(fixture);
+
+      expect(submitEmitted).toEqual([{ name: 'Ada' }]); // formSubmit still works in 'live' mode too
+    });
+
+    it('cleans up its valueChanges subscription on destroy, no emissions after that', () => {
+      const fixture = createFixture(
+        [{ key: 'name', label: 'Name', type: 'text' }],
+        { mode: 'live' },
+      );
+      const component = fixture.componentInstance;
+
+      const emitted: TestModel[] = [];
+      component.valueChange.subscribe((value) => emitted.push(value));
+      const countBeforeDestroy = emitted.length;
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const formGroup = (component as any).formGroup();
+      fixture.destroy();
+      formGroup.get('name')?.setValue('Ada after destroy');
+
+      expect(emitted.length).toBe(countBeforeDestroy); // no new emission reached the (destroyed) output
     });
   });
 });

@@ -1,3 +1,4 @@
+import { provideRouter } from '@angular/router';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DataGridDemo } from './data-grid-demo';
 
@@ -8,6 +9,7 @@ describe('DataGridDemo', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [DataGridDemo],
+      providers: [provideRouter([])],
     }).compileComponents();
 
     fixture = TestBed.createComponent(DataGridDemo);

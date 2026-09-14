@@ -94,6 +94,31 @@ export class FormBuilder<T> {
   formSubmit = output<T>();
 
   /**
+   * Whether the form only reports its values on explicit submit, or
+   * also continuously as the user edits it. `formSubmit` still fires
+   * on submit in both modes; `valueChange` only fires when this is
+   * `'live'`.
+   * @default 'submit'
+   * @example
+   * <lib-form-builder [fields]="fields" mode="live" (valueChange)="onValueChange($event)" />
+   */
+  mode = input<'submit' | 'live'>('submit');
+
+  /**
+   * Emitted with the typed, valid form values, only when `mode` is
+   * `'live'` (never fires in the default `'submit'` mode). Fires once
+   * immediately if the form starts valid with its default values (since
+   * `FormGroup.valueChanges` never emits on its own at startup), then
+   * again on every subsequent change, as long as both the native
+   * `FormGroup` and every `crossFieldValidators` check keep passing —
+   * the same validity criteria `formSubmit` already uses, just
+   * continuous instead of submit-gated.
+   * @example
+   * <lib-form-builder [fields]="fields" mode="live" (valueChange)="onValueChange($event)" />
+   */
+  valueChange = output<T>();
+
+  /**
    * Errors returned by the backend after a submit attempt (e.g. "email
    * already registered"), keyed by field. Shown as soon as they're set,
    * regardless of whether the field has been touched or the form
@@ -151,6 +176,37 @@ export class FormBuilder<T> {
         snapshot[key] = group.get(String(key))?.value;
       }
       this.serverErrorSnapshot.set(snapshot);
+    });
+
+    // Early return keeps this a no-op entirely (no subscription, no
+    // extra work) for the default 'submit' mode every existing consumer
+    // is already on. Re-subscribes whenever formGroup() itself changes
+    // (fields() changed), since that's a brand new FormGroup instance.
+    effect((onCleanup) => {
+      if (this.mode() !== 'live') {
+        return;
+      }
+      const group = this.formGroup();
+
+      const emitIfValid = () => {
+        if (!group.valid) {
+          return;
+        }
+        const value = this.coerceNumberFields(group.getRawValue());
+        if (Object.keys(this.runCrossFieldValidators(value)).length > 0) {
+          return;
+        }
+        this.valueChange.emit(value);
+      };
+
+      // FormGroup.valueChanges only fires on an actual value change, never
+      // on its own at startup — emit once here so a 'live' consumer sees
+      // the form's initial state immediately, not just after the user's
+      // first edit.
+      emitIfValid();
+
+      const subscription = group.valueChanges.subscribe(emitIfValid);
+      onCleanup(() => subscription.unsubscribe());
     });
   }
 

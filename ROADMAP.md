@@ -13,15 +13,44 @@ only reference it.
 
 ## Active phase
 
-Ninguna fase activa por el momento. Fase 4 (Client-side document (PDF)
-generator) completada y publicada: `@zhunam/pdf-generator@1.1.0` en
-npm, junto con `@zhunam/auth@1.0.0`, `@zhunam/data-grid@1.1.0`, y
-`@zhunam/form-builder@1.1.0`.
+Ninguna fase activa por el momento. Fase 5 (Calendar with Google
+Calendar integration) completada y publicada: `@zhunam/calendar@1.0.0`
+en npm, junto con `@zhunam/auth@1.0.0`, `@zhunam/data-grid@1.1.0`,
+`@zhunam/form-builder@1.1.0`, y `@zhunam/pdf-generator@1.1.0`.
 
-Chat/notificaciones (antes fase 5) se sacó de la secuencia numerada el
-2026-08-27, ver "Future ideas" para el detalle. La siguiente candidata
-en la secuencia es Calendar, sesión de definición de scope pendiente
-(mismo proceso ya usado para las fases anteriores).
+La siguiente y última fase de la secuencia numerada es el dashboard
+financiero/cripto (`apps/`, no publicable), sesión de definición de
+scope pendiente.
+
+Infraestructura de despliegue agregada 2026-09 (fuera de la secuencia
+de fases, aplica a todo el repo): `portfolio-showcase` se despliega
+automáticamente a Vercel en cada push a `master`, ver sección
+"Despliegue" en README.md.
+
+**Pendiente de publicar**: `@zhunam/data-grid` tiene cambios reales sin
+publicar (`ColumnConfig<T>.cellTemplate`/`cellClass`, agregados durante
+la fase 6 para que `market-table` pueda mostrar imagen y color por
+celda; ver `libs/data-grid/CHANGELOG.md` → `[Unreleased]`). Sigue en
+`1.1.0` en npm. No bloquea el desarrollo local (`portfolio-showcase`
+importa el código fuente directo vía path mapping, no el paquete
+publicado), pero falta bump a `2.0.0` (**major**, no minor: agrega
+`@angular/common` como peer dependency nueva y requerida, sin marcarla
+opcional en `peerDependenciesMeta`; ver `libs/data-grid/CHANGELOG.md` →
+`[Unreleased]` sección "Changed") y `npm publish` antes de que un
+consumidor externo pueda usar esta capacidad. Esta nota decía
+originalmente "minor, aditivo": era un error de redacción del propio
+commit que la introdujo (`0f7bceec2`, `feat(data-grid)!:` ya usaba el
+marcador de breaking change en el asunto), corregido 2026-09-14 tras
+una verificación cruzada con `git log`/`git blame` y el CHANGELOG
+completo. Plan: publicar al cerrar la fase 6 completa, no ahora mismo,
+para no republicar varias veces por cambios sueltos.
+
+**`@zhunam/form-builder` en la misma situación**: `mode: input<'submit'
+| 'live'>('submit')` + `valueChange: output<T>` agregados durante la
+fase 6 (necesidad real: `currency-converter` necesitaba valores en
+vivo, el contrato submit-only existente no alcanzaba; ver
+`libs/form-builder/CHANGELOG.md` → `[Unreleased]`). Sigue en `1.1.0`
+en npm, mismo plan: publicar (minor) al cerrar la fase 6 completa.
 
 ## Phases: full sequence
 
@@ -46,11 +75,20 @@ data-grid, form-builder, pdf-generator) instead of standing alone.
    mostly free, possible template sales (Gumroad). **DONE, published on
    npm as `@zhunam/pdf-generator@1.1.0`**
 5. **Calendar with Google Calendar integration** (`libs/calendar`):
-   freemium UI + SaaS sync. Not started
-6. **Financial/crypto dashboard** (`apps/`, portfolio piece, not a
-   publishable lib): 100% free, not monetizable as a product. Meant to
-   showcase auth, data-grid, form-builder, and pdf-generator working
-   together in a real use case. Not started
+   freemium UI + SaaS sync. **DONE, published on npm as
+   `@zhunam/calendar@1.0.0`**
+6. **Crypto market dashboard** (`apps/`, portfolio piece, not a
+   publishable lib): 100% free, not monetizable as a product. Showcases
+   data-grid, form-builder, and pdf-generator together over real,
+   live market data (CoinGecko public API, no backend). auth
+   deliberately excluded: a login here would gate nothing real, it
+   already has its own honest demo. In progress, most of the page
+   already built (see `apps/portfolio-showcase/ROADMAP.md`, the source
+   of truth for this phase's detail, not duplicated here): the
+   pdf-generator gap named in this scope line specifically — it was
+   never actually integrated until late in the process, a real hole
+   caught before closing the phase — is now closed, an "Export PDF"
+   report button next to the market table.
 
 
 ## Future ideas (not yet phased)
@@ -74,6 +112,22 @@ promoted into the numbered sequence above.
   Extraerlo a un componente compartido antes de que pdf-generator lo
   copie por cuarta vez y calendar/chat-widget lo hagan crecer más.
   Detectado durante el relevamiento previo a la demo de pdf-generator.
+
+- **El `<footer>`, a diferencia del breadcrumb, NO está duplicado por
+  página: es un único elemento global en `app.html`** (fuera del
+  `<router-outlet>`), verificado antes de tocar nada al armar el
+  footer específico de `/crypto-dashboard`. Como consecuencia, mostrar
+  contenido distinto ahí según la ruta no se resuelve copiando markup
+  (como el breadcrumb), sino con detección de ruta en `App` (`app.ts`):
+  se agregó `isCryptoDashboard`, mismo patrón `toSignal(router.events...)`
+  que ya usaba `isHome` para el header transparente. Primera vez que el
+  footer diverge intencionalmente entre rutas (sin "MIT License" en
+  `/crypto-dashboard`, ya que esa pieza es `apps/*` y no una librería
+  publicable; con atribución real a CoinGecko y un disclaimer
+  financiero en su lugar) — una decisión documentada, no una
+  inconsistencia accidental. Cualquier futura página con necesidades de
+  footer distintas debería sumarse a este mismo `computed`/`toSignal`,
+  no reabrir la pregunta de si el footer está duplicado.
 
 - **`home.ts`/`home.html` no iteran las tarjetas de librería**: cada
   tarjeta (Data Grid, Form Builder, Auth) es una propiedad separada
@@ -99,6 +153,29 @@ promoted into the numbered sequence above.
 
 ## Lecciones de infraestructura
 
+- **El monorepo es zoneless: `fakeAsync`/`tick` de Angular no funcionan
+  en ningún test con timers** (`apps/portfolio-showcase` no tiene
+  `zone.js` como dependencia en absoluto, confirmado en `package.json`;
+  tampoco hay `provideZoneChangeDetection()` en ningún `app.config.ts`).
+  Encontrado el 2026-09-12 construyendo `market-ticker`
+  (crypto-dashboard): un test con `fakeAsync(() => { ...; tick(...); })`
+  falló con `Error: zone-testing.js is needed for the fakeAsync() test
+  helper but could not be found`, confirmado en WSL, no un problema de
+  configuración de esa librería puntual sino de todo el workspace (sin
+  `zone.js` instalado, `fakeAsync`/`tick` no pueden funcionar en ningún
+  proyecto del monorepo). Solución: usar los fake timers nativos de
+  Vitest (`vi.useFakeTimers()` / `vi.advanceTimersByTimeAsync()`), que
+  interceptan `setInterval`/`setTimeout` a nivel del runtime de JS, sin
+  depender de zonas de Angular. Detalle importante confirmado
+  empíricamente: `vi.useFakeTimers()` debe instalarse **antes** de crear
+  el componente/servicio bajo test (`TestBed.createComponent(...)`), no
+  después — un `setInterval` ya registrado con timers reales (ej. desde
+  el constructor de un componente) queda invisible para los fake timers
+  si estos se instalan recién en el cuerpo del test, después de que el
+  componente ya se construyó. Aplica a cualquier test futuro de este
+  monorepo que necesite simular el paso del tiempo (polling, debounce,
+  timeouts), no solo a `market-ticker`.
+
 - **Vitest no aísla specs que mockean el mismo SDK externo** (`test.isolate`
   default `false` en `@nx/angular:unit-test`): causa real de una falla en
   CI (Linux) en `form-builder` el 2026-08-16. Varios specs llamando
@@ -119,10 +196,11 @@ promoted into the numbered sequence above.
   igual que CI. Cualquier `nx test` corrido nativo en Windows no es
   confiable como resultado, ni positivo ni negativo.
 
-- **`nx test portfolio-showcase` falla hoy en 5 de 6 archivos** (confirmado
-  en WSL 2026-08-25, no es un problema del entorno): `app.spec.ts`,
-  `home.spec.ts`, `data-grid-demo.spec.ts`, `form-builder-demo.spec.ts`, y
-  el nuevo `pdf-generator-demo.spec.ts`, todos con
+- **`nx test portfolio-showcase` falla hoy en 5 de 6 archivos — CERRADO,
+  ver fix real más abajo.** Diagnóstico original (confirmado en WSL
+  2026-08-25, no un problema del entorno): `app.spec.ts`, `home.spec.ts`,
+  `data-grid-demo.spec.ts`, `form-builder-demo.spec.ts`, y el nuevo
+  `pdf-generator-demo.spec.ts`, todos con
   `NG0201: No provider found for ActivatedRoute`. Causa: cualquier
   componente que usa `RouterLink` (`app.ts`, y cada página de demo vía su
   sidebar/breadcrumb) inyecta `ActivatedRoute` en su constructor, y
@@ -136,6 +214,34 @@ promoted into the numbered sequence above.
   investigado por qué ese caso puntual no dispara el mismo error. Pendiente
   de arreglo real (agregar `provideRouter([])` a los `TestBed` afectados),
   fuera del alcance de la tarea que lo detectó.
+
+  **Fix real aplicado 2026-09-13.** `provideRouter([])` agregado a los
+  `TestBed` de `calendar-demo.spec.ts`, `data-grid-demo.spec.ts`,
+  `form-builder-demo.spec.ts`, `pdf-generator-demo.spec.ts`, y al
+  primer `describe` de `home.spec.ts` (el segundo `describe` de ese
+  archivo ya lo tenía, agregado en una tarea anterior específicamente
+  para poder testear la sección Featured Project mientras este bug
+  seguía sin resolver). Mismo patrón exacto ya usado en
+  `auth-demo.spec.ts`/`crypto-dashboard.spec.ts`: un array vacío
+  alcanza, ninguno de estos tests navega a una ruta real.
+
+  **Dos detalles del diagnóstico original que ya no coinciden con el
+  estado real del repo, dejados anotados en vez de reescribir la
+  nota original**: (1) `app.spec.ts` ya no estaba en la lista de
+  fallos al empezar este fix — se corrigió como efecto secundario de
+  una tarea anterior (agregar `provideRouter(...)` al `TestBed` de
+  `app.spec.ts` para poder testear el footer condicional de
+  `/crypto-dashboard` arregló, sin buscarlo, el mismo NG0201 que
+  afectaba a ese archivo). (2) `auth-demo.spec.ts`, al releerlo ahora,
+  sí tiene `provideRouter([])` en su `TestBed` — contradice la
+  afirmación original de que "no provee nada especial"; no se
+  investigó cuándo se agregó, pero el archivo real hoy ya sigue el
+  patrón correcto.
+
+  Verificado: `nx run-many --target=test --all` en WSL — 6/6 proyectos
+  del monorepo en verde, cero regresión. `portfolio-showcase`:
+  17/17 archivos, **129 passed, 0 failed** (antes: 124 passed, 5
+  failed). Build y lint de `portfolio-showcase` limpios.
 
 - **`/tmp` de WSL puede llenarse con restos de `npm install` viejos**:
   el `tmpfs` de la instancia WSL usada para verificación es de 2GB:
@@ -157,6 +263,26 @@ promoted into the numbered sequence above.
   calendar, aplica a cualquier librería futura con entry points
   secundarios que necesiten tipos ambientales (ej. tipos de un script
   externo cargado en runtime).
+
+- **daisyUI v5 sigue aplicando su propio tema segun
+  `prefers-color-scheme` del sistema si `<html>` no tiene `data-theme`
+  explícito**, incluso con `default: true` configurado en el tema
+  propio del proyecto. Un visitante con modo oscuro activo veía el
+  tema genérico azul/violeta de daisyUI en vez de la paleta real, en
+  cualquier navegador (confirmado en Chromium, Firefox, y WebKit por
+  igual, no es un problema de compatibilidad entre motores).
+  Encontrado en `apps/portfolio-showcase` el 2026-09-10, vía una
+  captura real en Firefox que no coincidía con lo visto en Chrome.
+  Solución: `data-theme="<nombre-del-tema>"` explícito en el `<html>`
+  de `index.html`, confirmando que sobrevive el paso de inlineado de
+  CSS crítico del build de producción (Beasties en este proyecto).
+
+- **El Router de Angular no vuelve el scroll a 0 al cambiar de ruta
+  por defecto**: sin `withInMemoryScrolling({ scrollPositionRestoration:
+  'top' })` en `provideRouter()`, una SPA hereda la posición de scroll
+  de la ruta anterior. Encontrado en `apps/portfolio-showcase` el
+  2026-09-10. Aplica a cualquier app Angular nueva con múltiples
+  rutas, agregar esta configuración desde el principio.
 
 ## Recurring maintenance notes
 

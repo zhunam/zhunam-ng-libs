@@ -5,6 +5,22 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
 
 ## [Unreleased]
 
+### Added
+- `ColumnConfig<T>.cellTemplate`: optional custom cell rendering via
+  `TemplateRef<{ $implicit: T }>`, for columns that need more than plain
+  text (e.g. an image, a conditionally-styled value). Falls back to the
+  existing `{{ row[key] }}` plain-text rendering when not set, no change
+  for existing consumers.
+- `ColumnConfig<T>.cellClass`: optional `(row: T) => string` for
+  conditional per-row CSS classes on a column's cell.
+
+### Changed
+- `@angular/common` is now a required peer dependency (`^20.0.0 ||
+  ^21.0.0 || ^22.0.0`), needed for `cellTemplate`'s `NgTemplateOutlet`.
+  Additive from a usage standpoint (nothing existing breaks), but
+  consumers who somehow don't already have `@angular/common` installed
+  (unlikely in any real Angular app) would need to add it.
+
 ## [1.1.0] - 2026-08-17
 
 ### Added

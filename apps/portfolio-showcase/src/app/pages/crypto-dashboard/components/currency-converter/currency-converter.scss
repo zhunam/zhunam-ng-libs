@@ -1,0 +1,13 @@
+:host {
+  display: block;
+}
+
+// form-builder's Submit button reads its background from this custom
+// property (see libs/form-builder's own :host block), defaulting to a
+// generic blue when a consumer never sets it, which is what was
+// happening here. Not a hardcoded override to fight, this is the
+// library's documented per-consumer theming mechanism; it was simply
+// never wired to Signal Teal until now.
+lib-form-builder {
+  --fb-primary-color: #2c5f5d;
+}

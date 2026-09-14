@@ -72,3 +72,12 @@
       existing standalone `DataGrid` contract; still needs a version
       bump before republishing (new public surface). Resolves the tech
       debt logged in the root `ROADMAP.md` under "Future ideas".
+- [x] `ColumnConfig<T>.cellTemplate` + `cellClass`: custom cell
+      rendering via `TemplateRef`, for consumers needing more than plain
+      text per cell (e.g. an image, conditional coloring). Driven by a
+      real need found building the crypto-dashboard's `market-table`
+      (`apps/portfolio-showcase`): plain-text-only cells couldn't show
+      a coin's image or color-code its price change. Additive, existing
+      consumers unaffected when neither is set. Adds `@angular/common`
+      as a new required peer dependency (`NgTemplateOutlet`); still
+      needs a version bump before republishing.

@@ -1,0 +1,35 @@
+name: App Tests
+
+# Runs portfolio-showcase's unit test suite (including crypto-dashboard)
+# whenever a PR touches the app. Unlike lib-tests.yml, this app has no
+# coverageThresholds configured in its project.json (that discipline is
+# specific to publishable libs/*, tied to what a third-party consumer can
+# rely on; portfolio-showcase is never published, so it doesn't apply),
+# so this workflow checks for real pass/fail, not a coverage gate.
+#
+# Path is scoped to apps/portfolio-showcase/** only (same explicit-paths
+# criterion already used in lib-tests.yml), so this doesn't trigger on
+# unrelated libs/* changes.
+on:
+  pull_request:
+    paths:
+      - "apps/portfolio-showcase/**"
+
+jobs:
+  test:
+    name: App Tests (portfolio-showcase)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install workspace dependencies
+        run: npm ci
+
+      - name: Run portfolio-showcase unit tests
+        run: npx nx test portfolio-showcase
