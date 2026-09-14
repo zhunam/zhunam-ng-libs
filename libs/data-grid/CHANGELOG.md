@@ -5,6 +5,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-09-13
+
 ### Added
 - `ColumnConfig<T>.cellTemplate`: optional custom cell rendering via
   `TemplateRef<{ $implicit: T }>`, for columns that need more than plain
@@ -15,11 +17,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
   conditional per-row CSS classes on a column's cell.
 
 ### Changed
-- `@angular/common` is now a required peer dependency (`^20.0.0 ||
-  ^21.0.0 || ^22.0.0`), needed for `cellTemplate`'s `NgTemplateOutlet`.
-  Additive from a usage standpoint (nothing existing breaks), but
-  consumers who somehow don't already have `@angular/common` installed
-  (unlikely in any real Angular app) would need to add it.
+- **BREAKING**: `@angular/common` is now a required peer dependency
+  (`^20.0.0 || ^21.0.0 || ^22.0.0`), needed for `cellTemplate`'s
+  `NgTemplateOutlet`. Nothing existing breaks at the usage level, but
+  consumers who don't already have `@angular/common` installed (unlikely
+  in any real Angular app) need to add it, which is why this ships as a
+  major version.
 
 ## [1.1.0] - 2026-08-17
 

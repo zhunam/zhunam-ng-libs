@@ -5,6 +5,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-09-13
+
 ### Added
 - `mode: input<'submit' | 'live'>('submit')` and `valueChange:
   output<T>`: an opt-in live mode that emits the typed, valid form
