@@ -22,6 +22,16 @@ export class PdfGeneratorDemo {
   protected readonly library = pdfGeneratorLibrary;
   protected readonly invoiceTemplate = invoiceTemplate;
 
+  // <lib-pdf-preview> is reactive by design (it re-renders on every data
+  // change, that's the whole feature) — but that also means mounting it
+  // immediately calls generatePdf() as soon as this page loads, which
+  // eagerly downloads pdfmake + its embedded Roboto font (~1.9MB
+  // combined, confirmed via a real Lighthouse audit: Performance 39,
+  // LCP 10.2s on this route). Gating the mount behind this signal defers
+  // that download to an actual user interaction, without touching
+  // PdfPreview itself or its reactive behavior once it's mounted.
+  protected readonly showPreview = signal(false);
+
   protected readonly clientName = signal(initialInvoiceData.clientName);
   protected readonly clientAddress = signal(initialInvoiceData.clientAddress);
   protected readonly items = signal<DemoInvoiceItem[]>(initialInvoiceData.items);
