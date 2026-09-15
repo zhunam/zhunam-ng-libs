@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://zhunam-dev.vercel.app/</loc>
+  </url>
+  <url>
+    <loc>https://zhunam-dev.vercel.app/data-grid</loc>
+  </url>
+  <url>
+    <loc>https://zhunam-dev.vercel.app/form-builder</loc>
+  </url>
+  <url>
+    <loc>https://zhunam-dev.vercel.app/auth</loc>
+  </url>
+  <url>
+    <loc>https://zhunam-dev.vercel.app/pdf-generator</loc>
+  </url>
+  <url>
+    <loc>https://zhunam-dev.vercel.app/calendar</loc>
+  </url>
+  <url>
+    <loc>https://zhunam-dev.vercel.app/crypto-dashboard</loc>
+  </url>
+</urlset>

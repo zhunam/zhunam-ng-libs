@@ -104,31 +104,54 @@
       </section>
 
       <section class="flex flex-col gap-3 rounded-box border border-slate-200 bg-base-100 p-6">
-        <div class="flex items-center justify-between">
+        @if (showPreview()) {
+          <div class="flex items-center justify-between">
+            <h2 class="text-sm font-semibold text-base-content">Preview</h2>
+            <button
+              type="button"
+              [disabled]="!preview.result()"
+              (click)="preview.result()?.download('invoice.pdf')"
+              class="btn btn-outline btn-xs transition-transform duration-200 ease-out hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            >
+              Download
+            </button>
+          </div>
+
+          @if (preview.status() === 'generating') {
+            <p class="text-xs text-slate-500">Generating PDF…</p>
+          } @else if (preview.status() === 'error') {
+            <p class="text-xs text-red-600">{{ preview.error()?.message }}</p>
+          }
+
+          <lib-pdf-preview
+            #preview
+            [template]="invoiceTemplate"
+            [data]="editableData()"
+            (generationError)="onGenerationError($event)"
+            style="--pdf-preview-height: 500px"
+          />
+        } @else {
           <h2 class="text-sm font-semibold text-base-content">Preview</h2>
-          <button
-            type="button"
-            [disabled]="!preview.result()"
-            (click)="preview.result()?.download('invoice.pdf')"
-            class="btn btn-outline btn-xs transition-transform duration-200 ease-out hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-          >
-            Download
-          </button>
-        </div>
 
-        @if (preview.status() === 'generating') {
-          <p class="text-xs text-slate-500">Generating PDF…</p>
-        } @else if (preview.status() === 'error') {
-          <p class="text-xs text-red-600">{{ preview.error()?.message }}</p>
+          <!-- <lib-pdf-preview> is reactive: mounting it immediately calls
+               generatePdf(), which lazy-loads pdfmake + its embedded font
+               (~1.9MB combined). Deferred behind this button so that cost
+               is only paid once the visitor actually asks for a preview,
+               not on every page load. -->
+          <div class="flex flex-col items-center justify-center gap-3 rounded-md border border-dashed border-slate-300 py-16 text-center">
+            <p class="max-w-prose text-sm text-slate-600">
+              Rendering a live preview loads the PDF engine and its embedded font on demand
+              (about 1.9MB).
+            </p>
+            <button
+              type="button"
+              (click)="showPreview.set(true)"
+              class="btn btn-primary btn-sm transition-transform duration-200 ease-out hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            >
+              Show live preview
+            </button>
+          </div>
         }
-
-        <lib-pdf-preview
-          #preview
-          [template]="invoiceTemplate"
-          [data]="editableData()"
-          (generationError)="onGenerationError($event)"
-          style="--pdf-preview-height: 500px"
-        />
       </section>
     </div>
 

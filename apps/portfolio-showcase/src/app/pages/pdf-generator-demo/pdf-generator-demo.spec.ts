@@ -32,4 +32,30 @@ describe('PdfGeneratorDemo', () => {
     expect(packageCard).toBeTruthy();
     expect(packageCard.componentInstance.library().importPath).toBe('@zhunam/pdf-generator');
   });
+
+  // <lib-pdf-preview> is reactive: mounting it immediately calls
+  // generatePdf(), which lazy-loads pdfmake + its embedded font (~1.9MB
+  // combined, confirmed via a real Lighthouse audit). This page defers
+  // that mount behind a real user interaction instead of paying that cost
+  // on every page load.
+  it('does not mount <lib-pdf-preview> until the user asks for it', () => {
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('lib-pdf-preview')).toBeNull();
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Show live preview');
+  });
+
+  it('mounts <lib-pdf-preview> once the user clicks "Show live preview"', () => {
+    fixture.detectChanges();
+
+    const button = Array.from(fixture.nativeElement.querySelectorAll('button')).find(
+      (el) => (el as HTMLButtonElement).textContent?.trim() === 'Show live preview',
+    ) as HTMLButtonElement;
+    expect(button).toBeTruthy();
+
+    button.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('lib-pdf-preview')).toBeTruthy();
+  });
 });
