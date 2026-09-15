@@ -1,0 +1,27 @@
+<div class="flex w-full flex-col gap-6 rounded-box border border-slate-200 p-4 sm:w-72">
+  <div class="flex items-baseline justify-between gap-2">
+    <span class="font-mono text-xs font-semibold text-base-content" translate="no">{{
+      library().importPath
+    }}</span>
+    <span class="text-xs text-slate-500">v{{ library().version }}</span>
+  </div>
+  <code class="rounded-md bg-primary/50 px-2 py-1.5 font-mono text-xs text-slate-100">{{
+    installCommand(library().importPath)
+  }}</code>
+  <div class="flex gap-3 text-xs">
+    <a
+      [href]="npmUrl(library().importPath)"
+      target="_blank"
+      rel="noopener"
+      class="text-primary hover:underline"
+      >npm</a
+    >
+    <a
+      [href]="githubUrl(library().importPath)"
+      target="_blank"
+      rel="noopener"
+      class="text-primary hover:underline"
+      >GitHub</a
+    >
+  </div>
+</div>

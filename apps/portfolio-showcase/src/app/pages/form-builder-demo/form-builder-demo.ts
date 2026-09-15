@@ -6,21 +6,19 @@ import {
   registrationFields,
   RegistrationForm,
 } from '../../shared/mock-registration-fields';
-import { libraries } from '../../shared/libraries';
-import { injectCurrentUrl, sidebarLinkClasses } from '../../shared/library-sidebar';
+import { LibraryPageShell } from '../../shared/library-page-shell/library-page-shell';
+import { PackageInfoCard } from '../../shared/package-info-card/package-info-card';
+import { formBuilderLibrary } from '../../shared/libraries';
 
 @Component({
   selector: 'app-form-builder-demo',
-  imports: [FormBuilder, RouterLink],
+  imports: [FormBuilder, RouterLink, LibraryPageShell, PackageInfoCard],
   templateUrl: './form-builder-demo.html',
   styleUrl: './form-builder-demo.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FormBuilderDemo {
-  protected readonly libraries = libraries;
-  protected readonly currentUrl = injectCurrentUrl();
-  protected readonly sidebarLinkClasses = sidebarLinkClasses;
-
+  protected readonly library = formBuilderLibrary;
   protected readonly fields = registrationFields;
   protected readonly columns = 2;
   protected readonly crossFieldValidators = [passwordsMatchValidator];

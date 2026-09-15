@@ -7,21 +7,19 @@ import {
   invoiceTemplate,
   TAX_RATE_PERCENT,
 } from '../../shared/mock-invoice-template';
-import { libraries } from '../../shared/libraries';
-import { injectCurrentUrl, sidebarLinkClasses } from '../../shared/library-sidebar';
+import { LibraryPageShell } from '../../shared/library-page-shell/library-page-shell';
+import { PackageInfoCard } from '../../shared/package-info-card/package-info-card';
+import { pdfGeneratorLibrary } from '../../shared/libraries';
 
 @Component({
   selector: 'app-pdf-generator-demo',
-  imports: [PdfPreview, RouterLink],
+  imports: [PdfPreview, RouterLink, LibraryPageShell, PackageInfoCard],
   templateUrl: './pdf-generator-demo.html',
   styleUrl: './pdf-generator-demo.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PdfGeneratorDemo {
-  protected readonly libraries = libraries;
-  protected readonly currentUrl = injectCurrentUrl();
-  protected readonly sidebarLinkClasses = sidebarLinkClasses;
-
+  protected readonly library = pdfGeneratorLibrary;
   protected readonly invoiceTemplate = invoiceTemplate;
 
   protected readonly clientName = signal(initialInvoiceData.clientName);

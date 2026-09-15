@@ -4,6 +4,14 @@ export interface LibraryEntry {
   description: string;
   route: string | null;
   status: 'available' | 'coming-soon';
+  /**
+   * Real published version, from that library's own package.json.
+   * Hand-maintained here for the sidebar's package info card (see
+   * DESIGN.md > Mobile Drawer Navigation > "Package info card"); keep in
+   * sync whenever a library ships a release, same "no invented version
+   * numbers" rule as the rest of this file.
+   */
+  version: string;
 }
 
 /** Sourced from the root ROADMAP.md phase list — no invented libraries or version numbers. */
@@ -14,6 +22,7 @@ export const libraries: LibraryEntry[] = [
     description: 'Table with column sorting, pagination, and row selection.',
     route: '/data-grid',
     status: 'available',
+    version: '2.0.0',
   },
   {
     name: 'Form Builder',
@@ -21,6 +30,7 @@ export const libraries: LibraryEntry[] = [
     description: 'Dynamic reactive forms from a declarative field configuration.',
     route: '/form-builder',
     status: 'available',
+    version: '1.2.0',
   },
   {
     name: 'Auth',
@@ -28,6 +38,7 @@ export const libraries: LibraryEntry[] = [
     description: 'Unified wrapper over Firebase Auth and Supabase Auth, with a route guard and ready-made forms.',
     route: '/auth',
     status: 'available',
+    version: '1.0.0',
   },
   {
     name: 'PDF Generator',
@@ -35,6 +46,7 @@ export const libraries: LibraryEntry[] = [
     description: 'Client-side PDF documents from a declarative, typed template, with a live preview component.',
     route: '/pdf-generator',
     status: 'available',
+    version: '1.1.0',
   },
   {
     name: 'Calendar',
@@ -42,6 +54,7 @@ export const libraries: LibraryEntry[] = [
     description: 'Signal-based event store with real RRULE recurrence, an optional Google Calendar connector, and a month/week/day UI component.',
     route: '/calendar',
     status: 'available',
+    version: '1.0.0',
   },
 ];
 

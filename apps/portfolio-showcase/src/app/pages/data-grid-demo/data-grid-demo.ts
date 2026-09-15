@@ -2,8 +2,9 @@ import { ChangeDetectionStrategy, Component, signal, WritableSignal } from '@ang
 import { RouterLink } from '@angular/router';
 import { ColumnConfig, DataGrid } from '@zhunam/data-grid';
 import { mockUsers, userColumns } from '../../shared/mock-users';
-import { libraries } from '../../shared/libraries';
-import { injectCurrentUrl, sidebarLinkClasses } from '../../shared/library-sidebar';
+import { LibraryPageShell } from '../../shared/library-page-shell/library-page-shell';
+import { PackageInfoCard } from '../../shared/package-info-card/package-info-card';
+import { dataGridLibrary } from '../../shared/libraries';
 
 // Once a user can freely rename a column's `key` through the JSON editor, the
 // row shape is no longer the fixed `User` interface — it's whatever set of
@@ -12,15 +13,13 @@ type Row = Record<string, unknown>;
 
 @Component({
   selector: 'app-data-grid-demo',
-  imports: [DataGrid, RouterLink],
+  imports: [DataGrid, RouterLink, LibraryPageShell, PackageInfoCard],
   templateUrl: './data-grid-demo.html',
   styleUrl: './data-grid-demo.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DataGridDemo {
-  protected readonly libraries = libraries;
-  protected readonly currentUrl = injectCurrentUrl();
-  protected readonly sidebarLinkClasses = sidebarLinkClasses;
+  protected readonly library = dataGridLibrary;
   protected readonly selectedUser = signal<Row | null>(null);
 
   // Both editors below follow the same shape: an in-progress textarea value,

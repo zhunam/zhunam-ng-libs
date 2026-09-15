@@ -2,8 +2,9 @@ import { ChangeDetectionStrategy, Component, effect, ElementRef, inject, signal,
 import { RouterLink } from '@angular/router';
 import { AUTH_SERVICE, AuthUser } from '@zhunam/auth';
 import { LoginForm, RegisterForm, ResetPasswordForm } from '@zhunam/auth/form-ui';
-import { libraries } from '../../shared/libraries';
-import { injectCurrentUrl, sidebarLinkClasses } from '../../shared/library-sidebar';
+import { LibraryPageShell } from '../../shared/library-page-shell/library-page-shell';
+import { PackageInfoCard } from '../../shared/package-info-card/package-info-card';
+import { authLibrary } from '../../shared/libraries';
 import { AuthStateSource, DEMO_EMAIL, DEMO_PASSWORD, MockAuthService } from './mock-auth.service';
 
 type Provider = 'firebase' | 'supabase';
@@ -16,7 +17,7 @@ const STATE_SOURCE_LABEL: Record<AuthStateSource, string> = {
 
 @Component({
   selector: 'app-auth-demo',
-  imports: [RouterLink, LoginForm, RegisterForm, ResetPasswordForm],
+  imports: [RouterLink, LoginForm, RegisterForm, ResetPasswordForm, LibraryPageShell, PackageInfoCard],
   templateUrl: './auth-demo.html',
   styleUrl: './auth-demo.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -34,10 +35,7 @@ const STATE_SOURCE_LABEL: Record<AuthStateSource, string> = {
   ],
 })
 export class AuthDemo {
-  protected readonly libraries = libraries;
-  protected readonly currentUrl = injectCurrentUrl();
-  protected readonly sidebarLinkClasses = sidebarLinkClasses;
-
+  protected readonly library = authLibrary;
   protected readonly authService = inject(AUTH_SERVICE);
   protected readonly mockAuthService = inject(MockAuthService);
   protected readonly demoEmail = DEMO_EMAIL;
