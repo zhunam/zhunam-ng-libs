@@ -132,6 +132,25 @@ investigación real antes de escribir código)
   ítems) trending, no usados por ahora pero ahí están si se quiere
   ampliar el carrusel más adelante.
 
+## Limitaciones conocidas
+
+- **Meta tags (SEO/Open Graph/Twitter Card) son únicos para todo el
+  sitio, no por ruta.** `portfolio-showcase` es una SPA sin
+  prerendering ni SSR: un único `index.html` sirve todas las rutas
+  (`/`, `/data-grid`, `/crypto-dashboard`, etc.), y ese archivo es lo
+  único que un bot de redes sociales (Facebook, Twitter/X, LinkedIn)
+  o un crawler que no ejecuta JavaScript llega a ver. Los
+  `<meta name="description">`/`og:*`/`twitter:*` agregados ahí
+  describen el sitio en general (el portfolio + el dashboard cripto),
+  no cada página específica — no es un descuido, es una limitación
+  real de esta arquitectura, documentada acá a propósito. `Title` sí
+  varía por ruta (ver `AppTitleStrategy`), porque eso lo controla
+  Angular Router en el cliente después de que la página ya cargó, no
+  depende de qué ve un bot al pedir la URL la primera vez.
+  Reconsiderar esto (meta tags reales por ruta) requeriría
+  prerendering (`@angular/ssr` con `outputMode: 'static'` o similar) o
+  SSR real, explícitamente fuera de alcance de esta tarea.
+
 ## Tareas (1-3h cada una, en orden)
 
 - [x] **Investigación complementaria de API**: `/global` y

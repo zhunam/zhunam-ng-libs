@@ -9,6 +9,35 @@
     <title>zhunam-dev</title>
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- This is a client-rendered SPA with no prerendering: this same
+         index.html serves every route, so these meta tags are necessarily
+         site-wide, not per-page. See ROADMAP.md > "Known limitations" for
+         why (a deliberate decision, not an oversight) and what per-route
+         meta tags would require. -->
+    <meta
+      name="description"
+      content="Angular frontend developer portfolio: real, independently published npm libraries (Data Grid, Form Builder, Auth, PDF Generator, Calendar), plus a live crypto market dashboard built on real CoinGecko data."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="zhunam-dev" />
+    <meta
+      property="og:description"
+      content="Angular frontend developer portfolio: real, independently published npm libraries, plus a live crypto market dashboard built on real CoinGecko data."
+    />
+    <meta property="og:image" content="https://zhunam-dev.vercel.app/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:url" content="https://zhunam-dev.vercel.app/" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="zhunam-dev" />
+    <meta
+      name="twitter:description"
+      content="Angular frontend developer portfolio: real, independently published npm libraries, plus a live crypto market dashboard built on real CoinGecko data."
+    />
+    <meta name="twitter:image" content="https://zhunam-dev.vercel.app/og-image.png" />
+
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
     <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png" />

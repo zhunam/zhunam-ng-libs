@@ -4,6 +4,7 @@ import { DataGridDemo } from './pages/data-grid-demo/data-grid-demo';
 import { FormBuilderDemo } from './pages/form-builder-demo/form-builder-demo';
 import { AuthDemo } from './pages/auth-demo/auth-demo';
 import { PdfGeneratorDemo } from './pages/pdf-generator-demo/pdf-generator-demo';
+import { NotFound } from './pages/not-found/not-found';
 
 export const appRoutes: Route[] = [
   { path: '', component: Home, title: 'Home' },
@@ -22,4 +23,5 @@ export const appRoutes: Route[] = [
       import('./pages/crypto-dashboard/crypto-dashboard').then((m) => m.CryptoDashboard),
     title: 'Crypto Market Dashboard',
   },
+  { path: '**', component: NotFound, title: 'Page not found' },
 ];
