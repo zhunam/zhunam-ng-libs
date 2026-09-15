@@ -1,45 +1,26 @@
-<div class="drawer gap-6 lg:drawer-open">
-  <input id="library-explorer-drawer" type="checkbox" class="drawer-toggle" />
-
-  <div class="drawer-content flex min-w-0 flex-col gap-8">
-    <label
-      for="library-explorer-drawer"
-      aria-label="Toggle library explorer"
-      class="drawer-tab btn btn-square fixed top-16 left-0 z-40 rounded-l-none border border-l-0 border-slate-200 bg-base-100 shadow-md transition-all duration-300 ease-out lg:hidden"
-    >
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="1.5"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        class="h-5 w-5"
-        aria-hidden="true"
-      >
-        <path d="M4 6h16M4 12h16M4 18h16" />
-      </svg>
-    </label>
-
+<app-library-page-shell>
     <nav aria-label="Breadcrumb" class="text-sm text-slate-500">
       <a routerLink="/" class="hover:text-primary"><span translate="no">Home</span></a>
       <span class="mx-1.5">/</span>
       <span class="text-base-content" translate="no">Form Builder</span>
     </nav>
 
-    <header class="flex flex-col gap-3">
-      <span class="text-primary font-bold w-fit font-mono text-2xl">&#64;zhunam/form-builder</span>
-      <h1 class="text-lg font-bold tracking-tight text-balance text-base-content">Live Demo</h1>
-      <p class="max-w-prose text-slate-600">
-        A sign-up form rendered entirely from a declarative field configuration: native
-        per-field validation, cross-field password confirmation, and a typed
-        <span class="font-mono text-sm">formSubmit</span> output.
-      </p>
-      <p class="max-w-prose text-sm text-slate-500">
-        Tip: submit with <span class="font-mono" translate="no"> test&#64;test.com </span> to see a
-        simulated server-side error on the email field; edit it to watch the message clear
-        itself.
-      </p>
+    <header class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+      <div class="flex flex-col gap-3">
+        <span class="text-primary font-bold w-fit font-mono text-2xl">&#64;zhunam/form-builder</span>
+        <h1 class="text-lg font-bold tracking-tight text-balance text-base-content">Live Demo</h1>
+        <p class="max-w-prose text-slate-600">
+          A sign-up form rendered entirely from a declarative field configuration: native
+          per-field validation, cross-field password confirmation, and a typed
+          <span class="font-mono text-sm">formSubmit</span> output.
+        </p>
+        <p class="max-w-prose text-sm text-slate-500">
+          Tip: submit with <span class="font-mono" translate="no"> test&#64;test.com </span> to see a
+          simulated server-side error on the email field; edit it to watch the message clear
+          itself.
+        </p>
+      </div>
+      <app-package-info-card [library]="library" />
     </header>
 
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
@@ -73,28 +54,4 @@
         ><code class="font-mono">{{ usageSnippet }}</code></pre>
       </section>
     </div>
-  </div>
-
-  <div class="drawer-side">
-    <label for="library-explorer-drawer" aria-label="Close library explorer" class="drawer-overlay"></label>
-    <aside
-      class="h-fit w-72 bg-base-100 border-0 shadow-none p-4 max-lg:border-r max-lg:border-slate-200 lg:sticky lg:top-6 lg:w-55 lg:rounded-box lg:border lg:border-slate-200"
-    >
-      <h2 class="mb-3 text-sm font-semibold text-base-content">Library Explorer</h2>
-      <nav class="flex flex-col gap-1">
-        @for (lib of libraries; track lib.name) {
-          @if (lib.route) {
-            <a [routerLink]="lib.route" [class]="sidebarLinkClasses(lib.route === currentUrl())"
-              ><span translate="no">{{ lib.name }}</span></a
-            >
-          } @else {
-            <span class="flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium text-slate-400">
-              <span translate="no">{{ lib.name }}</span>
-              <span class="text-xs font-normal">Coming Soon</span>
-            </span>
-          }
-        }
-      </nav>
-    </aside>
-  </div>
-</div>
+</app-library-page-shell>

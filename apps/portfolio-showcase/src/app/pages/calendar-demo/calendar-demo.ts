@@ -9,8 +9,9 @@ import {
   type CalendarBoardVisibleRange,
 } from '@zhunam/calendar/calendar-ui';
 import { mockCalendarEvents } from '../../shared/mock-calendar-events';
-import { libraries } from '../../shared/libraries';
-import { injectCurrentUrl, sidebarLinkClasses } from '../../shared/library-sidebar';
+import { LibraryPageShell } from '../../shared/library-page-shell/library-page-shell';
+import { PackageInfoCard } from '../../shared/package-info-card/package-info-card';
+import { calendarLibrary } from '../../shared/libraries';
 
 function startOfMonth(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), 1);
@@ -22,16 +23,13 @@ function startOfNextMonth(date: Date): Date {
 
 @Component({
   selector: 'app-calendar-demo',
-  imports: [RouterLink, CalendarBoard, DatePipe],
+  imports: [RouterLink, CalendarBoard, DatePipe, LibraryPageShell, PackageInfoCard],
   templateUrl: './calendar-demo.html',
   styleUrl: './calendar-demo.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CalendarDemo {
-  protected readonly libraries = libraries;
-  protected readonly currentUrl = injectCurrentUrl();
-  protected readonly sidebarLinkClasses = sidebarLinkClasses;
-
+  protected readonly library = calendarLibrary;
   private readonly calendarStore = new CalendarStore();
 
   protected readonly viewMode = signal<CalendarBoardViewMode>('month');
