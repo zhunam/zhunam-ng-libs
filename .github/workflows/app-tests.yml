@@ -7,13 +7,19 @@ name: App Tests
 # rely on; portfolio-showcase is never published, so it doesn't apply),
 # so this workflow checks for real pass/fail, not a coverage gate.
 #
-# Path is scoped to apps/portfolio-showcase/** only (same explicit-paths
-# criterion already used in lib-tests.yml), so this doesn't trigger on
-# unrelated libs/* changes.
+# This workflow is a required status check on master (see the repo
+# ruleset). A path-filtered `on.pull_request.paths` trigger means GitHub
+# never even creates a check run for a PR that doesn't touch
+# apps/portfolio-showcase, so the required check sits "pending" forever
+# and blocks the merge (confirmed with a real PR that only added
+# .gitattributes at the repo root). The trigger now always fires; whether
+# the real npm ci / nx test steps run is instead decided inside the job
+# via a plain `git diff` against the PR's base, so a PR with no relevant
+# changes still gets a real, fast, passing check run. A plain diff is
+# used instead of a third-party paths-filter action to avoid trusting
+# external CI code in a public repo for a check this simple.
 on:
   pull_request:
-    paths:
-      - "apps/portfolio-showcase/**"
 
 jobs:
   test:
@@ -22,14 +28,29 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect relevant changes
+        id: changes
+        run: |
+          if git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" \
+            | grep -q '^apps/portfolio-showcase/'; then
+            echo "relevant=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "relevant=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Setup Node
+        if: steps.changes.outputs.relevant == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
       - name: Install workspace dependencies
+        if: steps.changes.outputs.relevant == 'true'
         run: npm ci
 
       - name: Run portfolio-showcase unit tests
+        if: steps.changes.outputs.relevant == 'true'
         run: npx nx test portfolio-showcase
