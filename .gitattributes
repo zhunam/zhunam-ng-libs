@@ -1,0 +1,3 @@
+.agents/skills/** linguist-vendored
+.claude/skills/** linguist-vendored
+.opencode/skills/** linguist-vendored
