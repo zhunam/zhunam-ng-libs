@@ -25,11 +25,11 @@ for which API of each library it consumes and why.
 
 | Library | Package | Version | What it does |
 | --- | --- | --- | --- |
-| Data Grid | [`@zhunam/data-grid`](https://www.npmjs.com/package/@zhunam/data-grid) | 2.0.0 | Table with column sorting, pagination, and row selection. |
-| Form Builder | [`@zhunam/form-builder`](https://www.npmjs.com/package/@zhunam/form-builder) | 1.2.0 | Dynamic reactive forms from a declarative field configuration. |
-| Auth | [`@zhunam/auth`](https://www.npmjs.com/package/@zhunam/auth) | 1.0.0 | Unified wrapper over Firebase Auth and Supabase Auth, with a route guard and ready-made forms. |
-| PDF Generator | [`@zhunam/pdf-generator`](https://www.npmjs.com/package/@zhunam/pdf-generator) | 1.1.0 | Client-side PDF documents from a declarative, typed template, with a live preview component. |
-| Calendar | [`@zhunam/calendar`](https://www.npmjs.com/package/@zhunam/calendar) | 1.0.0 | Signal-based event store with real RRULE recurrence, an optional Google Calendar connector, and a month/week/day UI component. |
+| Data Grid | [`@zhunam/data-grid`](https://www.npmjs.com/package/@zhunam/data-grid) | 3.0.0 | Table with column sorting, pagination, and row selection. |
+| Form Builder | [`@zhunam/form-builder`](https://www.npmjs.com/package/@zhunam/form-builder) | 2.0.0 | Dynamic reactive forms from a declarative field configuration. |
+| Auth | [`@zhunam/auth`](https://www.npmjs.com/package/@zhunam/auth) | 2.0.0 | Unified wrapper over Firebase Auth and Supabase Auth, with a route guard and ready-made forms. |
+| PDF Generator | [`@zhunam/pdf-generator`](https://www.npmjs.com/package/@zhunam/pdf-generator) | 2.0.0 | Client-side PDF documents from a declarative, typed template, with a live preview component. |
+| Calendar | [`@zhunam/calendar`](https://www.npmjs.com/package/@zhunam/calendar) | 2.0.0 | Signal-based event store with real RRULE recurrence, an optional Google Calendar connector, and a month/week/day UI component. |
 
 Each library has its own `README.md` (installation, usage example, full
 API table) linked from its row above, and its own `CHANGELOG.md` with
