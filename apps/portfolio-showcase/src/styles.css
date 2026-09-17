@@ -53,7 +53,7 @@ body {
 /* Public re-theme hook documented in libs/data-grid's AGENTS.md — scoped to
    this app only, the library's own default stays untouched and neutral. */
 lib-data-grid {
-  --dg-primary-color: var(--color-primary);
+  --zhunam-primary: var(--color-primary);
 }
 
 /* Reduced motion is not optional: every transition/animation collapses to instant. */

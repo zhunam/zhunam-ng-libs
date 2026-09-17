@@ -81,3 +81,17 @@
       consumers unaffected when neither is set. Adds `@angular/common`
       as a new required peer dependency (`NgTemplateOutlet`); still
       needs a version bump before republishing.
+- [x] Renamed every CSS custom property to the shared `--zhunam-*`
+      namespace (`--dg-primary-color` → `--zhunam-primary`, etc.), part
+      of a workspace-wide migration unifying theming roles across all 5
+      `@zhunam/*` libraries so a consumer using more than one sees one
+      consistent name per role instead of a different prefix per
+      library. `--zhunam-border` also changes its default from
+      `#e5e7eb` to `#d1d5db` to match the value already used by
+      `@zhunam/form-builder`/`@zhunam/calendar`. `:focus-visible` now
+      reads a new `--zhunam-focus` property (defaults to
+      `--zhunam-primary`) instead of the primary color directly, and
+      every `var()` usage gained an inline fallback matching its
+      `:host` default. No compatibility aliases kept for the old names
+      (breaking change, major version bump). Full rename table in
+      `CHANGELOG.md`.

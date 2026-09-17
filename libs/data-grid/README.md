@@ -64,6 +64,30 @@ columns: ColumnConfig<Coin>[] = [
 ];
 ```
 
+### Theming
+
+`DataGrid` sizes and colors itself via CSS custom properties, part of the
+shared `--zhunam-*` namespace used across every `@zhunam/*` library. Set
+any of them from the consuming app's own stylesheet, scoped to
+`lib-data-grid` or wider:
+
+| Custom property | Default | Description |
+| ------------------------------- | -------- | -------------------------------------------------- |
+| `--zhunam-primary`               | `#3b82f6` | Sort-icon color, active/hover accents. |
+| `--zhunam-focus`                 | `var(--zhunam-primary)` | Focus outline on sortable headers, rows, and pagination buttons. |
+| `--zhunam-text`                  | `#1f2937` | Base text color and pagination button text. |
+| `--zhunam-text-secondary`        | `#374151` | Header row and pagination label text. |
+| `--zhunam-border`                | `#d1d5db` | Table, cell, and pagination button borders. |
+| `--zhunam-radius`                | `0.5rem`  | Table wrapper and pagination button corner radius. |
+| `--zhunam-font-family`           | `system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif` | Font for the whole component. |
+| `--zhunam-font-size`             | `0.9375rem` | Base font size. |
+| `--zhunam-transition-duration`   | `150ms`   | Duration of hover/focus color transitions. |
+| `--zhunam-grid-header-bg`        | `#f9fafb` | Header row background. |
+| `--zhunam-grid-header-hover-bg`  | `rgb(15 23 42 / 6%)` | Header background on hover, for sortable columns. |
+| `--zhunam-grid-row-hover-bg`     | `rgb(15 23 42 / 4.5%)` | Row background on hover. |
+| `--zhunam-grid-cell-padding-x`   | `1rem`    | Horizontal cell padding. |
+| `--zhunam-grid-cell-padding-y`   | `0.75rem` | Vertical cell padding. |
+
 ## Compatibility
 
 `@angular/core` and `@angular/common` (new peer dependency, needed for `cellTemplate`'s `NgTemplateOutlet`) `^20.0.0 || ^21.0.0 || ^22.0.0`.

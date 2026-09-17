@@ -5,6 +5,31 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
 
 ## [Unreleased]
 
+### Changed
+- **BREAKING** (`@zhunam/auth/form-ui`): every CSS custom property on
+  `LoginForm`, `RegisterForm`, and `ResetPasswordForm` is renamed to the
+  shared `--zhunam-*` namespace, unified across all `@zhunam/*`
+  libraries so they use one consistent name per theming role instead of
+  a library-specific `--auth-*` prefix. No compatibility aliases are
+  kept for the old names; update any stylesheet that sets one of them.
+  The fields rendered by the wrapped `<lib-form-builder>` were already
+  themed through its own `--zhunam-*` properties and are unaffected
+  beyond the rename of `@zhunam/form-builder` itself (see that
+  library's changelog).
+- **BREAKING**: `@zhunam/form-builder` peer dependency raised to
+  `^2.0.0` (was `^1.0.0`), required for `@zhunam/auth/form-ui` to pick
+  up form-builder's own `--zhunam-*` rename above.
+- Every `var()` usage now carries an inline fallback matching its
+  `:host` default, so these components degrade gracefully if that
+  declaration is ever missing instead of resolving to an invalid value.
+
+| Old name | New name | Used by |
+| -------------------- | ------------------- | ------------------------------------------------ |
+| `--auth-error-color`  | `--zhunam-error`   | `LoginForm`, `RegisterForm`, `ResetPasswordForm` |
+| `--auth-link-color`   | `--zhunam-primary` | `LoginForm` |
+| `--auth-success-color`| `--zhunam-success` | `ResetPasswordForm` |
+| `--auth-spacing`      | `--zhunam-spacing` | `LoginForm`, `RegisterForm`, `ResetPasswordForm` |
+
 ## [1.0.0] - 2026-08-17
 
 ### Added

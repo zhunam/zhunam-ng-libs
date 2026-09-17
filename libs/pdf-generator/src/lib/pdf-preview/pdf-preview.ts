@@ -38,8 +38,8 @@ export const GENERATE_PDF = new InjectionToken<typeof generatePdf>('GENERATE_PDF
  * it in an `<iframe>` using the browser's native PDF viewer.
  *
  * Sizes itself via CSS custom properties, re-themeable from the
- * consuming app: `--pdf-preview-height` (default `600px`) controls the
- * host's, and therefore the iframe's, height; width always fills the
+ * consuming app: `--zhunam-pdf-preview-height` (default `600px`) controls
+ * the host's, and therefore the iframe's, height; width always fills the
  * host's container at 100%. The component draws no border or radius of
  * its own, wrap it in whatever bounded-panel styling the consumer's own
  * design system already uses.

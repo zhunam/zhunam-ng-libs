@@ -1,14 +1,14 @@
 :host {
   // Re-theme any of these from the consumer app — nothing here is brand-specific.
-  --pdf-preview-height: 600px;
-  --pdf-preview-text-color: #374151;
-  --pdf-preview-error-color: #dc2626;
-  --pdf-preview-font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --zhunam-pdf-preview-height: 600px;
+  --zhunam-text-secondary: #374151;
+  --zhunam-error: #dc2626;
+  --zhunam-font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
   display: block;
   width: 100%;
-  height: var(--pdf-preview-height);
-  font-family: var(--pdf-preview-font-family);
+  height: var(--zhunam-pdf-preview-height, 600px);
+  font-family: var(--zhunam-font-family, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif);
 }
 
 // No border/radius of its own: a border is a container decision, not this
@@ -22,9 +22,9 @@
 }
 
 .pdf-preview__status {
-  color: var(--pdf-preview-text-color);
+  color: var(--zhunam-text-secondary, #374151);
 }
 
 .pdf-preview__status--error {
-  color: var(--pdf-preview-error-color);
+  color: var(--zhunam-error, #dc2626);
 }

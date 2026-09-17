@@ -1,30 +1,31 @@
 :host {
   // Re-theme any of these from the consumer app — nothing here is brand-specific.
-  --dg-font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --dg-font-size: 0.9375rem;
-  --dg-text-color: #1f2937;
-  --dg-header-text-color: #374151;
-  --dg-header-bg: #f9fafb;
-  --dg-border-color: #e5e7eb;
-  --dg-row-hover-bg: rgb(15 23 42 / 4.5%);
-  --dg-header-hover-bg: rgb(15 23 42 / 6%);
-  --dg-primary-color: #3b82f6;
-  --dg-radius: 0.5rem;
-  --dg-cell-padding-y: 0.75rem;
-  --dg-cell-padding-x: 1rem;
-  --dg-transition-duration: 150ms;
+  --zhunam-font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --zhunam-font-size: 0.9375rem;
+  --zhunam-text: #1f2937;
+  --zhunam-text-secondary: #374151;
+  --zhunam-grid-header-bg: #f9fafb;
+  --zhunam-border: #d1d5db;
+  --zhunam-grid-row-hover-bg: rgb(15 23 42 / 4.5%);
+  --zhunam-grid-header-hover-bg: rgb(15 23 42 / 6%);
+  --zhunam-primary: #3b82f6;
+  --zhunam-focus: var(--zhunam-primary, #3b82f6);
+  --zhunam-radius: 0.5rem;
+  --zhunam-grid-cell-padding-y: 0.75rem;
+  --zhunam-grid-cell-padding-x: 1rem;
+  --zhunam-transition-duration: 150ms;
 
   display: block;
   container-type: inline-size;
-  font-family: var(--dg-font-family);
-  font-size: var(--dg-font-size);
-  color: var(--dg-text-color);
+  font-family: var(--zhunam-font-family, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif);
+  font-size: var(--zhunam-font-size, 0.9375rem);
+  color: var(--zhunam-text, #1f2937);
 }
 
 .dg-table-wrapper {
   overflow-x: auto;
-  border: 1px solid var(--dg-border-color);
-  border-radius: var(--dg-radius);
+  border: 1px solid var(--zhunam-border, #d1d5db);
+  border-radius: var(--zhunam-radius, 0.5rem);
 }
 
 .dg-table {
@@ -35,30 +36,30 @@
 
 .dg-th,
 td {
-  padding: var(--dg-cell-padding-y) var(--dg-cell-padding-x);
+  padding: var(--zhunam-grid-cell-padding-y, 0.75rem) var(--zhunam-grid-cell-padding-x, 1rem);
   text-align: left;
   // Forces horizontal scroll on narrow containers instead of squeezing/wrapping content.
   white-space: nowrap;
 }
 
 .dg-th {
-  background: var(--dg-header-bg);
-  color: var(--dg-header-text-color);
+  background: var(--zhunam-grid-header-bg, #f9fafb);
+  color: var(--zhunam-text-secondary, #374151);
   font-weight: 600;
-  border-bottom: 1px solid var(--dg-border-color);
+  border-bottom: 1px solid var(--zhunam-border, #d1d5db);
   user-select: none;
 }
 
 .dg-th--sortable {
   cursor: pointer;
-  transition: background-color var(--dg-transition-duration) ease;
+  transition: background-color var(--zhunam-transition-duration, 150ms) ease;
 
   &:hover {
-    background: var(--dg-header-hover-bg);
+    background: var(--zhunam-grid-header-hover-bg, rgb(15 23 42 / 6%));
   }
 
   &:focus-visible {
-    outline: 2px solid var(--dg-primary-color);
+    outline: 2px solid var(--zhunam-focus, var(--zhunam-primary, #3b82f6));
     outline-offset: -2px;
   }
 }
@@ -72,12 +73,12 @@ td {
 .dg-sort-icon {
   display: inline-block;
   font-size: 0.625rem;
-  color: var(--dg-primary-color);
+  color: var(--zhunam-primary, #3b82f6);
   opacity: 0;
   transform: translateY(0.125rem) rotate(0deg);
   transition:
-    opacity var(--dg-transition-duration) ease,
-    transform var(--dg-transition-duration) ease;
+    opacity var(--zhunam-transition-duration, 150ms) ease,
+    transform var(--zhunam-transition-duration, 150ms) ease;
 }
 
 .dg-sort-icon--active {
@@ -90,19 +91,19 @@ td {
 }
 
 tbody tr:not(:last-child) td {
-  border-bottom: 1px solid var(--dg-border-color);
+  border-bottom: 1px solid var(--zhunam-border, #d1d5db);
 }
 
 .dg-row {
   cursor: pointer;
-  transition: background-color var(--dg-transition-duration) ease;
+  transition: background-color var(--zhunam-transition-duration, 150ms) ease;
 
   &:hover {
-    background: var(--dg-row-hover-bg);
+    background: var(--zhunam-grid-row-hover-bg, rgb(15 23 42 / 4.5%));
   }
 
   &:focus-visible {
-    outline: 2px solid var(--dg-primary-color);
+    outline: 2px solid var(--zhunam-focus, var(--zhunam-primary, #3b82f6));
     outline-offset: -2px;
   }
 }
@@ -114,30 +115,30 @@ tbody tr:not(:last-child) td {
   gap: 0.75rem;
   padding: 0.75rem 0.125rem 0;
   font-size: 0.875rem;
-  color: var(--dg-header-text-color);
+  color: var(--zhunam-text-secondary, #374151);
 }
 
 .dg-page-btn {
   appearance: none;
-  border: 1px solid var(--dg-border-color);
-  border-radius: calc(var(--dg-radius) / 2);
+  border: 1px solid var(--zhunam-border, #d1d5db);
+  border-radius: calc(var(--zhunam-radius, 0.5rem) / 2);
   background: transparent;
-  color: var(--dg-text-color);
+  color: var(--zhunam-text, #1f2937);
   padding: 0.375rem 0.75rem;
   font: inherit;
   cursor: pointer;
   transition:
-    background-color var(--dg-transition-duration) ease,
-    border-color var(--dg-transition-duration) ease,
-    opacity var(--dg-transition-duration) ease;
+    background-color var(--zhunam-transition-duration, 150ms) ease,
+    border-color var(--zhunam-transition-duration, 150ms) ease,
+    opacity var(--zhunam-transition-duration, 150ms) ease;
 
   &:hover:not(:disabled) {
-    background: var(--dg-header-hover-bg);
-    border-color: var(--dg-primary-color);
+    background: var(--zhunam-grid-header-hover-bg, rgb(15 23 42 / 6%));
+    border-color: var(--zhunam-primary, #3b82f6);
   }
 
   &:focus-visible {
-    outline: 2px solid var(--dg-primary-color);
+    outline: 2px solid var(--zhunam-focus, var(--zhunam-primary, #3b82f6));
     outline-offset: 2px;
   }
 
@@ -151,8 +152,8 @@ tbody tr:not(:last-child) td {
 // sidebar or a modal) — tighten spacing instead of relying on the viewport.
 @container (max-width: 28rem) {
   :host {
-    --dg-cell-padding-x: 0.625rem;
-    --dg-cell-padding-y: 0.5rem;
+    --zhunam-grid-cell-padding-x: 0.625rem;
+    --zhunam-grid-cell-padding-y: 0.5rem;
     font-size: 0.875rem;
   }
 

@@ -5,6 +5,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+- **BREAKING**: `PdfPreview`'s CSS custom properties are renamed to the
+  shared `--zhunam-*` namespace, unified across all `@zhunam/*`
+  libraries so they use one consistent name per theming role instead of
+  a library-specific `--pdf-preview-*` prefix. No compatibility aliases
+  are kept for the old names; update any stylesheet that sets one of
+  them.
+- Every `var()` usage now carries an inline fallback matching its
+  `:host` default, so the component degrades gracefully if that
+  declaration is ever missing instead of resolving to an invalid value.
+
+| Old name | New name |
+| --------------------------- | --------------------------- |
+| `--pdf-preview-height`      | `--zhunam-pdf-preview-height` |
+| `--pdf-preview-text-color`  | `--zhunam-text-secondary`   |
+| `--pdf-preview-error-color` | `--zhunam-error`            |
+| `--pdf-preview-font-family` | `--zhunam-font-family`      |
+
 ## [1.1.0] - 2026-08-26
 
 ### Added

@@ -1,15 +1,15 @@
-// See login-form.scss for why this only defines --auth-* tokens for
-// chrome that has no --fb-* equivalent (the form fields themselves stay
-// styled through <lib-form-builder>'s own custom properties).
+// See login-form.scss for why this only reuses --zhunam-* shared roles for
+// chrome that has no <lib-form-builder> equivalent (the form fields
+// themselves stay styled through <lib-form-builder>'s own custom properties).
 :host {
-  --auth-error-color: #dc2626;
-  --auth-spacing: 1rem;
+  --zhunam-error: #dc2626;
+  --zhunam-spacing: 1rem;
 
   display: block;
 }
 
 .auth-error {
-  margin-top: var(--auth-spacing);
-  color: var(--auth-error-color);
+  margin-top: var(--zhunam-spacing, 1rem);
+  color: var(--zhunam-error, #dc2626);
   font-size: 0.875rem;
 }

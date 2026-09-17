@@ -5,6 +5,42 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
 
 ## [Unreleased]
 
+### Changed
+- **BREAKING**: every CSS custom property is renamed to the shared
+  `--zhunam-*` namespace, unified across all `@zhunam/*` libraries so
+  they use one consistent name per theming role instead of a
+  library-specific prefix. No compatibility aliases are kept for the
+  old names; update any stylesheet that sets one of them.
+- **BREAKING**: `--zhunam-border` (formerly `--dg-border-color`)
+  defaults to `#d1d5db` instead of `#e5e7eb`, aligned with the same
+  default already used by `@zhunam/form-builder` and
+  `@zhunam/calendar`'s toolbar. A visible, slightly darker border for
+  consumers who never overrode this property.
+- `:focus-visible` on sortable headers, rows, and pagination buttons now
+  reads `--zhunam-focus` (falls back to `--zhunam-primary`) instead of
+  `--zhunam-primary` directly, matching the same focus/brand-color
+  decoupling `@zhunam/form-builder` already had.
+- Every `var()` usage now carries an inline fallback matching its
+  `:host` default, so the component degrades gracefully if that
+  declaration is ever missing instead of resolving to an invalid value.
+
+| Old name | New name |
+| ----------------------- | -------------------------------- |
+| `--dg-font-family`      | `--zhunam-font-family`           |
+| `--dg-font-size`        | `--zhunam-font-size`             |
+| `--dg-text-color`       | `--zhunam-text`                  |
+| `--dg-header-text-color`| `--zhunam-text-secondary`        |
+| `--dg-header-bg`        | `--zhunam-grid-header-bg`        |
+| `--dg-border-color`     | `--zhunam-border`                |
+| `--dg-row-hover-bg`     | `--zhunam-grid-row-hover-bg`     |
+| `--dg-header-hover-bg`  | `--zhunam-grid-header-hover-bg`  |
+| `--dg-primary-color`    | `--zhunam-primary`               |
+| `--dg-radius`           | `--zhunam-radius`                |
+| `--dg-cell-padding-y`   | `--zhunam-grid-cell-padding-y`   |
+| `--dg-cell-padding-x`   | `--zhunam-grid-cell-padding-x`   |
+| `--dg-transition-duration` | `--zhunam-transition-duration` |
+| _(none, used `--dg-primary-color` directly)_ | `--zhunam-focus` |
+
 ## [2.0.0] - 2026-09-13
 
 ### Added

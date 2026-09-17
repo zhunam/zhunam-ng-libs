@@ -209,3 +209,18 @@ export class CalendarStore {
       que cualquier nx build calendar corrido a lo largo del
       desarrollo de esta librería ya era este mismo build, no uno
       distinto. Sin warnings ni errores en ninguna corrida.
+- [x] Renombradas todas las custom properties CSS de `CalendarBoard`
+      (`calendar-ui/`) al namespace compartido `--zhunam-*`
+      (`--cal-board-accent-color` → `--zhunam-primary`, etc.), parte de
+      una migración a nivel de workspace que unifica los roles de
+      theming entre las 5 librerías `@zhunam/*`. Se agregó además
+      `--zhunam-calendar-event-dot-color` (nueva, no un rename) para el
+      punto "hay eventos" de la vista mes, que antes era
+      `background-color: #1e90ff` hardcodeado dentro del `::ng-deep`
+      existente; deliberadamente su propia property y no
+      `--zhunam-primary`, ya documentado en `calendar-board.scss`: ese
+      azul calza con el color default de `angular-calendar`, no con el
+      acento del toolbar. Todo `var()` ganó además un fallback en línea
+      con el mismo valor que su `:host`. Sin alias de compatibilidad
+      hacia los nombres viejos (breaking change, bump de versión major).
+      Tabla completa de renames en `CHANGELOG.md`.
