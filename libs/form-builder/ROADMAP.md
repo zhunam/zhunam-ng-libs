@@ -61,3 +61,19 @@
       explícito. Sin dependencia nueva (`FormGroup.valueChanges` ya
       viene de `@angular/forms`). Todavía necesita bump de versión
       (minor) antes de republicar.
+- [x] Renombradas todas las custom properties CSS al namespace
+      compartido `--zhunam-*` (`--fb-primary-color` → `--zhunam-primary`,
+      etc.), parte de una migración a nivel de workspace que unifica los
+      roles de theming entre las 5 librerías `@zhunam/*`, para que un
+      consumidor que use más de una vea el mismo nombre por rol en vez
+      de un prefijo distinto por librería. Se agregó además
+      `--zhunam-primary-content` (nueva, no un rename) para el color de
+      texto de `.fb-submit`, que antes era `color: #fff` hardcodeado:
+      corrige un bug de contraste latente si un consumidor retematiza
+      `--zhunam-primary` a un color claro. `--fb-columns` no se tocó: no
+      es una custom property de tema, es el canal interno por el que el
+      componente pasa su input `columns` al grid vía
+      `[style.--fb-columns]`. Todo `var()` ganó además un fallback en
+      línea con el mismo valor que su `:host`. Sin alias de
+      compatibilidad hacia los nombres viejos (breaking change, bump de
+      versión major). Tabla completa de renames en `CHANGELOG.md`.

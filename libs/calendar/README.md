@@ -141,6 +141,23 @@ Errors
 classic NgModule architecture. The standalone component is still the
 recommended way to consume it.
 
+#### Theming
+
+`CalendarBoard` only styles its own toolbar (nav buttons, view switch,
+title) via CSS custom properties, part of the shared `--zhunam-*`
+namespace used across every `@zhunam/*` library. Everything else
+(day cells, event pills, hour grid) comes from `angular-calendar`'s own
+stylesheet, imported separately, and isn't controlled by these
+properties:
+
+| Custom property | Default | Description |
+| --------------------------------------- | -------- | -------------------------------------------------- |
+| `--zhunam-primary`                       | `#3b82f6` | Active view-switch button border and text color. |
+| `--zhunam-text`                          | `#374151` | Base text color, inherited by the toolbar's buttons and title. |
+| `--zhunam-border`                        | `#d1d5db` | Nav and view-switch button borders. |
+| `--zhunam-font-family`                   | `system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif` | Font for the whole component. |
+| `--zhunam-calendar-event-dot-color`      | `#1e90ff` | Color of the "has events" dot on month-view days. Deliberately independent from `--zhunam-primary`: it matches `angular-calendar`'s own default event color, not this toolbar's accent. |
+
 ## Compatibility
 
 `@angular/core` `^20.0.0 || ^21.0.0 || ^22.0.0`, the only peer

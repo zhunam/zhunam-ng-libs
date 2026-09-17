@@ -1,29 +1,28 @@
 // These components wrap <lib-form-builder>, which already exposes its own
-// --fb-* custom properties for the actual form fields (colors, spacing,
-// fonts) — duplicating a parallel --auth-* token for every one of those
-// would just be two knobs controlling the same thing. --auth-* is reserved
-// for chrome that's unique to these auth forms and has no --fb-*
-// equivalent: the error banner and the "forgot password" link button.
+// --zhunam-* custom properties for the actual form fields (colors, spacing,
+// fonts) — this component reuses the same shared roles for the chrome that
+// has no <lib-form-builder> equivalent: the error banner and the "forgot
+// password" link button.
 :host {
-  --auth-error-color: #dc2626;
-  --auth-link-color: #3b82f6;
-  --auth-spacing: 1rem;
+  --zhunam-error: #dc2626;
+  --zhunam-primary: #3b82f6;
+  --zhunam-spacing: 1rem;
 
   display: block;
 }
 
 .auth-error {
-  margin-top: var(--auth-spacing);
-  color: var(--auth-error-color);
+  margin-top: var(--zhunam-spacing, 1rem);
+  color: var(--zhunam-error, #dc2626);
   font-size: 0.875rem;
 }
 
 .auth-link-button {
-  margin-top: var(--auth-spacing);
+  margin-top: var(--zhunam-spacing, 1rem);
   background: none;
   border: none;
   padding: 0;
-  color: var(--auth-link-color);
+  color: var(--zhunam-primary, #3b82f6);
   font-size: 0.875rem;
   cursor: pointer;
   text-decoration: underline;

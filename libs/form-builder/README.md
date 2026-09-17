@@ -64,6 +64,34 @@ For a calculator-style form (no submit action, values used as you type):
 | `colSpan`     | `1 \| 2`                | `1`          | How many grid columns this field spans, when the component's `columns` input is 2 or more. |
 | `disabled`    | `boolean`               | `false`      | Renders the control disabled from the start; still included in the value `formSubmit` emits. |
 
+### Theming
+
+`FormBuilder` sizes and colors itself via CSS custom properties, part of
+the shared `--zhunam-*` namespace used across every `@zhunam/*` library.
+Set any of them from the consuming app's own stylesheet, scoped to
+`lib-form-builder` or wider:
+
+| Custom property | Default | Description |
+| ------------------------------- | -------- | -------------------------------------------------- |
+| `--zhunam-primary`               | `#3b82f6` | Submit button background, radio/checkbox accent color. |
+| `--zhunam-primary-content`       | `#fff`    | Submit button text/icon color, always painted on top of `--zhunam-primary`. |
+| `--zhunam-focus`                 | `var(--zhunam-primary)` | Focus outline and border on controls, independent from `--zhunam-primary` so a high-contrast focus ring doesn't require changing your brand color. |
+| `--zhunam-text`                  | `#1f2937` | Base text color, radio/checkbox option labels. |
+| `--zhunam-text-secondary`        | `#374151` | Field label text. |
+| `--zhunam-border`                | `#d1d5db` | Control borders. |
+| `--zhunam-error`                 | `#dc2626` | Validation/server error message text. |
+| `--zhunam-radius`                | `0.5rem`  | Control and submit button corner radius. |
+| `--zhunam-font-family`           | `system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif` | Font for the whole component. |
+| `--zhunam-font-size`             | `0.9375rem` | Base font size. |
+| `--zhunam-spacing`               | `1rem`    | Vertical rhythm between fields, and the grid gap on desktop. |
+| `--zhunam-transition-duration`   | `150ms`   | Duration of border/opacity transitions. |
+| `--zhunam-form-control-padding-x` | `0.75rem` | Horizontal padding inside inputs/selects/textareas. |
+| `--zhunam-form-control-padding-y` | `0.5rem`  | Vertical padding inside inputs/selects/textareas. |
+
+`--fb-columns` is an internal implementation detail (it carries the
+`columns` input's value into the field grid's CSS), not a themeable
+custom property; setting it manually has no supported effect.
+
 ## Compatibility
 
 `@angular/core` and `@angular/forms` `^20.0.0 || ^21.0.0 || ^22.0.0`.

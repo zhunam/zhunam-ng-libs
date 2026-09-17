@@ -321,3 +321,13 @@ export interface PdfResult {
       configuraciones (`development` no sobreescribe nada). Re-corrido
       sin caché (`--skip-nx-cache`) para confirmar un log fresco, no
       solo un hit de caché de una corrida anterior.
+- [x] Renombradas todas las custom properties CSS de `PdfPreview` al
+      namespace compartido `--zhunam-*` (`--pdf-preview-height` →
+      `--zhunam-pdf-preview-height`, etc.), parte de una migración a
+      nivel de workspace que unifica los roles de theming entre las 5
+      librerías `@zhunam/*` para que un consumidor que use más de una
+      vea el mismo nombre por rol en vez de un prefijo distinto por
+      librería. Todo `var()` ganó además un fallback en línea con el
+      mismo valor que su `:host`. Sin alias de compatibilidad hacia los
+      nombres viejos (breaking change, bump de versión major). Tabla
+      completa de renames en `CHANGELOG.md`.

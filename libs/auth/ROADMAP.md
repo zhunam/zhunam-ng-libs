@@ -52,3 +52,17 @@
       y `supabase/` no exponen componentes, así que no necesitan wrapper.
       Cambio aditivo, sin breaking change. Resuelve la deuda técnica
       anotada en el ROADMAP.md raíz bajo "Future ideas".
+- [x] Renombradas todas las custom properties CSS de `form-ui/` al
+      namespace compartido `--zhunam-*` (`--auth-error-color` →
+      `--zhunam-error`, etc.), parte de una migración a nivel de
+      workspace que unifica los roles de theming entre las 5 librerías
+      `@zhunam/*`. Los campos de formulario en sí, renderizados por
+      `<lib-form-builder>`, ya usaban las propiedades de esa librería y
+      quedan afectados solo por su propio rename (ver el CHANGELOG.md de
+      `@zhunam/form-builder`), no por este cambio directamente. El
+      peerDependency `@zhunam/form-builder` se subió a `^2.0.0` (era
+      `^1.0.0`), requerido para que `form-ui` reciba las `--zhunam-*` de
+      esa librería. Todo `var()` ganó además un fallback en línea con el
+      mismo valor que su `:host`. Sin alias de compatibilidad hacia los
+      nombres viejos (breaking change, bump de versión major). Tabla
+      completa de renames en `CHANGELOG.md`.

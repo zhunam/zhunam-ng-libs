@@ -157,6 +157,23 @@ protected onLoginSuccess(user: AuthUser): void {
 
 `ResetPasswordForm` (`<lib-reset-password-form>`): a single email field, no inputs or outputs. Always shows the same generic success message regardless of whether the account exists, see Security below.
 
+#### Theming
+
+The form fields themselves (inputs, labels, submit button) are styled by
+the `<lib-form-builder>` these components wrap internally, see
+`@zhunam/form-builder`'s own Theming section. `LoginForm`,
+`RegisterForm`, and `ResetPasswordForm` additionally read a few
+`--zhunam-*` custom properties, part of the same shared namespace, for
+chrome that has no `<lib-form-builder>` equivalent. Not every component
+uses every property below:
+
+| Custom property | Default | Description | Used by |
+| ----------------- | -------- | -------------------------------------------- | -------------------------------------------- |
+| `--zhunam-error`   | `#dc2626` | Error banner text color. | `LoginForm`, `RegisterForm`, `ResetPasswordForm` |
+| `--zhunam-success` | `#16a34a` | Success message text color. | `ResetPasswordForm` |
+| `--zhunam-primary` | `#3b82f6` | "Forgot your password?" link color. | `LoginForm` |
+| `--zhunam-spacing` | `1rem`    | Top margin of the error/success/link chrome. | `LoginForm`, `RegisterForm`, `ResetPasswordForm` |
+
 ## Compatibility
 
 | Peer dependency          | Range                                | Required for                        |
@@ -165,7 +182,7 @@ protected onLoginSuccess(user: AuthUser): void {
 | `@angular/router`           | `^20.0.0 \|\| ^21.0.0 \|\| ^22.0.0`     | Always (`authGuard`)                   |
 | `firebase`                  | `^10.0.0 \|\| ^11.0.0 \|\| ^12.0.0`     | Only if using `@zhunam/auth/firebase`  |
 | `@supabase/supabase-js`     | `^2.0.0`                               | Only if using `@zhunam/auth/supabase`  |
-| `@zhunam/form-builder`      | `^1.0.0`                               | Only if using `@zhunam/auth/form-ui`   |
+| `@zhunam/form-builder`      | `^2.0.0`                               | Only if using `@zhunam/auth/form-ui`   |
 
 ## Security
 

@@ -5,6 +5,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- `--zhunam-calendar-event-dot-color` custom property (default
+  `#1e90ff`, `@zhunam/calendar/calendar-ui`): the "has events" dot on
+  month-view days now reads from this property instead of a hardcoded
+  `background-color: #1e90ff`. Deliberately its own property, not
+  `--zhunam-primary`: it matches `angular-calendar`'s own default event
+  color, a separate visual anchor from this toolbar's accent.
+
+### Changed
+- **BREAKING** (`@zhunam/calendar/calendar-ui`): `CalendarBoard`'s CSS
+  custom properties are renamed to the shared `--zhunam-*` namespace,
+  unified across all `@zhunam/*` libraries so they use one consistent
+  name per theming role instead of a library-specific `--cal-board-*`
+  prefix. No compatibility aliases are kept for the old names; update
+  any stylesheet that sets one of them.
+- Every `var()` usage now carries an inline fallback matching its
+  `:host` default, so the component degrades gracefully if that
+  declaration is ever missing instead of resolving to an invalid value.
+
+| Old name | New name |
+| ------------------------ | -------------------- |
+| `--cal-board-text-color`  | `--zhunam-text`     |
+| `--cal-board-border-color`| `--zhunam-border`   |
+| `--cal-board-accent-color`| `--zhunam-primary`  |
+| `--cal-board-font-family` | `--zhunam-font-family` |
+
 ## [1.0.0] - 2026-09-08
 
 ### Added

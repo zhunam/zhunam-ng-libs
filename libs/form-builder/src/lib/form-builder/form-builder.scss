@@ -1,49 +1,53 @@
 :host {
   // Re-theme any of these from the consumer app — nothing here is brand-specific.
-  --fb-font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --fb-font-size: 0.9375rem;
-  --fb-text-color: #1f2937;
-  --fb-label-color: #374151;
-  --fb-border-color: #d1d5db;
-  --fb-error-color: #dc2626;
-  --fb-primary-color: #3b82f6;
-  // Independent from --fb-primary-color so a consumer can keep their brand
+  --zhunam-font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --zhunam-font-size: 0.9375rem;
+  --zhunam-text: #1f2937;
+  --zhunam-text-secondary: #374151;
+  --zhunam-border: #d1d5db;
+  --zhunam-error: #dc2626;
+  --zhunam-primary: #3b82f6;
+  --zhunam-primary-content: #fff;
+  // Independent from --zhunam-primary so a consumer can keep their brand
   // color but pick a higher-contrast focus ring (or vice versa) for a11y.
-  --fb-focus-color: var(--fb-primary-color);
-  --fb-border-radius: 0.5rem;
-  --fb-spacing: 1rem;
-  --fb-control-padding-y: 0.5rem;
-  --fb-control-padding-x: 0.75rem;
-  --fb-transition-duration: 150ms;
+  --zhunam-focus: var(--zhunam-primary, #3b82f6);
+  --zhunam-radius: 0.5rem;
+  --zhunam-spacing: 1rem;
+  --zhunam-form-control-padding-y: 0.5rem;
+  --zhunam-form-control-padding-x: 0.75rem;
+  --zhunam-transition-duration: 150ms;
 
   display: block;
-  font-family: var(--fb-font-family);
-  font-size: var(--fb-font-size);
-  color: var(--fb-text-color);
+  font-family: var(--zhunam-font-family, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif);
+  font-size: var(--zhunam-font-size, 0.9375rem);
+  color: var(--zhunam-text, #1f2937);
 }
 
 .fb-form {
   // Column, mobile-first: fields never assume a minimum container width.
   display: flex;
   flex-direction: column;
-  gap: var(--fb-spacing);
+  gap: var(--zhunam-spacing, 1rem);
   width: 100%;
 }
 
 .fb-fields-grid {
   display: grid;
+  // --fb-columns is an internal channel set by the component itself
+  // ([style.--fb-columns] in form-builder.html), not a public --zhunam-*
+  // re-theme hook, so it keeps its own name outside the shared namespace.
   grid-template-columns: repeat(var(--fb-columns, 1), 1fr);
-  // Reuses --fb-spacing (already the vertical rhythm between stacked
+  // Reuses --zhunam-spacing (already the vertical rhythm between stacked
   // fields) instead of a new custom property — at the 1-column default
   // it's the exact same gap as before this feature existed, so nothing
   // about the non-grid layout changes.
-  gap: var(--fb-spacing);
+  gap: var(--zhunam-spacing, 1rem);
 }
 
 .fb-field {
   display: flex;
   flex-direction: column;
-  gap: calc(var(--fb-spacing) / 2.5);
+  gap: calc(var(--zhunam-spacing, 1rem) / 2.5);
   min-width: 0;
 }
 
@@ -65,7 +69,7 @@
 
 .fb-label {
   font-weight: 600;
-  color: var(--fb-label-color);
+  color: var(--zhunam-text-secondary, #374151);
   padding: 0;
   border: none;
 }
@@ -75,16 +79,16 @@
   width: 100%;
   font: inherit;
   color: inherit;
-  padding: var(--fb-control-padding-y) var(--fb-control-padding-x);
-  border: 1px solid var(--fb-border-color);
-  border-radius: var(--fb-border-radius);
+  padding: var(--zhunam-form-control-padding-y, 0.5rem) var(--zhunam-form-control-padding-x, 0.75rem);
+  border: 1px solid var(--zhunam-border, #d1d5db);
+  border-radius: var(--zhunam-radius, 0.5rem);
   background: transparent;
-  transition: border-color var(--fb-transition-duration) ease;
+  transition: border-color var(--zhunam-transition-duration, 150ms) ease;
 
   &:focus-visible {
-    outline: 2px solid var(--fb-focus-color);
+    outline: 2px solid var(--zhunam-focus, var(--zhunam-primary, #3b82f6));
     outline-offset: -1px;
-    border-color: var(--fb-focus-color);
+    border-color: var(--zhunam-focus, var(--zhunam-primary, #3b82f6));
   }
 }
 
@@ -100,7 +104,7 @@ select.fb-control {
 .fb-radio-group {
   display: flex;
   flex-direction: column;
-  gap: calc(var(--fb-spacing) / 2.5);
+  gap: calc(var(--zhunam-spacing, 1rem) / 2.5);
 }
 
 .fb-radio-option,
@@ -109,7 +113,7 @@ select.fb-control {
   align-items: center;
   gap: 0.5rem;
   font-weight: 400;
-  color: var(--fb-text-color);
+  color: var(--zhunam-text, #1f2937);
   cursor: pointer;
 }
 
@@ -117,10 +121,10 @@ select.fb-control {
 // intrinsic size), but they're just as interactive — focus must stay visible.
 .fb-radio-option input,
 .fb-checkbox-option input {
-  accent-color: var(--fb-primary-color);
+  accent-color: var(--zhunam-primary, #3b82f6);
 
   &:focus-visible {
-    outline: 2px solid var(--fb-focus-color);
+    outline: 2px solid var(--zhunam-focus, var(--zhunam-primary, #3b82f6));
     outline-offset: 2px;
   }
 }
@@ -128,24 +132,24 @@ select.fb-control {
 .fb-error {
   margin: 0;
   font-size: 0.8125rem;
-  color: var(--fb-error-color);
+  color: var(--zhunam-error, #dc2626);
 }
 
 .fb-submit {
   appearance: none;
   align-self: flex-start;
   border: none;
-  border-radius: var(--fb-border-radius);
-  background: var(--fb-primary-color);
-  color: #fff;
-  padding: var(--fb-control-padding-y) 1.25rem;
+  border-radius: var(--zhunam-radius, 0.5rem);
+  background: var(--zhunam-primary, #3b82f6);
+  color: var(--zhunam-primary-content, #fff);
+  padding: var(--zhunam-form-control-padding-y, 0.5rem) 1.25rem;
   font: inherit;
   font-weight: 600;
   cursor: pointer;
-  transition: opacity var(--fb-transition-duration) ease;
+  transition: opacity var(--zhunam-transition-duration, 150ms) ease;
 
   &:focus-visible {
-    outline: 2px solid var(--fb-focus-color);
+    outline: 2px solid var(--zhunam-focus, var(--zhunam-primary, #3b82f6));
     outline-offset: 2px;
   }
 

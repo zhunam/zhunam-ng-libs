@@ -5,6 +5,43 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
 
 ## [Unreleased]
 
+### Added
+- `--zhunam-primary-content` custom property (default `#fff`): the
+  `.fb-submit` button text color now reads from this property instead
+  of a hardcoded `color: #fff`, so a consumer who re-themes
+  `--zhunam-primary` to a light color can keep the submit button's text
+  readable.
+
+### Changed
+- **BREAKING**: every CSS custom property is renamed to the shared
+  `--zhunam-*` namespace, unified across all `@zhunam/*` libraries so
+  they use one consistent name per theming role instead of a
+  library-specific prefix. No compatibility aliases are kept for the
+  old names; update any stylesheet that sets one of them. `--fb-columns`
+  is unaffected: it was never a themeable custom property, it's an
+  internal channel the component uses to pass its `columns` input into
+  CSS, and stays as-is.
+- Every `var()` usage now carries an inline fallback matching its
+  `:host` default, so the component degrades gracefully if that
+  declaration is ever missing instead of resolving to an invalid value.
+
+| Old name | New name |
+| ------------------------- | -------------------------------- |
+| `--fb-font-family`        | `--zhunam-font-family`           |
+| `--fb-font-size`          | `--zhunam-font-size`             |
+| `--fb-text-color`         | `--zhunam-text`                  |
+| `--fb-label-color`        | `--zhunam-text-secondary`        |
+| `--fb-border-color`       | `--zhunam-border`                |
+| `--fb-error-color`        | `--zhunam-error`                 |
+| `--fb-primary-color`      | `--zhunam-primary`               |
+| `--fb-focus-color`        | `--zhunam-focus`                 |
+| `--fb-border-radius`      | `--zhunam-radius`                |
+| `--fb-spacing`            | `--zhunam-spacing`               |
+| `--fb-control-padding-y`  | `--zhunam-form-control-padding-y`|
+| `--fb-control-padding-x`  | `--zhunam-form-control-padding-x`|
+| `--fb-transition-duration`| `--zhunam-transition-duration`   |
+| `--fb-columns`            | _(unchanged, not a theming property)_ |
+
 ## [1.2.0] - 2026-09-13
 
 ### Added

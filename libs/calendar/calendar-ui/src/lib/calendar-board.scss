@@ -1,13 +1,18 @@
 :host {
   // Re-theme any of these from the consumer app — nothing here is brand-specific.
-  --cal-board-text-color: #374151;
-  --cal-board-border-color: #d1d5db;
-  --cal-board-accent-color: #3b82f6;
-  --cal-board-font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --zhunam-text: #374151;
+  --zhunam-border: #d1d5db;
+  --zhunam-primary: #3b82f6;
+  --zhunam-font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  // Deliberately its own token, not --zhunam-primary: matches the default
+  // blue angular-calendar's own CSS already uses for the (neutralized)
+  // per-event dot below, not this toolbar's accent color. See the comment
+  // on the .cal-day-badge rule further down.
+  --zhunam-calendar-event-dot-color: #1e90ff;
 
   display: block;
-  color: var(--cal-board-text-color);
-  font-family: var(--cal-board-font-family);
+  color: var(--zhunam-text, #374151);
+  font-family: var(--zhunam-font-family, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif);
 }
 
 // Only this toolbar is this library's own styling. Everything the day
@@ -23,7 +28,7 @@
 }
 
 .calendar-board__nav-button {
-  border: 1px solid var(--cal-board-border-color);
+  border: 1px solid var(--zhunam-border, #d1d5db);
   background: none;
   border-radius: 0.25rem;
   padding: 0.25rem 0.6rem;
@@ -44,7 +49,7 @@
 }
 
 .calendar-board__view-switch button {
-  border: 1px solid var(--cal-board-border-color);
+  border: 1px solid var(--zhunam-border, #d1d5db);
   background: none;
   border-radius: 0.25rem;
   padding: 0.25rem 0.6rem;
@@ -54,8 +59,8 @@
 }
 
 .calendar-board__view-switch-button--active {
-  border-color: var(--cal-board-accent-color);
-  color: var(--cal-board-accent-color);
+  border-color: var(--zhunam-primary, #3b82f6);
+  color: var(--zhunam-primary, #3b82f6);
 }
 
 // Month view renders one colored dot per event under each day
@@ -87,9 +92,10 @@
 // width, not a fixed value, confirmed in angular-calendar's own CSS), a
 // fixed `width`/`height` then makes every day with events render
 // identically regardless of its real count, whether that's 1 or 100.
-// Recolored to the same blue previously used for the (neutralized)
-// per-event dot above, one consistent "something's here" color instead
-// of introducing a second one alongside it.
+// Recolored via --zhunam-calendar-event-dot-color, the same blue
+// previously used for the (neutralized) per-event dot above, one
+// consistent "something's here" color instead of introducing a second
+// one alongside it.
 :host ::ng-deep .cal-month-view .cal-day-badge {
   width: 8px;
   height: 8px;
@@ -97,5 +103,5 @@
   padding: 0;
   font-size: 0;
   border-radius: 50%;
-  background-color: #1e90ff;
+  background-color: var(--zhunam-calendar-event-dot-color, #1e90ff);
 }
