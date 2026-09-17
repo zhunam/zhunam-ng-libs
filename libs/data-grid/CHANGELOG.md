@@ -5,6 +5,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-09-17
+
 ### Changed
 - **BREAKING**: every CSS custom property is renamed to the shared
   `--zhunam-*` namespace, unified across all `@zhunam/*` libraries so

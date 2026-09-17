@@ -5,6 +5,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-09-17
+
 ### Changed
 - **BREAKING** (`@zhunam/auth/form-ui`): every CSS custom property on
   `LoginForm`, `RegisterForm`, and `ResetPasswordForm` is renamed to the

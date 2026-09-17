@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-09-17
+
 ### Added
 - `--zhunam-calendar-event-dot-color` custom property (default
   `#1e90ff`, `@zhunam/calendar/calendar-ui`): the "has events" dot on

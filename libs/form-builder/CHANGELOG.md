@@ -5,6 +5,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-09-17
+
 ### Added
 - `--zhunam-primary-content` custom property (default `#fff`): the
   `.fb-submit` button text color now reads from this property instead
