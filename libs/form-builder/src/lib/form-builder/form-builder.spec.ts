@@ -1,6 +1,9 @@
+import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormBuilder } from './form-builder';
 import { CrossFieldValidator, FieldConfig } from '../models/field-config';
+import { FormBuilderMessages, FORM_BUILDER_MESSAGES_ES } from '../models/form-builder-messages';
+import { provideFormBuilderMessages } from '../tokens/form-builder-messages.token';
 
 interface TestModel {
   name: string;
@@ -261,7 +264,7 @@ describe('FormBuilder', () => {
       ]);
       blur(getInput(fixture, 'text'), fixture);
 
-      expect(getErrorText(fixture)).toBe('Este campo es obligatorio.');
+      expect(getErrorText(fixture)).toBe('This field is required.');
     });
   });
 
@@ -415,7 +418,7 @@ describe('FormBuilder', () => {
 
       expect(getErrorText(fixture)).toBeNull();
       submitForm(fixture);
-      expect(getErrorText(fixture)).toBe('Este campo es obligatorio.');
+      expect(getErrorText(fixture)).toBe('This field is required.');
     });
 
     it('emits the correct values when the form is valid', () => {
@@ -791,5 +794,144 @@ describe('FormBuilder', () => {
 
       expect(emitted.length).toBe(countBeforeDestroy); // no new emission reached the (destroyed) output
     });
+  });
+});
+
+describe('FormBuilder i18n', () => {
+  function createFixtureWithMessages(
+    fields: FieldConfig<TestModel>[],
+    overrides: Partial<FormBuilderMessages>,
+  ): ComponentFixture<FormBuilder<TestModel>> {
+    TestBed.configureTestingModule({
+      imports: [FormBuilder],
+      providers: [provideFormBuilderMessages(overrides)],
+    });
+    const fixture = TestBed.createComponent(FormBuilder<TestModel>);
+    fixture.componentRef.setInput('fields', fields);
+    fixture.detectChanges();
+    return fixture;
+  }
+
+  function createDefaultFixture(fields: FieldConfig<TestModel>[]): ComponentFixture<FormBuilder<TestModel>> {
+    TestBed.configureTestingModule({ imports: [FormBuilder] });
+    const fixture = TestBed.createComponent(FormBuilder<TestModel>);
+    fixture.componentRef.setInput('fields', fields);
+    fixture.detectChanges();
+    return fixture;
+  }
+
+  describe('English defaults, with the real Angular validation parameter', () => {
+    it('required', () => {
+      const fixture = createDefaultFixture([{ key: 'name', label: 'Name', type: 'text', validators: { required: true } }]);
+      blur(getInput(fixture, 'text'), fixture);
+      expect(getErrorText(fixture)).toBe('This field is required.');
+    });
+
+    it('email', () => {
+      const fixture = createDefaultFixture([{ key: 'email', label: 'Email', type: 'email', validators: { email: true } }]);
+      setValue(getInput(fixture, 'email'), 'not-an-email', fixture);
+      blur(getInput(fixture, 'email'), fixture);
+      expect(getErrorText(fixture)).toBe('Enter a valid email address.');
+    });
+
+    it('min', () => {
+      const fixture = createDefaultFixture([{ key: 'age', label: 'Age', type: 'number', validators: { min: 18 } }]);
+      setValue(getInput(fixture, 'number'), '10', fixture);
+      blur(getInput(fixture, 'number'), fixture);
+      expect(getErrorText(fixture)).toBe('The value must be at least 18.');
+    });
+
+    it('max', () => {
+      const fixture = createDefaultFixture([{ key: 'age', label: 'Age', type: 'number', validators: { max: 65 } }]);
+      setValue(getInput(fixture, 'number'), '99', fixture);
+      blur(getInput(fixture, 'number'), fixture);
+      expect(getErrorText(fixture)).toBe('The value must be at most 65.');
+    });
+
+    it('minLength', () => {
+      const fixture = createDefaultFixture([
+        { key: 'password', label: 'Password', type: 'password', validators: { minLength: 3 } },
+      ]);
+      setValue(getInput(fixture, 'password'), 'ab', fixture);
+      blur(getInput(fixture, 'password'), fixture);
+      expect(getErrorText(fixture)).toBe('Must be at least 3 characters.');
+    });
+
+    it('maxLength', () => {
+      const fixture = createDefaultFixture([{ key: 'code', label: 'Code', type: 'text', validators: { maxLength: 4 } }]);
+      setValue(getInput(fixture, 'text'), 'toolong', fixture);
+      blur(getInput(fixture, 'text'), fixture);
+      expect(getErrorText(fixture)).toBe('Must be at most 4 characters.');
+    });
+
+    it('pattern', () => {
+      const fixture = createDefaultFixture([
+        { key: 'code', label: 'Code', type: 'text', validators: { pattern: '^[0-9]+$' } },
+      ]);
+      setValue(getInput(fixture, 'text'), 'abc', fixture);
+      blur(getInput(fixture, 'text'), fixture);
+      expect(getErrorText(fixture)).toBe('The format is not valid.');
+    });
+  });
+
+  it('renders the Spanish preset with provideFormBuilderMessages(FORM_BUILDER_MESSAGES_ES)', () => {
+    const fixture = createFixtureWithMessages(
+      [{ key: 'name', label: 'Name', type: 'text', validators: { required: true, minLength: 3 } }],
+      FORM_BUILDER_MESSAGES_ES,
+    );
+    blur(getInput(fixture, 'text'), fixture);
+    expect(getErrorText(fixture)).toBe('Este campo es obligatorio.');
+    expect(getSubmitButton(fixture).textContent?.trim()).toBe('Enviar');
+  });
+
+  it('applies a partial override and leaves the rest in English', () => {
+    const fixture = createFixtureWithMessages(
+      [{ key: 'age', label: 'Age', type: 'number', validators: { min: 5 } }],
+      { min: (min) => `Must be greater than ${min - 1}` },
+    );
+    setValue(getInput(fixture, 'number'), '1', fixture);
+    blur(getInput(fixture, 'number'), fixture);
+    expect(getErrorText(fixture)).toBe('Must be greater than 4');
+    expect(getSubmitButton(fixture).textContent?.trim()).toBe('Submit');
+  });
+
+  it('updates a visible error message live when the message reads a signal, without re-touching the field', () => {
+    const lang = signal<'en' | 'es'>('en');
+    const fixture = createFixtureWithMessages(
+      [{ key: 'name', label: 'Name', type: 'text', validators: { required: true } }],
+      { required: () => (lang() === 'en' ? 'This field is required.' : 'Este campo es obligatorio.') },
+    );
+    const instance = fixture.componentInstance;
+    blur(getInput(fixture, 'text'), fixture);
+    expect(getErrorText(fixture)).toBe('This field is required.');
+
+    lang.set('es');
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance).toBe(instance);
+    expect(getErrorText(fixture)).toBe('Este campo es obligatorio.');
+  });
+
+  it('shows the submit button label from messages.submit()', () => {
+    const fixture = createFixtureWithMessages([{ key: 'name', label: 'Name', type: 'text' }], {
+      submit: () => 'Send it',
+    });
+    expect(getSubmitButton(fixture).textContent?.trim()).toBe('Send it');
+  });
+
+  it('a per-field errorMessages override takes precedence over the injected token', () => {
+    const fixture = createFixtureWithMessages(
+      [
+        {
+          key: 'name',
+          label: 'Name',
+          type: 'text',
+          validators: { required: true, errorMessages: { required: 'Please enter your name' } },
+        },
+      ],
+      { required: () => 'This field is required.' },
+    );
+    blur(getInput(fixture, 'text'), fixture);
+    expect(getErrorText(fixture)).toBe('Please enter your name');
   });
 });

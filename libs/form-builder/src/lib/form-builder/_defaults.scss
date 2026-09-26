@@ -1,0 +1,19 @@
+// Default values for every --zhunam-* custom property this component
+// reads, defined once here instead of in :host. A :host declaration
+// always wins the cascade over anything a consumer sets on an ancestor
+// (even :root), so keeping the defaults only as a var() fallback lets a
+// consumer override from any ancestor selector, not just one that beats
+// :host's specificity.
+$default-font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+$default-font-size: 0.9375rem;
+$default-text: #1f2937;
+$default-text-secondary: #374151;
+$default-border: #d1d5db;
+$default-error: #dc2626;
+$default-primary: #3b82f6;
+$default-primary-content: #fff;
+$default-radius: 0.5rem;
+$default-spacing: 1rem;
+$default-form-control-padding-y: 0.5rem;
+$default-form-control-padding-x: 0.75rem;
+$default-transition-duration: 150ms;

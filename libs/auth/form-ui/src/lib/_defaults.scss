@@ -1,0 +1,12 @@
+// Default values for every --zhunam-* custom property LoginForm,
+// RegisterForm, and ResetPasswordForm read, defined once here instead of
+// in each component's own :host. A :host declaration always wins the
+// cascade over anything a consumer sets on an ancestor (even :root), so
+// keeping the defaults only as a var() fallback lets a consumer override
+// from any ancestor selector, not just one that beats :host's specificity.
+// Shared by the 3 form-ui components: not every default below is read by
+// every one of them, see each component's own .scss for which.
+$default-error: #dc2626;
+$default-success: #16a34a;
+$default-primary: #3b82f6;
+$default-spacing: 1rem;

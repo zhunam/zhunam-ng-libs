@@ -5,6 +5,44 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
 
 ## [Unreleased]
 
+### Changed (`@zhunam/auth/form-ui`)
+- **BREAKING**: `LoginForm`, `RegisterForm`, and `ResetPasswordForm`'s
+  `fields` are now built from a `computed()` instead of a module-level
+  constant shared by every instance, so their labels can react to
+  `AUTH_UI_MESSAGES`. Changing the active language rebuilds the
+  underlying `FormGroup` (same effect changing `fields` on
+  `@zhunam/form-builder` always had), which clears whatever the user had
+  already typed. This is a known, accepted limitation for this change,
+  not addressed here.
+- **BREAKING**: `RegisterForm`'s password-match cross-field validator is
+  now built per instance instead of as a module-level constant, so its
+  "Passwords must match" message can be translated. It re-reads
+  `AUTH_UI_MESSAGES` on every validation run (each submit attempt), not
+  retroactively on a message already on screen.
+- **BREAKING**: `--zhunam-*` defaults are no longer declared on
+  `LoginForm`/`RegisterForm`/`ResetPasswordForm`'s own `:host`. A
+  consumer stylesheet that already set one of these properties on an
+  ancestor (e.g. `:root`) that is less specific than `:host` will now
+  see that value actually apply, where it was silently overridden
+  before. No default value changed.
+- `@zhunam/form-builder` peer dependency requirement is unchanged
+  (`^2.0.0`), but translating a form-ui component completely now also
+  requires `provideFormBuilderMessages()` from that library, see its own
+  CHANGELOG for the English-default breaking change there.
+
+### Added (`@zhunam/auth/form-ui`)
+- `AuthUiMessages`, `AUTH_UI_MESSAGES` (`InjectionToken`),
+  `provideAuthUiMessages()`, `AUTH_UI_MESSAGES_EN`, `AUTH_UI_MESSAGES_ES`:
+  translate field labels, the "Forgot your password?" link, the
+  password-match message, and the reset-sent message. Every message is a
+  function evaluated on render, so one that reads a signal updates live.
+  Exported from `@zhunam/auth/form-ui`, not from the core.
+- `--zhunam-error-text`, `--zhunam-success-text`, `--zhunam-primary-text`
+  custom properties (each defaults to its non-`-text` counterpart): the
+  error banner, success message, and "Forgot your password?" link's own
+  text colors, independent from the background/accent role each
+  non-`-text` property already had.
+
 ## [2.0.0] - 2026-09-17
 
 ### Changed

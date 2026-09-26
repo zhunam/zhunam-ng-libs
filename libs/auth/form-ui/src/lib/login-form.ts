@@ -1,16 +1,12 @@
-import { ChangeDetectionStrategy, Component, inject, output, signal, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, output, signal, ViewEncapsulation } from '@angular/core';
 import { FieldConfig, FormBuilder } from '@zhunam/form-builder';
 import { AUTH_SERVICE, AuthUser } from '@zhunam/auth';
+import { AUTH_UI_MESSAGES } from './tokens/auth-ui-messages.token';
 
 interface LoginFormValue {
   email: string;
   password: string;
 }
-
-const LOGIN_FIELDS: FieldConfig<LoginFormValue>[] = [
-  { key: 'email', label: 'Email', type: 'email', validators: { required: true, email: true } },
-  { key: 'password', label: 'Password', type: 'password', validators: { required: true } },
-];
 
 /**
  * Ready-to-use login form: email + password, wired to the `AUTH_SERVICE`
@@ -36,8 +32,13 @@ const LOGIN_FIELDS: FieldConfig<LoginFormValue>[] = [
 })
 export class LoginForm {
   private readonly authService = inject(AUTH_SERVICE);
+  protected readonly messages = inject(AUTH_UI_MESSAGES);
 
-  protected readonly fields = LOGIN_FIELDS;
+  protected readonly fields = computed<FieldConfig<LoginFormValue>[]>(() => [
+    { key: 'email', label: this.messages.emailLabel(), type: 'email', validators: { required: true, email: true } },
+    { key: 'password', label: this.messages.passwordLabel(), type: 'password', validators: { required: true } },
+  ]);
+
   protected readonly errorMessage = signal<string | null>(null);
 
   /**

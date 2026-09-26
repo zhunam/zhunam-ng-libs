@@ -157,22 +157,73 @@ protected onLoginSuccess(user: AuthUser): void {
 
 `ResetPasswordForm` (`<lib-reset-password-form>`): a single email field, no inputs or outputs. Always shows the same generic success message regardless of whether the account exists, see Security below.
 
+#### `AuthUiMessages`
+
+| Member | Type | Used by |
+| ------ | ---- | ------- |
+| `emailLabel()` | `() => string` | `LoginForm`, `RegisterForm`, `ResetPasswordForm` |
+| `passwordLabel()` | `() => string` | `LoginForm`, `RegisterForm` |
+| `confirmPasswordLabel()` | `() => string` | `RegisterForm` |
+| `forgotPassword()` | `() => string` | `LoginForm` |
+| `passwordsMustMatch()` | `() => string` | `RegisterForm` |
+| `resetPasswordSent()` | `() => string` | `ResetPasswordForm` |
+
+| Export | Type | Description |
+| ------ | ---- | ------------ |
+| `AUTH_UI_MESSAGES` | `InjectionToken<AuthUiMessages>` | Defaults to `AUTH_UI_MESSAGES_EN`. Prefer `provideAuthUiMessages()` over providing this directly. |
+| `provideAuthUiMessages(overrides)` | `(overrides: Partial<AuthUiMessages>) => Provider` | Registers a message override, merged on top of the English defaults. |
+| `AUTH_UI_MESSAGES_EN` | `AuthUiMessages` | English preset (the default). |
+| `AUTH_UI_MESSAGES_ES` | `AuthUiMessages` | Spanish preset. |
+
 #### Theming
 
 The form fields themselves (inputs, labels, submit button) are styled by
 the `<lib-form-builder>` these components wrap internally, see
-`@zhunam/form-builder`'s own Theming section. `LoginForm`,
-`RegisterForm`, and `ResetPasswordForm` additionally read a few
-`--zhunam-*` custom properties, part of the same shared namespace, for
-chrome that has no `<lib-form-builder>` equivalent. Not every component
-uses every property below:
+`@zhunam/form-builder`'s own Theming section. None of the properties
+below are declared on `LoginForm`/`RegisterForm`/`ResetPasswordForm`'s
+own `:host` either, so any of them can be set from `:root`, from a
+wrapping element, or scoped directly to the component's own tag,
+whichever is more convenient for your app. `LoginForm`, `RegisterForm`,
+and `ResetPasswordForm` additionally read a few `--zhunam-*` custom
+properties, part of the same shared namespace, for chrome that has no
+`<lib-form-builder>` equivalent. Not every component uses every property
+below:
 
 | Custom property | Default | Description | Used by |
 | ----------------- | -------- | -------------------------------------------- | -------------------------------------------- |
-| `--zhunam-error`   | `#dc2626` | Error banner text color. | `LoginForm`, `RegisterForm`, `ResetPasswordForm` |
-| `--zhunam-success` | `#16a34a` | Success message text color. | `ResetPasswordForm` |
-| `--zhunam-primary` | `#3b82f6` | "Forgot your password?" link color. | `LoginForm` |
+| `--zhunam-error`   | `#dc2626` | Error banner color, falls back to when `--zhunam-error-text` is unset. | `LoginForm`, `RegisterForm`, `ResetPasswordForm` |
+| `--zhunam-error-text` | `var(--zhunam-error)` | Error banner text color specifically. | `LoginForm`, `RegisterForm`, `ResetPasswordForm` |
+| `--zhunam-success` | `#16a34a` | Success message color, falls back to when `--zhunam-success-text` is unset. | `ResetPasswordForm` |
+| `--zhunam-success-text` | `var(--zhunam-success)` | Success message text color specifically. | `ResetPasswordForm` |
+| `--zhunam-primary` | `#3b82f6` | "Forgot your password?" link color, falls back to when `--zhunam-primary-text` is unset. | `LoginForm` |
+| `--zhunam-primary-text` | `var(--zhunam-primary)` | "Forgot your password?" link color specifically. | `LoginForm` |
 | `--zhunam-spacing` | `1rem`    | Top margin of the error/success/link chrome. | `LoginForm`, `RegisterForm`, `ResetPasswordForm` |
+
+### Internationalization
+
+`provideAuthUiMessages()` translates only the chrome specific to these 3
+components (field labels, the "Forgot your password?" link, the
+password-match and reset-sent messages). To translate a form
+completely, also provide `FORM_BUILDER_MESSAGES` from
+`@zhunam/form-builder`: the fields these components wrap render their
+own validation text and submit button label through that separate
+token.
+
+```typescript
+import { provideAuthUiMessages, AUTH_UI_MESSAGES_ES } from '@zhunam/auth/form-ui';
+import { provideFormBuilderMessages, FORM_BUILDER_MESSAGES_ES } from '@zhunam/form-builder';
+
+providers: [
+  provideAuthUiMessages(AUTH_UI_MESSAGES_ES),
+  provideFormBuilderMessages(FORM_BUILDER_MESSAGES_ES),
+]
+```
+
+Every message is a function, called on every render rather than once at
+startup, so one that reads a signal updates live. Field labels flow into
+`<lib-form-builder>` through each component's own `fields`, itself a
+`computed()` that re-reads `AUTH_UI_MESSAGES` on every change, same as
+any other reactive input.
 
 ## Compatibility
 

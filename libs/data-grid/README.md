@@ -45,6 +45,21 @@ const columns: ColumnConfig<User>[] = [{ key: 'name', label: 'Name', sortable: t
 | `cellTemplate` | `TemplateRef<{ $implicit: T }>`          | None      | Custom template for this column's cells, instead of plain text. |
 | `cellClass`    | `(row: T) => string`                     | None      | CSS class(es) applied to this column's cell for a given row. |
 
+### `DataGridMessages`
+
+| Member | Type | Description |
+| ------ | ---- | ------------ |
+| `previous()` | `() => string` | Label of the "previous page" button. |
+| `next()` | `() => string` | Label of the "next page" button. |
+| `pageStatus(current, total)` | `(current: number, total: number) => string` | Status text between the pagination buttons. |
+
+| Export | Type | Description |
+| ------ | ---- | ------------ |
+| `DATA_GRID_MESSAGES` | `InjectionToken<DataGridMessages>` | Defaults to `DATA_GRID_MESSAGES_EN`. Prefer `provideDataGridMessages()` over providing this directly. |
+| `provideDataGridMessages(overrides)` | `(overrides: Partial<DataGridMessages>) => Provider` | Registers a message override, merged on top of the English defaults. |
+| `DATA_GRID_MESSAGES_EN` | `DataGridMessages` | English preset (the default). |
+| `DATA_GRID_MESSAGES_ES` | `DataGridMessages` | Spanish preset. |
+
 ### Custom cell rendering
 
 ```html
@@ -67,13 +82,17 @@ columns: ColumnConfig<Coin>[] = [
 ### Theming
 
 `DataGrid` sizes and colors itself via CSS custom properties, part of the
-shared `--zhunam-*` namespace used across every `@zhunam/*` library. Set
-any of them from the consuming app's own stylesheet, scoped to
-`lib-data-grid` or wider:
+shared `--zhunam-*` namespace used across every `@zhunam/*` library. None
+of them are declared on the component's own `:host`, so you can set any
+of them from `:root`, from a wrapping element, or scoped directly to
+`lib-data-grid`, whichever is more convenient for your app; the closest
+ancestor that sets a given property wins, same as any other inherited
+CSS custom property.
 
 | Custom property | Default | Description |
 | ------------------------------- | -------- | -------------------------------------------------- |
-| `--zhunam-primary`               | `#3b82f6` | Sort-icon color, active/hover accents. |
+| `--zhunam-primary`               | `#3b82f6` | Sort-icon background/border accents (see `--zhunam-primary-text` for the icon's own color). |
+| `--zhunam-primary-text`          | `var(--zhunam-primary)` | Sort-icon color specifically. Falls back to `--zhunam-primary` when unset, so most apps only ever need to set one of the two. |
 | `--zhunam-focus`                 | `var(--zhunam-primary)` | Focus outline on sortable headers, rows, and pagination buttons. |
 | `--zhunam-text`                  | `#1f2937` | Base text color and pagination button text. |
 | `--zhunam-text-secondary`        | `#374151` | Header row and pagination label text. |
@@ -85,8 +104,50 @@ any of them from the consuming app's own stylesheet, scoped to
 | `--zhunam-grid-header-bg`        | `#f9fafb` | Header row background. |
 | `--zhunam-grid-header-hover-bg`  | `rgb(15 23 42 / 6%)` | Header background on hover, for sortable columns. |
 | `--zhunam-grid-row-hover-bg`     | `rgb(15 23 42 / 4.5%)` | Row background on hover. |
-| `--zhunam-grid-cell-padding-x`   | `1rem`    | Horizontal cell padding. |
-| `--zhunam-grid-cell-padding-y`   | `0.75rem` | Vertical cell padding. |
+| `--zhunam-grid-cell-padding-x`   | `1rem` (`0.625rem` below a 28rem container width) | Horizontal cell padding. |
+| `--zhunam-grid-cell-padding-y`   | `0.75rem` (`0.5rem` below a 28rem container width) | Vertical cell padding. |
+
+The two cell-padding properties get a tighter default once the component
+itself is embedded somewhere narrower than 28rem (a sidebar, a modal),
+using Container Queries. If you set either one yourself, that value
+applies at every container size, compact included: the component no
+longer has its own narrower value to fall back to once you've supplied
+one.
+
+### Internationalization
+
+Every string `DataGrid` renders (the pagination buttons and status) comes
+from `DATA_GRID_MESSAGES`, an injectable token that defaults to English.
+
+```typescript
+import { provideDataGridMessages, DATA_GRID_MESSAGES_ES } from '@zhunam/data-grid';
+
+// app.config.ts, or any component's own `providers`:
+providers: [provideDataGridMessages(DATA_GRID_MESSAGES_ES)]
+```
+
+A partial override only replaces the messages you specify, the rest stay
+in English:
+
+```typescript
+providers: [provideDataGridMessages({ next: () => 'Forward' })]
+```
+
+Every message is a function, called on every render rather than once at
+startup, so one that reads a signal updates live:
+
+```typescript
+const language = signal<'en' | 'es'>('en');
+
+providers: [
+  provideDataGridMessages({
+    previous: () => (language() === 'en' ? 'Previous' : 'Anterior'),
+    next: () => (language() === 'en' ? 'Next' : 'Siguiente'),
+    pageStatus: (current, total) =>
+      language() === 'en' ? `Page ${current} of ${total}` : `Página ${current} de ${total}`,
+  }),
+]
+```
 
 ## Compatibility
 

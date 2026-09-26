@@ -3,6 +3,7 @@ import {
   Component,
   computed,
   effect,
+  inject,
   input,
   output,
   signal,
@@ -10,6 +11,7 @@ import {
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { ColumnConfig } from '../models/column-config';
+import { DATA_GRID_MESSAGES } from '../tokens/data-grid-messages.token';
 
 type SortDirection = 'asc' | 'desc';
 
@@ -55,6 +57,8 @@ export class DataGrid<T> {
    * <lib-data-grid (rowClick)="onRowClick($event)" />
    */
   rowClick = output<T>();
+
+  protected readonly messages = inject(DATA_GRID_MESSAGES);
 
   private readonly sortState = signal<SortState<T> | null>(null);
 

@@ -972,3 +972,34 @@ investigación real antes de escribir código)
         alineados con el margen del cuerpo en ambas páginas, sin
         pegarse al borde. Build y lint limpios, WSL con los mismos 5
         fallos preexistentes (124 passed, sin regresión).
+- [x] **Hallazgo real durante el bloque 1 de theming/i18n de
+      `@zhunam/data-grid`/`@zhunam/form-builder`/`@zhunam/auth`
+      (form-ui)**: el override `lib-data-grid { --zhunam-primary:
+      var(--color-primary) }` de `styles.css:56` estaba declarado
+      desde el primer commit de esta app, pero nunca aplicaba de
+      verdad, confirmado midiendo `getComputedStyle` real con
+      Playwright antes y después del bloque. La causa: `data-grid`
+      declaraba `--zhunam-primary` directo en su propio `:host`, y esa
+      declaración (especificidad `[_nghost]`, equivalente a una clase)
+      siempre le ganaba en cascada al selector `lib-data-grid` de
+      `styles.css` (especificidad de tipo, más baja), sin importar el
+      orden de las hojas de estilo. Tras el bloque 1 (que saca todos
+      los defaults `--zhunam-*` de `:host` en las 3 librerías), el
+      override ya aplica de verdad: el ícono de orden de
+      `market-table` y el foco de la paginación pasan a Signal Teal
+      (`rgb(44, 95, 93)`), confirmado tanto en la demo aislada
+      `/data-grid` como dentro de `/crypto-dashboard` (con las
+      respuestas de CoinGecko simuladas vía `page.route()`, cuota real
+      agotada en el momento de la verificación). No es una regresión
+      de este bloque, es un bug preexistente que quedó corregido como
+      efecto colateral correcto.
+      - De paso, se revisó si `currency-converter` necesitaba un
+        `provideFormBuilderMessages({ min: ... })` nuevo para evitar
+        que el mensaje de validación `min` mostrara el
+        `Number.EPSILON` crudo: no hace falta, ese componente ya tenía
+        su propio `errorMessages: { min: 'Amount must be greater than
+        0.' } }` por campo desde antes de este bloque, y la precedencia
+        campo > token que el bloque 1 estableció hace que ese mensaje
+        por campo siga ganando siempre. Confirmado que el test
+        existente (`currency-converter.spec.ts:160`) ya cubría esto
+        sin cambios.

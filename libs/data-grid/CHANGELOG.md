@@ -5,6 +5,29 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
 
 ## [Unreleased]
 
+### Changed
+- **BREAKING**: default language of every rendered string (pagination
+  buttons and status) is now English instead of Spanish. Use
+  `provideDataGridMessages(DATA_GRID_MESSAGES_ES)` to restore the
+  previous text.
+- **BREAKING**: `--zhunam-*` defaults are no longer declared on the
+  component's own `:host`. A consumer stylesheet that already set one of
+  these properties on an ancestor of `lib-data-grid` (e.g. `:root`) that
+  is less specific than `:host` will now see that value actually apply,
+  where it was silently overridden before: `:host`'s own declaration
+  always won the cascade regardless of the ancestor rule's specificity.
+  No default value changed.
+
+### Added
+- `DataGridMessages`, `DATA_GRID_MESSAGES` (`InjectionToken`),
+  `provideDataGridMessages()`, `DATA_GRID_MESSAGES_EN`,
+  `DATA_GRID_MESSAGES_ES`: translate the pagination buttons and status
+  text. Every message is a function evaluated on render, so one that
+  reads a signal updates live.
+- `--zhunam-primary-text` custom property (default `var(--zhunam-primary)`):
+  the sort icon's own text color, independent from `--zhunam-primary`
+  (which now only controls its background/border accents).
+
 ## [3.0.0] - 2026-09-17
 
 ### Changed

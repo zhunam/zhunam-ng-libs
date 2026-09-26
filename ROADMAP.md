@@ -96,13 +96,17 @@ data-grid, form-builder, pdf-generator) instead of standing alone.
 Anything beyond the 7 above goes here first, unordered, until it's
 promoted into the numbered sequence above.
 
-- **i18n / customizable text in libs/***: varias librerías tienen
+- **i18n / customizable text in libs/***: varias librerías tenían
   strings hardcodeados en un idioma fijo (ej. paginación en español en
-  data-grid, botón "Submit" en inglés en form-builder). Evaluar un
-  patrón consistente de customización de texto (inputs opcionales para
-  labels de UI, o soporte de i18n real) antes de que la lista de
-  librerías crezca más y el problema se replique. Detectado en
+  data-grid, botón "Submit" en inglés en form-builder). Detectado en
   libs/data-grid/ROADMAP.md durante el desarrollo de form-builder.
+  **Resuelto para data-grid, form-builder, y auth/form-ui**: las 3
+  exponen ahora un token de mensajes inyectable
+  (`DATA_GRID_MESSAGES`/`FORM_BUILDER_MESSAGES`/`AUTH_UI_MESSAGES`, con
+  su `provide*Messages()` correspondiente) con presets EN/ES, default
+  en inglés, cada mensaje una función evaluada al renderizar. No
+  revisado todavía en pdf-generator ni calendar, ninguna afirmación
+  sobre esas dos.
 
 - **Extraer el shell de drawer/sidebar de las páginas de demo**: hoy
   triplicado byte a byte entre `data-grid-demo.html`/`.scss`,

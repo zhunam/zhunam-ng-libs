@@ -1,8 +1,10 @@
-import { provideZonelessChangeDetection } from '@angular/core';
+import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AUTH_SERVICE, AuthService } from '@zhunam/auth';
 import { FormBuilder } from '@zhunam/form-builder';
 import { ResetPasswordForm } from './reset-password-form';
+import { AUTH_UI_MESSAGES_ES } from './models/auth-ui-messages';
+import { provideAuthUiMessages } from './tokens/auth-ui-messages.token';
 
 const GENERIC_SUCCESS_MESSAGE = "If that email is registered, you'll receive instructions to reset your password.";
 
@@ -18,13 +20,24 @@ function createAuthServiceMock(): AuthService {
   } as unknown as AuthService;
 }
 
-function createFixture(authService: AuthService): ComponentFixture<ResetPasswordForm> {
+function createFixture(
+  authService: AuthService,
+  extraProviders: ReturnType<typeof provideAuthUiMessages>[] = [],
+): ComponentFixture<ResetPasswordForm> {
   TestBed.configureTestingModule({
-    providers: [provideZonelessChangeDetection(), { provide: AUTH_SERVICE, useValue: authService }],
+    providers: [
+      provideZonelessChangeDetection(),
+      { provide: AUTH_SERVICE, useValue: authService },
+      ...extraProviders,
+    ],
   });
   const fixture = TestBed.createComponent(ResetPasswordForm);
   fixture.detectChanges();
   return fixture;
+}
+
+function labelText(fixture: ComponentFixture<ResetPasswordForm>): string | null {
+  return (fixture.nativeElement as HTMLElement).querySelector('.fb-label')?.textContent?.trim() ?? null;
 }
 
 // Under zoneless testing, fixture.whenStable() only tracks Angular-aware
@@ -101,5 +114,44 @@ describe('ResetPasswordForm', () => {
     await submitResetForm(fixture, 'user@example.com');
 
     expect(messageText(fixture, '.auth-error')).toBe('rejected without an Error object');
+  });
+
+  describe('i18n', () => {
+    it('renders the English label by default, with no AUTH_UI_MESSAGES provider', () => {
+      const fixture = createFixture(createAuthServiceMock());
+      expect(labelText(fixture)).toBe('Email');
+    });
+
+    it('renders the Spanish preset with provideAuthUiMessages(AUTH_UI_MESSAGES_ES), including the success message', async () => {
+      const authService = createAuthServiceMock();
+      (authService.resetPassword as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      const fixture = createFixture(authService, [provideAuthUiMessages(AUTH_UI_MESSAGES_ES)]);
+
+      expect(labelText(fixture)).toBe('Correo electrónico');
+
+      await submitResetForm(fixture, 'user@example.com');
+
+      expect(messageText(fixture, '.auth-success')).toBe(
+        'Si ese email está registrado, recibirás instrucciones para restablecer tu contraseña.',
+      );
+    });
+
+    it('updates the label live when a message reads a signal, without recreating the component', () => {
+      const lang = signal<'en' | 'es'>('en');
+      const fixture = createFixture(createAuthServiceMock(), [
+        provideAuthUiMessages({
+          emailLabel: () => (lang() === 'en' ? 'Email' : 'Correo electrónico'),
+        }),
+      ]);
+      const instance = fixture.componentInstance;
+
+      expect(labelText(fixture)).toBe('Email');
+
+      lang.set('es');
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance).toBe(instance);
+      expect(labelText(fixture)).toBe('Correo electrónico');
+    });
   });
 });
