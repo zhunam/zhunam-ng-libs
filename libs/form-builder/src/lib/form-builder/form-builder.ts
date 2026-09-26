@@ -1,11 +1,12 @@
 // NUNCA usar [innerHTML], bypassSecurityTrustHtml, ni ningún mecanismo de inserción de HTML crudo en el DOM del componente.
-// label, placeholder, errorMessages, y FieldOption.label se renderizan siempre con interpolación {{ }} normal de Angular — nunca vía binding de propiedad que inserte HTML.
+// label, placeholder, errorMessages, y FieldOption.label se renderizan siempre con interpolación {{ }} normal de Angular, nunca vía binding de propiedad que inserte HTML.
 
 import {
   ChangeDetectionStrategy,
   Component,
   computed,
   effect,
+  inject,
   input,
   output,
   signal,
@@ -14,12 +15,13 @@ import {
 import { FormControl, FormGroup, ReactiveFormsModule, ValidatorFn, Validators } from '@angular/forms';
 import { CrossFieldValidator, FieldConfig, FieldOption } from '../models/field-config';
 import { assertSafePattern } from '../utils/safe-pattern';
+import { FORM_BUILDER_MESSAGES } from '../tokens/form-builder-messages.token';
 
 type ErrorKey = 'required' | 'min' | 'max' | 'minLength' | 'maxLength' | 'pattern' | 'email';
 
 // Angular's built-in validators report `minlength`/`maxlength` (all lowercase)
 // on `control.errors`, not the camelCase keys `FieldValidatorConfig.errorMessages`
-// uses — this bridges the two so consumer-facing config can stay camelCase.
+// uses, this bridges the two so consumer-facing config can stay camelCase.
 const RAW_ERROR_KEY_MAP: Record<string, ErrorKey> = {
   required: 'required',
   min: 'min',
@@ -28,16 +30,6 @@ const RAW_ERROR_KEY_MAP: Record<string, ErrorKey> = {
   maxlength: 'maxLength',
   pattern: 'pattern',
   email: 'email',
-};
-
-const DEFAULT_ERROR_MESSAGES: Record<ErrorKey, string> = {
-  required: 'Este campo es obligatorio.',
-  min: 'El valor es menor al mínimo permitido.',
-  max: 'El valor supera el máximo permitido.',
-  minLength: 'El valor es demasiado corto.',
-  maxLength: 'El valor es demasiado largo.',
-  pattern: 'El formato no es válido.',
-  email: 'Ingresá un email válido.',
 };
 
 @Component({
@@ -140,6 +132,8 @@ export class FormBuilder<T> {
    * <lib-form-builder [fields]="fields" [serverErrors]="serverErrors()" (formSubmit)="onFormSubmit($event)" />
    */
   serverErrors = input<Partial<Record<keyof T, string>>>({});
+
+  protected readonly messages = inject(FORM_BUILDER_MESSAGES);
 
   protected readonly submitted = signal(false);
   protected readonly crossFieldErrors = signal<Record<string, string>>({});
@@ -280,12 +274,38 @@ export class FormBuilder<T> {
       return null;
     }
 
-    const errorKey = RAW_ERROR_KEY_MAP[Object.keys(control.errors)[0]];
+    const rawKey = Object.keys(control.errors)[0];
+    const errorKey = RAW_ERROR_KEY_MAP[rawKey];
     if (!errorKey) {
       return null;
     }
 
-    return field.validators?.errorMessages?.[errorKey] ?? DEFAULT_ERROR_MESSAGES[errorKey];
+    // Precedence: a per-field override always wins, then the injected
+    // FORM_BUILDER_MESSAGES token (English by default), evaluated fresh
+    // here so a message reading a signal (e.g. a language switcher)
+    // updates live.
+    const fieldMessage = field.validators?.errorMessages?.[errorKey];
+    if (fieldMessage) {
+      return fieldMessage;
+    }
+
+    const errorDetail = control.errors[rawKey];
+    switch (errorKey) {
+      case 'required':
+        return this.messages.required();
+      case 'email':
+        return this.messages.email();
+      case 'min':
+        return this.messages.min(errorDetail.min);
+      case 'max':
+        return this.messages.max(errorDetail.max);
+      case 'minLength':
+        return this.messages.minLength(errorDetail.requiredLength);
+      case 'maxLength':
+        return this.messages.maxLength(errorDetail.requiredLength);
+      case 'pattern':
+        return this.messages.pattern();
+    }
   }
 
   protected serverErrorFor(field: FieldConfig<T>): string | null {

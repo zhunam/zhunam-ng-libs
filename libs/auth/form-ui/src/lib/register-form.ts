@@ -1,22 +1,13 @@
-import { ChangeDetectionStrategy, Component, inject, output, signal, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, output, signal, ViewEncapsulation } from '@angular/core';
 import { CrossFieldValidator, FieldConfig, FormBuilder } from '@zhunam/form-builder';
 import { AUTH_SERVICE, AuthUser } from '@zhunam/auth';
+import { AUTH_UI_MESSAGES } from './tokens/auth-ui-messages.token';
 
 interface RegisterFormValue {
   email: string;
   password: string;
   confirmPassword: string;
 }
-
-const REGISTER_FIELDS: FieldConfig<RegisterFormValue>[] = [
-  { key: 'email', label: 'Email', type: 'email', validators: { required: true, email: true } },
-  { key: 'password', label: 'Password', type: 'password', validators: { required: true, minLength: 8 } },
-  { key: 'confirmPassword', label: 'Confirm password', type: 'password', validators: { required: true } },
-];
-
-const PASSWORDS_MATCH_VALIDATOR: CrossFieldValidator<RegisterFormValue> = {
-  validate: (value) => (value.password !== value.confirmPassword ? { confirmPassword: 'Passwords must match' } : null),
-};
 
 /**
  * Ready-to-use registration form: email + password + confirm password
@@ -37,9 +28,34 @@ const PASSWORDS_MATCH_VALIDATOR: CrossFieldValidator<RegisterFormValue> = {
 })
 export class RegisterForm {
   private readonly authService = inject(AUTH_SERVICE);
+  protected readonly messages = inject(AUTH_UI_MESSAGES);
 
-  protected readonly fields = REGISTER_FIELDS;
-  protected readonly crossFieldValidators = [PASSWORDS_MATCH_VALIDATOR];
+  protected readonly fields = computed<FieldConfig<RegisterFormValue>[]>(() => [
+    { key: 'email', label: this.messages.emailLabel(), type: 'email', validators: { required: true, email: true } },
+    {
+      key: 'password',
+      label: this.messages.passwordLabel(),
+      type: 'password',
+      validators: { required: true, minLength: 8 },
+    },
+    {
+      key: 'confirmPassword',
+      label: this.messages.confirmPasswordLabel(),
+      type: 'password',
+      validators: { required: true },
+    },
+  ]);
+
+  // Built per instance (not a module constant) so its message reads
+  // AUTH_UI_MESSAGES fresh every time FormBuilder runs it, instead of
+  // capturing whatever language was active when the module first loaded.
+  protected readonly crossFieldValidators = computed<CrossFieldValidator<RegisterFormValue>[]>(() => [
+    {
+      validate: (value) =>
+        value.password !== value.confirmPassword ? { confirmPassword: this.messages.passwordsMustMatch() } : null,
+    },
+  ]);
+
   protected readonly errorMessage = signal<string | null>(null);
 
   /**

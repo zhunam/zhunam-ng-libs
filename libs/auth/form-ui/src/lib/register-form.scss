@@ -1,15 +1,14 @@
+@use 'defaults' as *;
+
 // See login-form.scss for why this only reuses --zhunam-* shared roles for
 // chrome that has no <lib-form-builder> equivalent (the form fields
 // themselves stay styled through <lib-form-builder>'s own custom properties).
 :host {
-  --zhunam-error: #dc2626;
-  --zhunam-spacing: 1rem;
-
   display: block;
 }
 
 .auth-error {
-  margin-top: var(--zhunam-spacing, 1rem);
-  color: var(--zhunam-error, #dc2626);
+  margin-top: var(--zhunam-spacing, $default-spacing);
+  color: var(--zhunam-error-text, var(--zhunam-error, $default-error));
   font-size: 0.875rem;
 }

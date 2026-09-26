@@ -64,12 +64,35 @@ For a calculator-style form (no submit action, values used as you type):
 | `colSpan`     | `1 \| 2`                | `1`          | How many grid columns this field spans, when the component's `columns` input is 2 or more. |
 | `disabled`    | `boolean`               | `false`      | Renders the control disabled from the start; still included in the value `formSubmit` emits. |
 
+### `FormBuilderMessages`
+
+| Member | Type | Description |
+| ------ | ---- | ------------ |
+| `required()` | `() => string` | Shown when a required field is empty. |
+| `email()` | `() => string` | Shown when an `email` field isn't well-formed. |
+| `min(min)` | `(min: number) => string` | Shown when a numeric field is below `min`. |
+| `max(max)` | `(max: number) => string` | Shown when a numeric field is above `max`. |
+| `minLength(requiredLength)` | `(requiredLength: number) => string` | Shown when a field's value is shorter than `minLength`. |
+| `maxLength(requiredLength)` | `(requiredLength: number) => string` | Shown when a field's value is longer than `maxLength`. |
+| `pattern()` | `() => string` | Shown when a field's value doesn't match `pattern`. |
+| `submit()` | `() => string` | Label of the submit button. |
+
+| Export | Type | Description |
+| ------ | ---- | ------------ |
+| `FORM_BUILDER_MESSAGES` | `InjectionToken<FormBuilderMessages>` | Defaults to `FORM_BUILDER_MESSAGES_EN`. Prefer `provideFormBuilderMessages()` over providing this directly. |
+| `provideFormBuilderMessages(overrides)` | `(overrides: Partial<FormBuilderMessages>) => Provider` | Registers a message override, merged on top of the English defaults. |
+| `FORM_BUILDER_MESSAGES_EN` | `FormBuilderMessages` | English preset (the default). |
+| `FORM_BUILDER_MESSAGES_ES` | `FormBuilderMessages` | Spanish preset. |
+
 ### Theming
 
 `FormBuilder` sizes and colors itself via CSS custom properties, part of
 the shared `--zhunam-*` namespace used across every `@zhunam/*` library.
-Set any of them from the consuming app's own stylesheet, scoped to
-`lib-form-builder` or wider:
+None of them are declared on the component's own `:host`, so you can set
+any of them from `:root`, from a wrapping element, or scoped directly to
+`lib-form-builder`, whichever is more convenient for your app; the
+closest ancestor that sets a given property wins, same as any other
+inherited CSS custom property.
 
 | Custom property | Default | Description |
 | ------------------------------- | -------- | -------------------------------------------------- |
@@ -79,7 +102,8 @@ Set any of them from the consuming app's own stylesheet, scoped to
 | `--zhunam-text`                  | `#1f2937` | Base text color, radio/checkbox option labels. |
 | `--zhunam-text-secondary`        | `#374151` | Field label text. |
 | `--zhunam-border`                | `#d1d5db` | Control borders. |
-| `--zhunam-error`                 | `#dc2626` | Validation/server error message text. |
+| `--zhunam-error`                 | `#dc2626` | Validation/server error message background/border, where used. See `--zhunam-error-text` for the message's own text color. |
+| `--zhunam-error-text`            | `var(--zhunam-error)` | Validation/server error message text color specifically. Falls back to `--zhunam-error` when unset, so most apps only ever need to set one of the two. |
 | `--zhunam-radius`                | `0.5rem`  | Control and submit button corner radius. |
 | `--zhunam-font-family`           | `system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif` | Font for the whole component. |
 | `--zhunam-font-size`             | `0.9375rem` | Base font size. |
@@ -91,6 +115,42 @@ Set any of them from the consuming app's own stylesheet, scoped to
 `--fb-columns` is an internal implementation detail (it carries the
 `columns` input's value into the field grid's CSS), not a themeable
 custom property; setting it manually has no supported effect.
+
+### Internationalization
+
+Every message `FormBuilder` renders on its own (validation text, the
+submit button label) comes from `FORM_BUILDER_MESSAGES`, an injectable
+token that defaults to English. A per-field `FieldValidatorConfig.errorMessages`
+override always takes precedence over this token for that specific field.
+
+```typescript
+import { provideFormBuilderMessages, FORM_BUILDER_MESSAGES_ES } from '@zhunam/form-builder';
+
+// app.config.ts, or any component's own `providers`:
+providers: [provideFormBuilderMessages(FORM_BUILDER_MESSAGES_ES)]
+```
+
+A partial override only replaces the messages you specify, the rest stay
+in English:
+
+```typescript
+providers: [provideFormBuilderMessages({ submit: () => 'Send' })]
+```
+
+Every message is a function, called on every render rather than once at
+startup, so one that reads a signal updates live:
+
+```typescript
+const language = signal<'en' | 'es'>('en');
+
+providers: [
+  provideFormBuilderMessages({
+    required: () => (language() === 'en' ? 'This field is required.' : 'Este campo es obligatorio.'),
+    min: (min) =>
+      language() === 'en' ? `The value must be at least ${min}.` : `El valor debe ser como mínimo ${min}.`,
+  }),
+]
+```
 
 ## Compatibility
 

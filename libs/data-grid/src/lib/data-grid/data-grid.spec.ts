@@ -1,7 +1,9 @@
-import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
+import { Component, OnInit, signal, TemplateRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DataGrid } from './data-grid';
 import { ColumnConfig } from '../models/column-config';
+import { DataGridMessages, DATA_GRID_MESSAGES_ES } from '../models/data-grid-messages';
+import { provideDataGridMessages } from '../tokens/data-grid-messages.token';
 
 interface TestRow {
   name: string;
@@ -204,7 +206,7 @@ describe('DataGrid', () => {
 
     it('computes totalPages from data length and pageSize', () => {
       const fixture = createFixture(fiveRows, { pageSize: 2 });
-      expect(getPageInfo(fixture)).toBe('Página 1 de 3');
+      expect(getPageInfo(fixture)).toBe('Page 1 of 3');
     });
 
     it('does not advance past the last page', () => {
@@ -212,20 +214,20 @@ describe('DataGrid', () => {
       clickNext(fixture);
       clickNext(fixture);
       clickNext(fixture); // already on the last page
-      expect(getPageInfo(fixture)).toBe('Página 3 de 3');
+      expect(getPageInfo(fixture)).toBe('Page 3 of 3');
     });
 
     it('does not go before the first page', () => {
       const fixture = createFixture(fiveRows, { pageSize: 2 });
       clickPrevious(fixture); // already on the first page
-      expect(getPageInfo(fixture)).toBe('Página 1 de 3');
+      expect(getPageInfo(fixture)).toBe('Page 1 of 3');
     });
 
-    it('goes back a page when clicking Anterior from a later page', () => {
+    it('goes back a page when clicking Previous from a later page', () => {
       const fixture = createFixture(fiveRows, { pageSize: 2 });
       clickNext(fixture); // page 2
       clickPrevious(fixture); // back to page 1
-      expect(getPageInfo(fixture)).toBe('Página 1 de 3');
+      expect(getPageInfo(fixture)).toBe('Page 1 of 3');
     });
 
     it('disables the previous/next buttons at each boundary', () => {
@@ -246,12 +248,12 @@ describe('DataGrid', () => {
       const fixture = createFixture(fiveRows, { pageSize: 2 });
       clickNext(fixture);
       clickNext(fixture); // page 3 of 3
-      expect(getPageInfo(fixture)).toBe('Página 3 de 3');
+      expect(getPageInfo(fixture)).toBe('Page 3 of 3');
 
       fixture.componentRef.setInput('data', fiveRows.slice(0, 2)); // now only 1 page
       fixture.detectChanges();
 
-      expect(getPageInfo(fixture)).toBe('Página 1 de 1');
+      expect(getPageInfo(fixture)).toBe('Page 1 of 1');
     });
   });
 
@@ -306,7 +308,7 @@ describe('DataGrid', () => {
     it('handles an empty dataset without breaking', () => {
       const fixture = createFixture([]);
       expect(getRowCount(fixture)).toBe(0);
-      expect(getPageInfo(fixture)).toBe('Página 1 de 1');
+      expect(getPageInfo(fixture)).toBe('Page 1 of 1');
     });
   });
 
@@ -359,5 +361,71 @@ describe('DataGrid', () => {
 
       expect(ageCell.textContent?.trim()).toBe('30');
     });
+  });
+});
+
+describe('DataGrid i18n', () => {
+  function createFixtureWithMessages(
+    data: TestRow[],
+    overrides: Partial<DataGridMessages>,
+  ): ComponentFixture<DataGrid<TestRow>> {
+    TestBed.configureTestingModule({
+      imports: [DataGrid],
+      providers: [provideDataGridMessages(overrides)],
+    });
+    const fixture = TestBed.createComponent(DataGrid<TestRow>);
+    fixture.componentRef.setInput('data', data);
+    fixture.componentRef.setInput('columns', columns);
+    fixture.componentRef.setInput('pageSize', 2);
+    fixture.detectChanges();
+    return fixture;
+  }
+
+  it('renders English text by default, with no provider registered', () => {
+    TestBed.configureTestingModule({ imports: [DataGrid] });
+    const fixture = TestBed.createComponent(DataGrid<TestRow>);
+    fixture.componentRef.setInput('data', unsortedRows);
+    fixture.componentRef.setInput('columns', columns);
+    fixture.componentRef.setInput('pageSize', 2);
+    fixture.detectChanges();
+
+    const [previousBtn, nextBtn] = getPageButtons(fixture);
+    expect(previousBtn.textContent?.trim()).toBe('Previous');
+    expect(nextBtn.textContent?.trim()).toBe('Next');
+    expect(getPageInfo(fixture)).toBe('Page 1 of 2');
+  });
+
+  it('renders Spanish text with provideDataGridMessages(DATA_GRID_MESSAGES_ES)', () => {
+    const fixture = createFixtureWithMessages(unsortedRows, DATA_GRID_MESSAGES_ES);
+
+    const [previousBtn, nextBtn] = getPageButtons(fixture);
+    expect(previousBtn.textContent?.trim()).toBe('Anterior');
+    expect(nextBtn.textContent?.trim()).toBe('Siguiente');
+    expect(getPageInfo(fixture)).toBe('Página 1 de 2');
+  });
+
+  it('applies a partial override and leaves the rest in English', () => {
+    const fixture = createFixtureWithMessages(unsortedRows, { next: () => 'Forward' });
+
+    const [previousBtn, nextBtn] = getPageButtons(fixture);
+    expect(previousBtn.textContent?.trim()).toBe('Previous');
+    expect(nextBtn.textContent?.trim()).toBe('Forward');
+    expect(getPageInfo(fixture)).toBe('Page 1 of 2');
+  });
+
+  it('updates the rendered text live when a message reads a signal, without recreating the component', () => {
+    const lang = signal<'en' | 'es'>('en');
+    const fixture = createFixtureWithMessages(unsortedRows, {
+      next: () => (lang() === 'en' ? 'Next' : 'Siguiente'),
+    });
+    const instance = fixture.componentInstance;
+
+    expect(getPageButtons(fixture)[1].textContent?.trim()).toBe('Next');
+
+    lang.set('es');
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance).toBe(instance);
+    expect(getPageButtons(fixture)[1].textContent?.trim()).toBe('Siguiente');
   });
 });

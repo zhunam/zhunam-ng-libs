@@ -5,6 +5,35 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
 
 ## [Unreleased]
 
+### Changed
+- **BREAKING**: default language of every validation message and the
+  submit button label is now English instead of Spanish. Use
+  `provideFormBuilderMessages(FORM_BUILDER_MESSAGES_ES)` to restore the
+  previous text. A per-field `FieldValidatorConfig.errorMessages`
+  override, when set, still takes precedence over this and is
+  unaffected.
+- **BREAKING**: validation messages for `min`/`max`/`minLength`/`maxLength`
+  now include the real configured value (e.g. "Must be at least 3
+  characters." instead of a generic "too short" sentence), read from
+  Angular's own validation error object.
+- **BREAKING**: `--zhunam-*` defaults are no longer declared on the
+  component's own `:host`. A consumer stylesheet that already set one of
+  these properties on an ancestor of `lib-form-builder` (e.g. `:root`)
+  that is less specific than `:host` will now see that value actually
+  apply, where it was silently overridden before: `:host`'s own
+  declaration always won the cascade regardless of the ancestor rule's
+  specificity. No default value changed.
+
+### Added
+- `FormBuilderMessages`, `FORM_BUILDER_MESSAGES` (`InjectionToken`),
+  `provideFormBuilderMessages()`, `FORM_BUILDER_MESSAGES_EN`,
+  `FORM_BUILDER_MESSAGES_ES`: translate every validation message and the
+  submit button label. Every message is a function evaluated on render,
+  so one that reads a signal updates live. Replaces the internal
+  `DEFAULT_ERROR_MESSAGES` constant.
+- `--zhunam-error-text` custom property (default `var(--zhunam-error)`):
+  the error message's own text color, independent from `--zhunam-error`.
+
 ## [2.0.0] - 2026-09-17
 
 ### Added

@@ -1,20 +1,15 @@
-import { ChangeDetectionStrategy, Component, inject, signal, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal, ViewEncapsulation } from '@angular/core';
 import { FieldConfig, FormBuilder } from '@zhunam/form-builder';
 import { AUTH_SERVICE } from '@zhunam/auth';
+import { AUTH_UI_MESSAGES } from './tokens/auth-ui-messages.token';
 
 interface ResetPasswordFormValue {
   email: string;
 }
 
-const RESET_PASSWORD_FIELDS: FieldConfig<ResetPasswordFormValue>[] = [
-  { key: 'email', label: 'Email', type: 'email', validators: { required: true, email: true } },
-];
-
-const GENERIC_SUCCESS_MESSAGE = "If that email is registered, you'll receive instructions to reset your password.";
-
 // Firebase's sendPasswordResetEmail() throws this code by default for a
 // non-existent email, unless the project has "Email enumeration
-// protection" enabled in the console — which this library can't assume.
+// protection" enabled in the console, which this library can't assume.
 // Supabase's resetPasswordForEmail() already suppresses this server-side
 // and never throws it, so the check below simply never triggers there;
 // it's kept anyway so behavior stays identical regardless of provider.
@@ -46,8 +41,12 @@ function isUserNotFoundError(error: unknown): boolean {
 })
 export class ResetPasswordForm {
   private readonly authService = inject(AUTH_SERVICE);
+  protected readonly messages = inject(AUTH_UI_MESSAGES);
 
-  protected readonly fields = RESET_PASSWORD_FIELDS;
+  protected readonly fields = computed<FieldConfig<ResetPasswordFormValue>[]>(() => [
+    { key: 'email', label: this.messages.emailLabel(), type: 'email', validators: { required: true, email: true } },
+  ]);
+
   protected readonly successMessage = signal<string | null>(null);
   protected readonly errorMessage = signal<string | null>(null);
 
@@ -56,16 +55,16 @@ export class ResetPasswordForm {
     this.successMessage.set(null);
     try {
       await this.authService.resetPassword(value.email);
-      this.successMessage.set(GENERIC_SUCCESS_MESSAGE);
+      this.successMessage.set(this.messages.resetPasswordSent());
     } catch (error) {
       // Deliberately identical to the success path for "user not found".
-      // Differentiating the UI here — even just this once, even just for
-      // a "nicer" message — would let an attacker tell registered emails
+      // Differentiating the UI here, even just this once, even just for
+      // a "nicer" message, would let an attacker tell registered emails
       // apart from unregistered ones by submitting this form and watching
       // which response they get. Don't "fix" this by showing the real
       // error for this specific case.
       if (isUserNotFoundError(error)) {
-        this.successMessage.set(GENERIC_SUCCESS_MESSAGE);
+        this.successMessage.set(this.messages.resetPasswordSent());
         return;
       }
       // Any other failure (network error, rate limit, etc.) doesn't leak

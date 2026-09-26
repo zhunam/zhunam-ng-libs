@@ -57,15 +57,15 @@
 
 <nav class="dg-pagination">
   <button type="button" class="dg-page-btn" (click)="previousPage()" [disabled]="currentPage() === 1">
-    Anterior
+    {{ messages.previous() }}
   </button>
-  <span class="dg-page-info">Página {{ currentPage() }} de {{ totalPages() }}</span>
+  <span class="dg-page-info">{{ messages.pageStatus(currentPage(), totalPages()) }}</span>
   <button
     type="button"
     class="dg-page-btn"
     (click)="nextPage()"
     [disabled]="currentPage() === totalPages()"
   >
-    Siguiente
+    {{ messages.next() }}
   </button>
 </nav>
