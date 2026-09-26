@@ -31,7 +31,7 @@ export class MarketTable implements OnInit {
 
   ngOnInit(): void {
     this.columns = [
-      { key: 'image', label: '', cellTemplate: this.imageCellTemplate },
+      { key: 'image', label: 'Logo', labelHidden: true, cellTemplate: this.imageCellTemplate },
       { key: 'name', label: 'Name', sortable: true },
       { key: 'symbol', label: 'Symbol' },
       { key: 'rank', label: 'Rank', sortable: true },

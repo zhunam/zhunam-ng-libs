@@ -10,7 +10,8 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
-import { ColumnConfig } from '../models/column-config';
+import { ColumnConfig, DataColumnConfig } from '../models/column-config';
+import { columnId, isDataColumn as isDataColumnConfig } from '../internal/column-id';
 import { DATA_GRID_MESSAGES } from '../tokens/data-grid-messages.token';
 
 type SortDirection = 'asc' | 'desc';
@@ -19,6 +20,11 @@ interface SortState<T> {
   key: keyof T;
   direction: SortDirection;
 }
+
+// Selectors that opt a click out of rowClick: anything a user would
+// reasonably expect to do its own thing on click, inside a
+// DisplayColumnConfig's cellTemplate (or, in principle, any cell).
+const INTERACTIVE_SELECTOR = 'button, a[href], input, select, textarea, label, [role="button"]';
 
 @Component({
   selector: 'lib-data-grid',
@@ -106,7 +112,7 @@ export class DataGrid<T> {
 
   constructor() {
     // Sorting, a new `data()`, or a different `pageSize()` can all shrink
-    // `totalPages()` below the page the user was on — fall back to page 1
+    // `totalPages()` below the page the user was on, fall back to page 1
     // instead of rendering an empty page.
     effect(() => {
       if (this.currentPage() > this.totalPages()) {
@@ -115,19 +121,40 @@ export class DataGrid<T> {
     });
   }
 
+  /**
+   * Stable identity for a column, used as the `track` expression for
+   * every `@for` over `columns()`. Exposed to the template only, not
+   * part of this component's public API.
+   */
+  protected columnId(column: ColumnConfig<T>): string {
+    return columnId(column);
+  }
+
+  /**
+   * Narrows a `ColumnConfig<T>` to `DataColumnConfig<T>`. Exposed to the
+   * template only, not part of this component's public API.
+   */
+  protected isDataColumn(column: ColumnConfig<T>): column is DataColumnConfig<T> {
+    return isDataColumnConfig(column);
+  }
+
   protected sortBy(column: ColumnConfig<T>): void {
-    if (!column.sortable) {
+    if (!this.isDataColumn(column) || !column.sortable) {
       return;
     }
 
+    const key = column.key;
     this.sortState.update((state) =>
-      state?.key === column.key
-        ? { key: column.key, direction: state.direction === 'asc' ? 'desc' : 'asc' }
-        : { key: column.key, direction: 'asc' },
+      state?.key === key
+        ? { key, direction: state.direction === 'asc' ? 'desc' : 'asc' }
+        : { key, direction: 'asc' },
     );
   }
 
   protected sortDirectionFor(column: ColumnConfig<T>): SortDirection | null {
+    if (!this.isDataColumn(column)) {
+      return null;
+    }
     const state = this.sortState();
     return state?.key === column.key ? state.direction : null;
   }
@@ -145,6 +172,46 @@ export class DataGrid<T> {
 
   protected onRowClick(row: T): void {
     this.rowClick.emit(row);
+  }
+
+  /**
+   * Handles a click anywhere on a row. Suppressed when the click lands on
+   * (or inside) an interactive element within the row, e.g. a button or
+   * link inside a `DisplayColumnConfig`'s `cellTemplate`, so that
+   * element's own click handler is the only thing that runs.
+   */
+  protected onRowClickEvent(event: MouseEvent, row: T): void {
+    const target = event.target as HTMLElement;
+    const currentTarget = event.currentTarget as HTMLElement;
+    const interactive = target.closest(INTERACTIVE_SELECTOR);
+    if (interactive && interactive !== currentTarget && currentTarget.contains(interactive)) {
+      return;
+    }
+    this.onRowClick(row);
+  }
+
+  /**
+   * Handles Enter/Space on a row. Bound to a plain `(keydown)` rather
+   * than Angular's `.enter`/`.space` key-filtered syntax, whose `$event`
+   * type-checks as `Event`, not `KeyboardEvent`, filtering here instead.
+   * Only emits when the row itself is the key event's target, i.e. the
+   * row itself has focus, not an interactive element inside one of its
+   * cells: that element's own keyboard handling (native or otherwise) is
+   * left alone. Space is `preventDefault()`-ed only in that same case, to
+   * stop the page from scrolling without swallowing Space for a focused
+   * control inside the row.
+   */
+  protected onRowKeydown(event: KeyboardEvent, row: T): void {
+    if (event.key !== 'Enter' && event.key !== ' ') {
+      return;
+    }
+    if (event.target !== event.currentTarget) {
+      return;
+    }
+    if (event.key === ' ') {
+      event.preventDefault();
+    }
+    this.onRowClick(row);
   }
 
   protected previousPage(): void {

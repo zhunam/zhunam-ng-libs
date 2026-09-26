@@ -91,8 +91,29 @@ class HostWithCustomCell implements OnInit {
   }
 }
 
+// The sortable header's click handler now lives on the <button> inside
+// the <th>, not the <th> itself (see PASO 3 of the data-grid columns
+// block); a non-sortable header has no button, so this falls back to
+// clicking the (handler-less) <th> itself, confirming the no-op case.
 function clickHeader(fixture: ComponentFixture<DataGrid<TestRow>>, index: number): void {
-  root(fixture).querySelectorAll<HTMLElement>('th')[index].click();
+  const th = root(fixture).querySelectorAll<HTMLElement>('th')[index];
+  const button = th.querySelector<HTMLElement>('button');
+  (button ?? th).click();
+  fixture.detectChanges();
+}
+
+// jsdom doesn't synthesize the native `click` a real <button> fires when
+// Enter/Space activates it while focused, unlike a real browser
+// (confirmed with Playwright separately) - dispatched explicitly here so
+// the test still exercises the real consequence of that native behavior.
+function activateHeaderButtonViaKeyboard(
+  fixture: ComponentFixture<DataGrid<TestRow>>,
+  index: number,
+  key: string,
+): void {
+  const button = root(fixture).querySelectorAll<HTMLElement>('th')[index].querySelector<HTMLElement>('button');
+  button?.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+  button?.click();
   fixture.detectChanges();
 }
 
@@ -147,7 +168,7 @@ describe('DataGrid', () => {
       const fixture = createFixture(unsortedRows, { columns: twoSortableColumns });
       clickHeader(fixture, 0); // name asc
       clickHeader(fixture, 0); // name desc
-      clickHeader(fixture, 1); // switch to age — should start at asc, not desc
+      clickHeader(fixture, 1); // switch to age, should start at asc, not desc
 
       // Ascending by age: Alice (25), Charlie (30), Bob (40)
       expect(getNameColumnValues(fixture)).toEqual(['Alice', 'Charlie', 'Bob']);
@@ -155,20 +176,14 @@ describe('DataGrid', () => {
 
     it('sorts when a sortable header is activated with Enter', () => {
       const fixture = createFixture(unsortedRows);
-      root(fixture)
-        .querySelectorAll<HTMLElement>('th')[0]
-        .dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
-      fixture.detectChanges();
+      activateHeaderButtonViaKeyboard(fixture, 0, 'Enter');
 
       expect(getNameColumnValues(fixture)).toEqual(['Alice', 'Bob', 'Charlie']);
     });
 
     it('sorts when a sortable header is activated with Space', () => {
       const fixture = createFixture(unsortedRows);
-      root(fixture)
-        .querySelectorAll<HTMLElement>('th')[0]
-        .dispatchEvent(new KeyboardEvent('keydown', { key: ' ' }));
-      fixture.detectChanges();
+      activateHeaderButtonViaKeyboard(fixture, 0, ' ');
 
       expect(getNameColumnValues(fixture)).toEqual(['Alice', 'Bob', 'Charlie']);
     });
@@ -180,7 +195,7 @@ describe('DataGrid', () => {
         { name: 'Alice', age: 25 },
       ];
       const fixture = createFixture(rowsWithTie);
-      clickHeader(fixture, 0); // sort by name ascending — the two "Bob" rows are equal on this column
+      clickHeader(fixture, 0); // sort by name ascending, the two "Bob" rows are equal on this column
 
       const ages = Array.from(
         root(fixture).querySelectorAll<HTMLElement>('tbody tr td:nth-child(2)'),
@@ -263,7 +278,7 @@ describe('DataGrid', () => {
       clickHeader(fixture, 0); // sort by name ascending
       clickNext(fixture); // move to page 2
 
-      // Full ascending order is Alice, Bob, Charlie — page 2 (pageSize 2) is just Charlie.
+      // Full ascending order is Alice, Bob, Charlie; page 2 (pageSize 2) is just Charlie.
       expect(getNameColumnValues(fixture)).toEqual(['Charlie']);
     });
   });
@@ -427,5 +442,229 @@ describe('DataGrid i18n', () => {
 
     expect(fixture.componentInstance).toBe(instance);
     expect(getPageButtons(fixture)[1].textContent?.trim()).toBe('Siguiente');
+  });
+});
+
+describe('DataGrid header markup', () => {
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({ imports: [DataGrid] }).compileComponents();
+  });
+
+  it('every <th> has scope="col"', () => {
+    const fixture = createFixture(unsortedRows);
+    const ths = Array.from(root(fixture).querySelectorAll('th'));
+    expect(ths.length).toBe(2);
+    for (const th of ths) {
+      expect(th.getAttribute('scope')).toBe('col');
+    }
+  });
+
+  it('renders a <button> for a sortable column', () => {
+    const fixture = createFixture(unsortedRows);
+    const nameHeader = root(fixture).querySelectorAll('th')[0];
+    expect(nameHeader.querySelector('button')).toBeTruthy();
+  });
+
+  it('renders plain text, no <button>, for a non-sortable column', () => {
+    const fixture = createFixture(unsortedRows);
+    const ageHeader = root(fixture).querySelectorAll('th')[1];
+    expect(ageHeader.querySelector('button')).toBeNull();
+    expect(ageHeader.textContent?.trim()).toBe('Age');
+  });
+
+  it('cycles aria-sort the same way as before a click at a time: none, ascending, descending, ascending', () => {
+    const fixture = createFixture(unsortedRows);
+    const nameHeader = root(fixture).querySelectorAll('th')[0];
+    expect(nameHeader.getAttribute('aria-sort')).toBe('none');
+
+    clickHeader(fixture, 0);
+    expect(nameHeader.getAttribute('aria-sort')).toBe('ascending');
+
+    clickHeader(fixture, 0);
+    expect(nameHeader.getAttribute('aria-sort')).toBe('descending');
+
+    clickHeader(fixture, 0);
+    expect(nameHeader.getAttribute('aria-sort')).toBe('ascending');
+  });
+
+  it('a non-sortable column has no aria-sort attribute at all', () => {
+    const fixture = createFixture(unsortedRows);
+    const ageHeader = root(fixture).querySelectorAll('th')[1];
+    expect(ageHeader.hasAttribute('aria-sort')).toBe(false);
+  });
+
+  it('the sort icon is aria-hidden', () => {
+    const fixture = createFixture(unsortedRows);
+    const icon = root(fixture).querySelector('.dg-sort-icon');
+    expect(icon?.getAttribute('aria-hidden')).toBe('true');
+  });
+});
+
+describe('DataGrid labelHidden', () => {
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({ imports: [DataGrid] }).compileComponents();
+  });
+
+  it('keeps the label in the DOM, with the sr-only class, for a sortable and a non-sortable column', () => {
+    const hiddenLabelColumns: ColumnConfig<TestRow>[] = [
+      { key: 'name', label: 'Name', sortable: true, labelHidden: true },
+      { key: 'age', label: 'Age', labelHidden: true },
+    ];
+    const fixture = createFixture(unsortedRows, { columns: hiddenLabelColumns });
+    const ths = root(fixture).querySelectorAll('th');
+
+    expect(ths[0].querySelector('.sr-only')?.textContent?.trim()).toBe('Name');
+    expect(ths[1].querySelector('.sr-only')?.textContent?.trim()).toBe('Age');
+  });
+
+  it('does not add the sr-only class when labelHidden is left unset', () => {
+    const fixture = createFixture(unsortedRows);
+    const ths = root(fixture).querySelectorAll('th');
+    expect(ths[0].querySelector('.sr-only')).toBeNull();
+    expect(ths[1].querySelector('.sr-only')).toBeNull();
+  });
+});
+
+@Component({
+  template: `
+    <ng-template #actionsCell let-row>
+      <button type="button" class="edit-btn" (click)="onEditClick()">Edit</button>
+      <a href="#" class="view-link" (click)="onLinkClick($event)">View</a>
+    </ng-template>
+    <lib-data-grid [data]="data" [columns]="columns" (rowClick)="onRowClickHandler()" />
+  `,
+  imports: [DataGrid],
+})
+class HostWithActionsColumn implements OnInit {
+  @ViewChild('actionsCell', { static: true })
+  actionsCell!: TemplateRef<{ $implicit: TestRow }>;
+
+  data = unsortedRows;
+  columns: ColumnConfig<TestRow>[] = [];
+
+  rowClickCount = 0;
+  editClickCount = 0;
+  linkClickCount = 0;
+
+  ngOnInit(): void {
+    this.columns = [
+      { key: 'name', label: 'Name', sortable: true },
+      { id: 'actions', label: 'Actions', labelHidden: true, cellTemplate: this.actionsCell },
+    ];
+  }
+
+  onRowClickHandler(): void {
+    this.rowClickCount++;
+  }
+
+  onEditClick(): void {
+    this.editClickCount++;
+  }
+
+  onLinkClick(event: Event): void {
+    event.preventDefault(); // real navigation isn't the point of this test, and jsdom warns on it otherwise
+    this.linkClickCount++;
+  }
+}
+
+describe('DataGrid display columns', () => {
+  function setup(): ComponentFixture<HostWithActionsColumn> {
+    TestBed.configureTestingModule({ imports: [HostWithActionsColumn] });
+    const fixture = TestBed.createComponent(HostWithActionsColumn);
+    fixture.detectChanges();
+    return fixture;
+  }
+
+  it('renders the display column template with the row, alongside a data column', () => {
+    const fixture = setup();
+    const nativeElement = fixture.nativeElement as HTMLElement;
+
+    expect(nativeElement.querySelectorAll('tbody tr').length).toBe(3);
+    expect(nativeElement.querySelectorAll('.edit-btn').length).toBe(3);
+    expect(nativeElement.querySelectorAll('.view-link').length).toBe(3);
+    // The data column ('Name') is still there, coexisting with the display one.
+    expect(nativeElement.querySelector('tbody tr td')?.textContent?.trim()).toBe('Charlie');
+  });
+
+  it('renders no sort button for the display column, only its (hidden) label', () => {
+    const fixture = setup();
+    const nativeElement = fixture.nativeElement as HTMLElement;
+    const actionsHeader = Array.from(nativeElement.querySelectorAll('th')).find(
+      (th) => th.querySelector('.sr-only')?.textContent?.trim() === 'Actions',
+    );
+
+    expect(actionsHeader).toBeTruthy();
+    expect(actionsHeader?.getAttribute('scope')).toBe('col');
+    expect(actionsHeader?.hasAttribute('aria-sort')).toBe(false);
+    expect(actionsHeader?.querySelector('button')).toBeNull();
+  });
+});
+
+describe('DataGrid rowClick with interactive elements inside a cell', () => {
+  function setup(): ComponentFixture<HostWithActionsColumn> {
+    TestBed.configureTestingModule({ imports: [HostWithActionsColumn] });
+    const fixture = TestBed.createComponent(HostWithActionsColumn);
+    fixture.detectChanges();
+    return fixture;
+  }
+
+  it('click on a <button> inside a cellTemplate: rowClick 0 times, the button\'s own handler 1 time', () => {
+    const fixture = setup();
+    const button = (fixture.nativeElement as HTMLElement).querySelector('.edit-btn') as HTMLButtonElement;
+
+    button.click();
+
+    expect(fixture.componentInstance.editClickCount).toBe(1);
+    expect(fixture.componentInstance.rowClickCount).toBe(0);
+  });
+
+  it('click on an <a href> inside a cellTemplate: rowClick 0 times, the link\'s own handler 1 time', () => {
+    const fixture = setup();
+    const link = (fixture.nativeElement as HTMLElement).querySelector('.view-link') as HTMLAnchorElement;
+
+    link.click();
+
+    expect(fixture.componentInstance.linkClickCount).toBe(1);
+    expect(fixture.componentInstance.rowClickCount).toBe(0);
+  });
+
+  it('click on a plain text cell: rowClick 1 time', () => {
+    const fixture = setup();
+    const nameCell = (fixture.nativeElement as HTMLElement).querySelector('tbody tr td') as HTMLElement;
+
+    nameCell.click();
+
+    expect(fixture.componentInstance.rowClickCount).toBe(1);
+  });
+
+  it('keydown Enter on the focused <tr> itself: rowClick 1 time', () => {
+    const fixture = setup();
+    const tr = (fixture.nativeElement as HTMLElement).querySelector('tbody tr') as HTMLElement;
+
+    tr.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+
+    expect(fixture.componentInstance.rowClickCount).toBe(1);
+  });
+
+  it('keydown Enter on an internal <button>, followed by the click a real browser fires for it: rowClick 0 times', () => {
+    const fixture = setup();
+    const button = (fixture.nativeElement as HTMLElement).querySelector('.edit-btn') as HTMLButtonElement;
+
+    // jsdom doesn't synthesize the native click a real focused <button>
+    // fires for Enter, unlike a real browser (confirmed with Playwright
+    // separately) - dispatched explicitly to model that exact sequence.
+    button.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    button.click();
+
+    expect(fixture.componentInstance.rowClickCount).toBe(0);
+  });
+
+  it('keydown Space on an internal <button>: rowClick 0 times', () => {
+    const fixture = setup();
+    const button = (fixture.nativeElement as HTMLElement).querySelector('.edit-btn') as HTMLButtonElement;
+
+    button.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+
+    expect(fixture.componentInstance.rowClickCount).toBe(0);
   });
 });

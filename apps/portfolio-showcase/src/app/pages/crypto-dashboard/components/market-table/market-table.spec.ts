@@ -123,4 +123,16 @@ describe('MarketTable', () => {
       'https://assets.coingecko.com/coins/images/1/large/bitcoin.png',
     );
   });
+
+  it('has a "Logo" column header, visually hidden but accessible', () => {
+    fixture.componentRef.setInput('coins', [buildCoin()]);
+    fixture.detectChanges();
+
+    const columnHeaders = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('th[scope="col"]'),
+    );
+    const logoHeader = columnHeaders.find((th) => th.textContent?.trim() === 'Logo');
+    expect(logoHeader).toBeTruthy();
+    expect(logoHeader?.querySelector('.sr-only')).toBeTruthy();
+  });
 });
