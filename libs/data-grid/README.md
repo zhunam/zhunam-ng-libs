@@ -33,17 +33,34 @@ const columns: ColumnConfig<User>[] = [{ key: 'name', label: 'Name', sortable: t
 | `data`     | `input<T[]>`                         | `[]`           | Data to render in the table.                       |
 | `columns`  | `input.required<ColumnConfig<T>[]>`  | Required       | Configuration of the columns to render, in display order. |
 | `pageSize` | `input<number>`                      | `10`           | Number of rows rendered per page.                  |
-| `rowClick` | `output<T>`                          | N/A            | Emitted when the user clicks a row.                |
+| `rowClick` | `output<T>`                          | N/A            | Emitted when the user clicks or keyboard-activates (Enter/Space) a row, except when that click or key originates from an interactive element inside one of its cells, see "Display columns" below. |
 
 ### `ColumnConfig<T>`
+
+`ColumnConfig<T>` is a union: `DataColumnConfig<T> | DisplayColumnConfig<T>`. A `DataColumnConfig` is bound to a real property of `T`; a `DisplayColumnConfig` isn't bound to any single property, for content that doesn't come from one field, e.g. an actions column. Code that reads a column's `key` (or writes a helper that does) needs to narrow the union first, `'key' in column` is enough: a `DisplayColumnConfig` never has a real `key`.
+
+#### `DataColumnConfig<T>`
 
 | Property       | Type                                    | Default   | Description                                             |
 | -------------- | --------------------------------------- | --------- | --------------------------------------------------------- |
 | `key`          | `keyof T`                                | Required  | Property of `T` this column reads its cell values from. |
 | `label`        | `string`                                 | Required  | Text displayed in the column header.                     |
+| `labelHidden`  | `boolean`                                | `false`      | Visually hides `label` while keeping it available to assistive technology. |
 | `sortable`     | `boolean`                                | `false`      | Whether clicking the header sorts the grid by this column. |
 | `cellTemplate` | `TemplateRef<{ $implicit: T }>`          | None      | Custom template for this column's cells, instead of plain text. |
 | `cellClass`    | `(row: T) => string`                     | None      | CSS class(es) applied to this column's cell for a given row. |
+
+#### `DisplayColumnConfig<T>`
+
+| Property       | Type                                    | Default   | Description                                             |
+| -------------- | --------------------------------------- | --------- | --------------------------------------------------------- |
+| `id`           | `string`                                 | Required  | This column's identity, in place of `key`. Must be unique among every column, `DataColumnConfig`s included, not enforced at runtime. |
+| `label`        | `string`                                 | Required  | Text displayed in the column header.                     |
+| `labelHidden`  | `boolean`                                | `false`      | Visually hides `label` while keeping it available to assistive technology. |
+| `cellTemplate` | `TemplateRef<{ $implicit: T }>`          | Required  | Template rendering this column's cells. Required here, unlike `DataColumnConfig`'s: a display column has no plain-text fallback. |
+| `cellClass`    | `(row: T) => string`                     | None      | CSS class(es) applied to this column's cell for a given row. |
+
+A `DisplayColumnConfig` is never sortable, and `cellTemplate` is always required, both enforced at the type level, not just documented.
 
 ### `DataGridMessages`
 
@@ -74,10 +91,34 @@ const columns: ColumnConfig<User>[] = [{ key: 'name', label: 'Name', sortable: t
 @ViewChild('imageCell', { static: true }) imageCell!: TemplateRef<{ $implicit: Coin }>;
 
 columns: ColumnConfig<Coin>[] = [
-  { key: 'image', label: '', cellTemplate: this.imageCell },
+  { key: 'image', label: 'Logo', labelHidden: true, cellTemplate: this.imageCell },
   { key: 'change', label: 'Change', cellClass: (c) => (c.change > 0 ? 'is-up' : 'is-down') },
 ];
 ```
+
+### Display columns
+
+Use a `DisplayColumnConfig` for a column not backed by any single field, e.g. a row of action buttons:
+
+```typescript
+@ViewChild('actionsCell', { static: true }) actionsCell!: TemplateRef<{ $implicit: User }>;
+
+columns: ColumnConfig<User>[] = [
+  { key: 'name', label: 'Name', sortable: true },
+  { id: 'actions', label: 'Actions', labelHidden: true, cellTemplate: this.actionsCell },
+];
+```
+
+```html
+<ng-template #actionsCell let-user>
+  <button type="button" (click)="edit(user)">Edit</button>
+  <button type="button" (click)="remove(user)">Delete</button>
+</ng-template>
+```
+
+No `$event.stopPropagation()` needed inside `edit()`/`remove()`'s click handlers: a click that lands on (or inside) a real interactive element, `button`, `a[href]`, `input`, `select`, `textarea`, `label`, or `[role="button"]`, never triggers `rowClick`, only that element's own handler does. `labelHidden` keeps "Actions" available to a screen reader as the column header's accessible name without showing it visually, since the buttons themselves already make the column's purpose clear on screen.
+
+Keyboard works the same way: Enter/Space only trigger `rowClick` when the row itself has focus, not when they originate from a focused control inside one of its cells, that control's own keyboard handling (native or otherwise) runs instead.
 
 ### Theming
 
@@ -159,8 +200,10 @@ No Tailwind, Bootstrap, or utility-framework dependency. Styling is plain
 SCSS behind CSS custom properties, so it drops into any Angular app
 regardless of its styling setup. Layout responds to its own container via
 Container Queries (`@container`), not the viewport. Accessible by default:
-`aria-sort` on sortable headers, visible `:focus-visible` on every
-interactive element, full keyboard operability.
+`scope="col"` on every header, `aria-sort` on sortable headers (an
+actual `<button>` inside the `<th>`, not a `click`/`keydown` handler on
+the header cell itself), visible `:focus-visible` on every interactive
+element, full keyboard operability.
 
 ## License
 

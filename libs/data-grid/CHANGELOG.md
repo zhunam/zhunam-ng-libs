@@ -17,6 +17,27 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
   where it was silently overridden before: `:host`'s own declaration
   always won the cascade regardless of the ancestor rule's specificity.
   No default value changed.
+- **BREAKING**: `ColumnConfig<T>` is now a union,
+  `DataColumnConfig<T> | DisplayColumnConfig<T>`. Code that reads a
+  column's `key` needs to narrow first (`'key' in column` is enough): a
+  `DisplayColumnConfig` never has a real `key`. Existing configuration
+  objects that only ever set `key` keep working unchanged, only code
+  written against the old single-interface `ColumnConfig<T>` and
+  reaching into `.key` directly needs an update.
+- **BREAKING**: `rowClick` is no longer emitted when the triggering click
+  lands on (or inside) an interactive element (`button`, `a[href]`,
+  `input`, `select`, `textarea`, `label`, `[role="button"]`) inside a
+  cell, nor when the triggering Enter/Space key event originates from an
+  element other than the row itself. A consumer previously relying on
+  `rowClick` firing regardless (e.g. by calling
+  `$event.stopPropagation()` inside a `cellTemplate`'s own handler to get
+  the opposite effect) sees a behavior change.
+- **BREAKING**: a sortable column's header is now an actual `<button>`
+  inside the `<th>`, not the `<th>` itself with a `click`/`keydown`
+  handler and `tabindex`. Consumer CSS that specifically targeted the
+  sortable `<th>` as the interactive/focusable element (e.g. a
+  `:focus`/`:focus-visible` rule on `.dg-th--sortable` itself) no longer
+  matches; target the header's own `<button>` instead.
 
 ### Added
 - `DataGridMessages`, `DATA_GRID_MESSAGES` (`InjectionToken`),
@@ -27,6 +48,22 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
 - `--zhunam-primary-text` custom property (default `var(--zhunam-primary)`):
   the sort icon's own text color, independent from `--zhunam-primary`
   (which now only controls its background/border accents).
+- `DisplayColumnConfig<T>`: a column not backed by any single property of
+  `T`, for content that doesn't come from one field, e.g. an actions
+  column. See the README's "Display columns" section.
+- `labelHidden` on both `DataColumnConfig` and `DisplayColumnConfig`:
+  visually hides a column's header `label` while keeping it available to
+  assistive technology (a standard `sr-only` pattern), instead of the
+  column having no accessible name at all when `label` is left empty.
+
+### Fixed
+- Every `<th>` now has `scope="col"`, giving assistive technology an
+  explicit header/cell association that previously relied only on
+  implicit browser table heuristics.
+- A sortable column's header is keyboard-operable through a real
+  `<button>` rather than a `tabindex`-ed `<th>` with manual `click`/
+  `keydown` handlers, the more conventional and broadly-supported
+  accessible pattern for an actionable table header.
 
 ## [3.0.0] - 2026-09-17
 

@@ -2,19 +2,11 @@
   <table translate="no" class="dg-table">
     <thead>
       <tr>
-        @for (column of columns(); track column.key) {
-          <th
-            class="dg-th"
-            [class.dg-th--sortable]="column.sortable"
-            [tabindex]="column.sortable ? 0 : null"
-            [attr.aria-sort]="column.sortable ? ariaSortFor(column) : null"
-            (click)="sortBy(column)"
-            (keydown.enter)="sortBy(column)"
-            (keydown.space)="$event.preventDefault(); sortBy(column)"
-          >
-            <span class="dg-th-content">
-              {{ column.label }}
-              @if (column.sortable) {
+        @for (column of columns(); track columnId(column)) {
+          <th class="dg-th" [class.dg-th--sortable]="column.sortable" scope="col" [attr.aria-sort]="column.sortable ? ariaSortFor(column) : null">
+            @if (isDataColumn(column) && column.sortable) {
+              <button type="button" class="dg-th-button dg-th-content" (click)="sortBy(column)">
+                <span [class.sr-only]="column.labelHidden">{{ column.label }}</span>
                 <span
                   class="dg-sort-icon"
                   [class.dg-sort-icon--active]="sortDirectionFor(column) !== null"
@@ -22,8 +14,12 @@
                   aria-hidden="true"
                   >▲</span
                 >
-              }
-            </span>
+              </button>
+            } @else {
+              <span class="dg-th-content">
+                <span [class.sr-only]="column.labelHidden">{{ column.label }}</span>
+              </span>
+            }
           </th>
         }
       </tr>
@@ -33,19 +29,25 @@
         <tr
           class="dg-row"
           tabindex="0"
-          (click)="onRowClick(row)"
-          (keydown.enter)="onRowClick(row)"
-          (keydown.space)="$event.preventDefault(); onRowClick(row)"
+          (click)="onRowClickEvent($event, row)"
+          (keydown)="onRowKeydown($event, row)"
         >
-          @for (column of columns(); track column.key) {
+          @for (column of columns(); track columnId(column)) {
             <td [class]="column.cellClass ? column.cellClass(row) : null">
-              @if (column.cellTemplate) {
+              @if (isDataColumn(column)) {
+                @if (column.cellTemplate) {
+                  <ng-container
+                    [ngTemplateOutlet]="column.cellTemplate"
+                    [ngTemplateOutletContext]="{ $implicit: row }"
+                  />
+                } @else {
+                  {{ row[column.key] }}
+                }
+              } @else {
                 <ng-container
                   [ngTemplateOutlet]="column.cellTemplate"
                   [ngTemplateOutletContext]="{ $implicit: row }"
                 />
-              } @else {
-                {{ row[column.key] }}
               }
             </td>
           }
