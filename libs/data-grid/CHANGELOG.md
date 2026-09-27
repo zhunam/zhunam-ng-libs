@@ -5,6 +5,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
 
 ## [Unreleased]
 
+## [4.0.0] - 2026-09-26
+
 ### Changed
 - **BREAKING**: default language of every rendered string (pagination
   buttons and status) is now English instead of Spanish. Use

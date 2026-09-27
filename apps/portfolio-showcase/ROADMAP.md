@@ -1003,3 +1003,24 @@ investigación real antes de escribir código)
         por campo siga ganando siempre. Confirmado que el test
         existente (`currency-converter.spec.ts:160`) ya cubría esto
         sin cambios.
+- **Cuota de la API de CoinGecko agotada en `/crypto-dashboard`, nota
+  de deuda, no implementado todavía**:
+  - La cuota mensual del plan Demo (10.000 llamadas) se agotó el
+    2026-09-20, con consumo real registrado en producción durante días
+    sin actividad de desarrollo local.
+  - Pendiente diagnosticar (desglose por endpoint en el panel de
+    CoinGecko + logs de Vercel) si el consumo vino de una pestaña
+    abierta en el sitio en vivo o de uso de la clave fuera de la app
+    (la clave viaja en el JS público del sitio pese a no estar
+    commiteada en el repo).
+  - Mejoras pendientes, en orden: pausar el polling con la Page
+    Visibility API cuando la pestaña no está visible; pausar por
+    inactividad (sin interacción real por N minutos) con aviso
+    accesible y botón para reanudar sin recargar; espaciar el
+    intervalo de refresco de 50s a ~3min; evaluar que market-ticker
+    reutilice la llamada de market-table en vez de la propia. Decisión
+    de arquitectura a futuro, si el consumo resulta ser abuso de la
+    clave o el tráfico real crece: mover a un proxy propio (función
+    serverless con caché en el borde) que además saca la clave del JS
+    público, revisando la decisión "sin backend" de este mismo
+    ROADMAP.
