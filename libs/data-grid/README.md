@@ -1,8 +1,8 @@
 # @zhunam/data-grid
 
-A lightweight Angular data table with client-side sorting, pagination, and
-row selection. No CSS framework dependency, no runtime dependencies beyond
-Angular itself.
+A lightweight Angular data table with sorting, pagination, and row
+selection, either client-side or server-side. No CSS framework dependency,
+no runtime dependencies beyond Angular itself.
 
 ## Installation
 
@@ -28,12 +28,16 @@ const columns: ColumnConfig<User>[] = [{ key: 'name', label: 'Name', sortable: t
 
 ### `DataGrid<T>`
 
-| Name       | Type                                 | Default        | Description                                       |
-| ---------- | ------------------------------------ | -------------- | --------------------------------------------------- |
-| `data`     | `input<T[]>`                         | `[]`           | Data to render in the table.                       |
-| `columns`  | `input.required<ColumnConfig<T>[]>`  | Required       | Configuration of the columns to render, in display order. |
-| `pageSize` | `input<number>`                      | `10`           | Number of rows rendered per page.                  |
-| `rowClick` | `output<T>`                          | N/A            | Emitted when the user clicks or keyboard-activates (Enter/Space) a row, except when that click or key originates from an interactive element inside one of its cells, see "Display columns" below. |
+| Name          | Type                                        | Default    | Description                                       |
+| ------------- | -------------------------------------------- | ---------- | --------------------------------------------------- |
+| `data`        | `input<T[]>`                                 | `[]`       | Data to render in the table. In `mode="server"`, just the current page's rows, not the full dataset. |
+| `columns`     | `input.required<ColumnConfig<T>[]>`          | Required   | Configuration of the columns to render, in display order. |
+| `pageSize`    | `input<number>`                              | `10`       | Number of rows rendered per page. Unidirectional in both modes, same as `data`/`columns`: the grid never writes it back. |
+| `mode`        | `input<'client' \| 'server'>`                | `'client'` | `'client'`: the grid sorts/paginates `data()` itself. `'server'`: the grid renders `data()` as received and reports `currentPage`/`sortState` back so the app can fetch the next page. Fixed for the component's lifetime. |
+| `totalCount`  | `input<number>`                              | `undefined`| Total row count across every page. Required in `mode="server"` (logs a `console.error` if left unset); ignored in `mode="client"`. |
+| `currentPage` | `model<number>`                              | `1`        | Current page, 1-based. Two-way bindable in both modes; only meaningful to bind from outside in `mode="server"`. |
+| `sortState`   | `model<DataGridSortState<T>>`                | `null`     | Current sort. Two-way bindable in both modes; only meaningful to bind from outside in `mode="server"`, see "Server mode" below. |
+| `rowClick`    | `output<T>`                                  | N/A        | Emitted when the user clicks or keyboard-activates (Enter/Space) a row, except when that click or key originates from an interactive element inside one of its cells, see "Display columns" below. |
 
 ### `ColumnConfig<T>`
 
@@ -61,6 +65,14 @@ const columns: ColumnConfig<User>[] = [{ key: 'name', label: 'Name', sortable: t
 | `cellClass`    | `(row: T) => string`                     | None      | CSS class(es) applied to this column's cell for a given row. |
 
 A `DisplayColumnConfig` is never sortable, and `cellTemplate` is always required, both enforced at the type level, not just documented.
+
+### `DataGridSortState<T>`
+
+```typescript
+type DataGridSortState<T> = { key: string; direction: 'asc' | 'desc' } | null;
+```
+
+`key` is a column's own string identity (`'key' in column ? String(column.key) : column.id`), not `keyof T`: a `DisplayColumnConfig` has no `keyof T` to point at, and this type has to describe both. See "Server mode" below for where this is actually read or written from outside the component.
 
 ### `DataGridMessages`
 
@@ -119,6 +131,55 @@ columns: ColumnConfig<User>[] = [
 No `$event.stopPropagation()` needed inside `edit()`/`remove()`'s click handlers: a click that lands on (or inside) a real interactive element, `button`, `a[href]`, `input`, `select`, `textarea`, `label`, or `[role="button"]`, never triggers `rowClick`, only that element's own handler does. `labelHidden` keeps "Actions" available to a screen reader as the column header's accessible name without showing it visually, since the buttons themselves already make the column's purpose clear on screen.
 
 Keyboard works the same way: Enter/Space only trigger `rowClick` when the row itself has focus, not when they originate from a focused control inside one of its cells, that control's own keyboard handling (native or otherwise) runs instead.
+
+### Server mode
+
+By default (`mode="client"`, or `mode` left unset), `DataGrid` sorts and paginates `data()` itself, exactly as described above: pass it the full dataset once and it handles the rest.
+
+In `mode="server"`, `DataGrid` never sorts or slices `data()`: it renders whatever rows it's given, as given. `currentPage` and `sortState` become two-way bindings (`model()`), so the app finds out when the user changes page or clicks a sortable header, does the real fetch, and passes the new page back in through `data`, along with the real `totalCount`:
+
+```typescript
+@Component({ /* ... */ })
+export class UsersPage {
+  currentPage = signal(1);
+  sortState = signal<DataGridSortState<User>>(null);
+  totalCount = signal(0);
+  users = signal<User[]>([]);
+
+  columns: ColumnConfig<User>[] = [
+    { key: 'name', label: 'Name', sortable: true },
+    { key: 'email', label: 'Email', sortable: true },
+  ];
+
+  constructor() {
+    // Refetches whenever the page or sort the grid reports back changes.
+    effect(() => {
+      this.fetchUsers(this.currentPage(), this.sortState(), this.pageSize).subscribe((result) => {
+        this.users.set(result.rows);
+        this.totalCount.set(result.totalCount);
+      });
+    });
+  }
+}
+```
+
+```html
+<lib-data-grid
+  mode="server"
+  [data]="users()"
+  [columns]="columns"
+  [totalCount]="totalCount()"
+  [(currentPage)]="currentPage"
+  [(sortState)]="sortState"
+/>
+```
+
+A few things worth calling out:
+
+- `pageSize` still isn't two-way: the app decides it and passes it in, same as `mode="client"`. If the app lets the user change it, that's just a new value flowing into the same unidirectional `pageSize` input, on both sides of the fetch.
+- `totalCount` is required in practice: without it, `totalPages()` falls back to `1` and pagination looks broken. `DataGrid` logs a `console.error` (not a thrown error, so one missed input doesn't take down the whole render) when `mode="server"` and `totalCount` is left unset.
+- `currentPage`/`sortState` are still plain `model()`s in `mode="client"`, they just aren't meaningful to bind from outside there: the grid keeps deciding sorting/pagination itself, same behavior as before this existed.
+- `mode` is fixed for the component's lifetime. Switching it at runtime isn't a supported case.
 
 ### Theming
 

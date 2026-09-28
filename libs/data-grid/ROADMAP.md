@@ -14,8 +14,9 @@
 
 - Virtual scroll, Excel export, column drag & drop → Pro (private repo)
 - Multi-select with checkboxes → Pro (private repo)
-- Server-side pagination, multi-column sorting, per-column filters → v2,
-  free/Pro not decided yet
+- Multi-column sorting, per-column filters → not scheduled yet,
+  free/Pro not decided
+- Server-side pagination → done, see Phase 2 below
 
 ### Known issues / tech debt
 
@@ -95,3 +96,55 @@
       `:host` default. No compatibility aliases kept for the old names
       (breaking change, major version bump). Full rename table in
       `CHANGELOG.md`.
+
+## Phase 2: server-side pagination/sort (done)
+
+### In scope
+
+- `mode: input<'client' | 'server'>` (default `'client'`): `'server'`
+  stops the grid from sorting/paginating `data()` itself.
+- `totalCount: input<number>`, required in practice for `mode="server"`.
+- `currentPage`/`sortState` as `model()`s (two-way bindable), in both
+  modes; only meaningful to bind from outside in `mode="server"`.
+- `DataGridSortState<T>`, exported: `{ key: string; direction: 'asc' |
+  'desc' } | null`.
+
+### Out of scope (unchanged from Phase 1)
+
+- Multi-column sorting, per-column filters, numbered/clickable page
+  buttons (still just Previous/Next + "Page X of Y").
+
+### Tasks
+
+- [x] `mode`/`totalCount` inputs, `currentPage`/`sortState` as `model()`,
+      `DataGridSortState<T>` exported from the public barrel
+      → `data-grid.ts`, `models/sort-state.ts`, `src/index.ts`
+- [x] `mode="server"`: `paginatedData()` renders `data()` unsorted/
+      unsliced; `totalPages()` derives from `totalCount()` instead of
+      `sortedData().length`; the existing auto-reset `effect()` (page
+      falls back to 1 when it exceeds `totalPages()`) covers both modes
+      with no mode-specific branching, since `totalPages()` already
+      picks the right source
+      → `data-grid.ts`
+- [x] `console.error` (not thrown) when `mode="server"` and
+      `totalCount` is left unset
+      → `data-grid.ts`
+- [x] Unit tests: server mode rendering/sorting, auto-reset against
+      `totalCount()`, missing-`totalCount` validation, and
+      bidirectional `currentPage`/`sortState` binding via a host
+      component with `[(currentPage)]`/`[(sortState)]`, in both modes
+      → `data-grid.spec.ts`
+- [x] README "Server mode" section with a full usage example; JSDoc on
+      every new/changed public member
+      → `libs/data-grid/README.md`, `data-grid.ts`
+- [x] Verified production build (`nx build data-grid
+      --configuration=production`) and a real-browser Playwright check
+      confirming `mode="client"` is pixel-for-pixel unchanged and
+      `mode="server"` never reorders `data()` on a header click, only
+      `sortState`
+      → see `CHANGELOG.md` `[Unreleased]`
+- [ ] `apps/portfolio-showcase` demo of `mode="server"` (the existing
+      `/data-grid` demo and `market-table` both stay in `mode="client"`
+      for this phase, unchanged on purpose; a real server-mode demo,
+      e.g. paginating `market-table`'s crypto list server-side, is a
+      separate task, not required for this API to ship)
