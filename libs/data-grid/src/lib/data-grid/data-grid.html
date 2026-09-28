@@ -2,6 +2,19 @@
   <table translate="no" class="dg-table">
     <thead>
       <tr>
+        @if (showSelectionColumn()) {
+          <th scope="col" class="dg-th dg-th--select">
+            <input
+              type="checkbox"
+              class="dg-select-checkbox"
+              [checked]="pageSelectionState() === 'all'"
+              [indeterminate]="pageSelectionState() === 'some'"
+              [attr.aria-checked]="pageSelectionState() === 'some' ? 'mixed' : null"
+              [attr.aria-label]="messages.selectAll()"
+              (change)="toggleSelectAll()"
+            />
+          </th>
+        }
         @for (column of columns(); track columnId(column)) {
           <th class="dg-th" [class.dg-th--sortable]="column.sortable" scope="col" [attr.aria-sort]="column.sortable ? ariaSortFor(column) : null">
             @if (isDataColumn(column) && column.sortable) {
@@ -32,6 +45,17 @@
           (click)="onRowClickEvent($event, row)"
           (keydown)="onRowKeydown($event, row)"
         >
+          @if (showSelectionColumn()) {
+            <td class="dg-td-select">
+              <input
+                type="checkbox"
+                class="dg-select-checkbox"
+                [checked]="isRowSelected(row)"
+                [attr.aria-label]="messages.selectRow()"
+                (change)="toggleRow(row)"
+              />
+            </td>
+          }
           @for (column of columns(); track columnId(column)) {
             <td [class]="column.cellClass ? column.cellClass(row) : null">
               @if (isDataColumn(column)) {

@@ -5,6 +5,20 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
 
 ## [Unreleased]
 
+### Added
+- `filterFn` input: a row predicate applied before sorting/pagination,
+  in `mode="client"` only. No effect in `mode="server"`, filtering
+  there is the app's own job. See the README's "Client-side filtering"
+  section.
+- `selectable`, `rowKey`, and `selection` inputs/model: a built-in
+  checkbox selection column (header "select all" plus one checkbox
+  per row), with `selection` as a two-way bindable `Set` of row keys
+  so an app can act on a bulk selection. Requires `rowKey` to render
+  (logs a `console.error` otherwise). See the README's "Row
+  selection" section.
+- `selectAll()` and `selectRow()` added to `DataGridMessages`: labels
+  for the selection column's checkboxes.
+
 ## [4.1.0] - 2026-09-28
 
 ### Added

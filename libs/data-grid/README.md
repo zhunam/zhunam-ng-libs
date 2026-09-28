@@ -33,10 +33,14 @@ const columns: ColumnConfig<User>[] = [{ key: 'name', label: 'Name', sortable: t
 | `data`        | `input<T[]>`                                 | `[]`       | Data to render in the table. In `mode="server"`, just the current page's rows, not the full dataset. |
 | `columns`     | `input.required<ColumnConfig<T>[]>`          | Required   | Configuration of the columns to render, in display order. |
 | `pageSize`    | `input<number>`                              | `10`       | Number of rows rendered per page. Unidirectional in both modes, same as `data`/`columns`: the grid never writes it back. |
+| `filterFn`    | `input<((row: T) => boolean) \| undefined>`  | `undefined`| Row predicate applied before sorting/pagination, in `mode="client"` only. No effect in `mode="server"`. See "Client-side filtering" below. |
 | `mode`        | `input<'client' \| 'server'>`                | `'client'` | `'client'`: the grid sorts/paginates `data()` itself. `'server'`: the grid renders `data()` as received and reports `currentPage`/`sortState` back so the app can fetch the next page. Fixed for the component's lifetime. |
 | `totalCount`  | `input<number>`                              | `undefined`| Total row count across every page. Required in `mode="server"` (logs a `console.error` if left unset); ignored in `mode="client"`. |
 | `currentPage` | `model<number>`                              | `1`        | Current page, 1-based. Two-way bindable in both modes; only meaningful to bind from outside in `mode="server"`. |
 | `sortState`   | `model<DataGridSortState<T>>`                | `null`     | Current sort. Two-way bindable in both modes; only meaningful to bind from outside in `mode="server"`, see "Server mode" below. |
+| `selectable`  | `input<boolean>`                             | `false`    | Renders the grid's own checkbox column (header "select all" + one per row). Requires `rowKey`, see "Row selection" below. |
+| `rowKey`      | `input<((row: T) => string \| number) \| undefined>` | `undefined` | Extracts a stable identifier from a row, used as the key in `selection`. Required in practice when `selectable` is `true`. |
+| `selection`   | `model<Set<string \| number>>`               | `new Set()`| Keys of every selected row, across every page. Two-way bindable; the app reads it to act on the selection, the grid never acts on it itself. |
 | `rowClick`    | `output<T>`                                  | N/A        | Emitted when the user clicks or keyboard-activates (Enter/Space) a row, except when that click or key originates from an interactive element inside one of its cells, see "Display columns" below. |
 
 ### `ColumnConfig<T>`
@@ -81,6 +85,8 @@ type DataGridSortState<T> = { key: string; direction: 'asc' | 'desc' } | null;
 | `previous()` | `() => string` | Label of the "previous page" button. |
 | `next()` | `() => string` | Label of the "next page" button. |
 | `pageStatus(current, total)` | `(current: number, total: number) => string` | Status text between the pagination buttons. |
+| `selectAll()` | `() => string` | Accessible label of the header "select all rows on this page" checkbox. |
+| `selectRow()` | `() => string` | Accessible label of an individual row's selection checkbox. |
 
 | Export | Type | Description |
 | ------ | ---- | ------------ |
@@ -132,6 +138,74 @@ No `$event.stopPropagation()` needed inside `edit()`/`remove()`'s click handlers
 
 Keyboard works the same way: Enter/Space only trigger `rowClick` when the row itself has focus, not when they originate from a focused control inside one of its cells, that control's own keyboard handling (native or otherwise) runs instead.
 
+### Client-side filtering
+
+`filterFn` narrows `data()` down to the rows it returns `true` for, before sorting and pagination run: `totalPages` and the rendered page both reflect only the matching rows. There's no built-in search input, this only takes a predicate: the app owns whatever UI drives it (a text box, a set of checkboxes, anything else).
+
+```typescript
+searchTerm = signal('');
+
+filterFn = computed(() => {
+  const term = this.searchTerm().trim().toLowerCase();
+  return term ? (row: User) => row.name.toLowerCase().includes(term) : undefined;
+});
+```
+
+```html
+<input [value]="searchTerm()" (input)="searchTerm.set($event.target.value)" />
+<lib-data-grid [data]="users" [columns]="columns" [filterFn]="filterFn()" />
+```
+
+A few things worth calling out:
+
+- `filterFn` isn't debounced internally. Every new function reference re-runs the filter over the whole dataset, so deriving it from fast-changing input (like every keystroke) without debouncing that signal first in the app recomputes on every keystroke.
+- `filterFn` only applies in `mode="client"`. In `mode="server"` it has no effect at all: `data()` renders exactly as received, since filtering there is the app's job, the same way sorting and pagination already are in that mode.
+- Undefined (the default) renders every row, same as not passing `filterFn` at all.
+
+### Row selection
+
+`selectable` renders the grid's own checkbox column: a "select all" checkbox in the header, one checkbox per row in the body. It needs `rowKey`, a function that extracts a stable identifier from a row, to know which rows are selected: `selection` stores identifiers, not row objects, so it stays correct across a sort, a filter, or a server-mode page change.
+
+```typescript
+interface User { id: string; name: string; email: string; }
+
+users = signal<User[]>([...]);
+selection = signal<Set<string | number>>(new Set());
+rowKey = (user: User) => user.id;
+
+columns: ColumnConfig<User>[] = [
+  { key: 'name', label: 'Name' },
+  { key: 'email', label: 'Email' },
+];
+
+deleteSelected(): void {
+  const ids = this.selection();
+  this.users.update((rows) => rows.filter((user) => !ids.has(user.id)));
+  this.selection.set(new Set());
+}
+```
+
+```html
+<lib-data-grid
+  [data]="users()"
+  [columns]="columns"
+  [selectable]="true"
+  [rowKey]="rowKey"
+  [(selection)]="selection"
+/>
+<button type="button" [disabled]="selection().size === 0" (click)="deleteSelected()">
+  Delete selected
+</button>
+```
+
+A few things worth calling out:
+
+- `DataGrid` only exposes what's selected, it never acts on the selection itself: a bulk action (delete, export, tag, anything else) is the app's own button, reading `selection()` directly, the same as the example above.
+- "Select all" only ever affects the current page: it adds or removes exactly the keys of the rows currently rendered (already filtered, sorted, and paginated in `mode="client"`), never a key belonging to a row on another page. A key from another page that was already selected stays selected.
+- `selection` isn't purged automatically when a row leaves `data()` (a filter excludes it, a server page moves past it, anything else): a stale key just doesn't match any row currently on screen, so it plays no part in the header checkbox's state until that row is visible again. Clear it explicitly (like `deleteSelected()` above) whenever that's not the wanted behavior.
+- `rowKey` is required in practice: without it, `selectable` logs a `console.error` and renders no selection column at all, the same as `mode="server"` without `totalCount`.
+- The row checkbox never triggers `rowClick`, same as any other interactive element inside a cell.
+
 ### Server mode
 
 By default (`mode="client"`, or `mode` left unset), `DataGrid` sorts and paginates `data()` itself, exactly as described above: pass it the full dataset once and it handles the rest.
@@ -180,6 +254,7 @@ A few things worth calling out:
 - `totalCount` is required in practice: without it, `totalPages()` falls back to `1` and pagination looks broken. `DataGrid` logs a `console.error` (not a thrown error, so one missed input doesn't take down the whole render) when `mode="server"` and `totalCount` is left unset.
 - `currentPage`/`sortState` are still plain `model()`s in `mode="client"`, they just aren't meaningful to bind from outside there: the grid keeps deciding sorting/pagination itself, same behavior as before this existed.
 - `mode` is fixed for the component's lifetime. Switching it at runtime isn't a supported case.
+- `filterFn` has no effect here: filtering the dataset before it reaches the grid (or before the request that produces it) is the app's job in `mode="server"`, the same as sorting and pagination already are.
 
 ### Theming
 

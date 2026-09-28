@@ -34,6 +34,9 @@ function createFixture(
     pageSize?: number;
     mode?: 'client' | 'server';
     totalCount?: number;
+    filterFn?: (row: TestRow) => boolean;
+    selectable?: boolean;
+    rowKey?: (row: TestRow) => string | number;
   } = {},
 ): ComponentFixture<DataGrid<TestRow>> {
   const fixture = TestBed.createComponent(DataGrid<TestRow>);
@@ -47,6 +50,15 @@ function createFixture(
   }
   if (options.totalCount !== undefined) {
     fixture.componentRef.setInput('totalCount', options.totalCount);
+  }
+  if (options.filterFn !== undefined) {
+    fixture.componentRef.setInput('filterFn', options.filterFn);
+  }
+  if (options.selectable !== undefined) {
+    fixture.componentRef.setInput('selectable', options.selectable);
+  }
+  if (options.rowKey !== undefined) {
+    fixture.componentRef.setInput('rowKey', options.rowKey);
   }
   fixture.detectChanges();
   return fixture;
@@ -72,6 +84,14 @@ function getPageInfo(fixture: ComponentFixture<DataGrid<TestRow>>): string {
 
 function getPageButtons(fixture: ComponentFixture<DataGrid<TestRow>>): HTMLButtonElement[] {
   return Array.from(root(fixture).querySelectorAll<HTMLButtonElement>('.dg-page-btn'));
+}
+
+function getHeaderCheckbox(fixture: ComponentFixture<DataGrid<TestRow>>): HTMLInputElement {
+  return root(fixture).querySelector('thead input[type="checkbox"]') as HTMLInputElement;
+}
+
+function getRowCheckboxes(fixture: ComponentFixture<DataGrid<TestRow>>): HTMLInputElement[] {
+  return Array.from(root(fixture).querySelectorAll<HTMLInputElement>('tbody input[type="checkbox"]'));
 }
 
 @Component({
@@ -292,6 +312,226 @@ describe('DataGrid', () => {
 
       // Full ascending order is Alice, Bob, Charlie; page 2 (pageSize 2) is just Charlie.
       expect(getNameColumnValues(fixture)).toEqual(['Charlie']);
+    });
+  });
+
+  describe('client-side filtering (filterFn)', () => {
+    const fiveRows: TestRow[] = [
+      { name: 'Row1', age: 1 },
+      { name: 'Row2', age: 2 },
+      { name: 'Row3', age: 3 },
+      { name: 'Row4', age: 4 },
+      { name: 'Row5', age: 5 },
+    ];
+
+    it('renders only the rows matching filterFn, in their original relative order', () => {
+      const fixture = createFixture(unsortedRows, { filterFn: (row) => row.age >= 30 });
+
+      // unsortedRows is Charlie(30), Alice(25), Bob(40); Alice is excluded.
+      expect(getNameColumnValues(fixture)).toEqual(['Charlie', 'Bob']);
+    });
+
+    it('sorts the filtered result, not the full dataset', () => {
+      const fixture = createFixture(unsortedRows, { filterFn: (row) => row.age >= 30 });
+      clickHeader(fixture, 0); // sort by name ascending
+
+      // If sorting ran over the full dataset first, Alice (excluded by the
+      // filter) would still show up. It must not.
+      expect(getNameColumnValues(fixture)).toEqual(['Bob', 'Charlie']);
+    });
+
+    it('paginates over the filtered result: totalPages() and paginatedData() reflect only the matching rows', () => {
+      const fixture = createFixture(fiveRows, {
+        pageSize: 2,
+        filterFn: (row) => row.age <= 3, // Row1, Row2, Row3 match
+      });
+
+      expect(getPageInfo(fixture)).toBe('Page 1 of 2'); // ceil(3 / 2), not ceil(5 / 2)
+      expect(getRowCount(fixture)).toBe(2);
+    });
+
+    it('resets currentPage to 1 when a stricter filterFn leaves the current page empty', () => {
+      const fixture = createFixture(fiveRows, { pageSize: 2 }); // 3 pages, no filter yet
+      clickNext(fixture);
+      clickNext(fixture); // page 3 of 3
+      expect(getPageInfo(fixture)).toBe('Page 3 of 3');
+
+      // Only 2 rows match now: 1 page. Page 3 no longer exists.
+      fixture.componentRef.setInput('filterFn', (row: TestRow) => row.age <= 2);
+      fixture.detectChanges();
+
+      expect(getPageInfo(fixture)).toBe('Page 1 of 1');
+      expect(getNameColumnValues(fixture)).toEqual(['Row1', 'Row2']);
+    });
+
+    it('has no effect in mode="server": paginatedData() renders data() as received, unfiltered', () => {
+      const fixture = createFixture(unsortedRows, {
+        mode: 'server',
+        totalCount: unsortedRows.length,
+        filterFn: (row) => row.age >= 30, // would exclude Alice in client mode
+      });
+
+      expect(getNameColumnValues(fixture)).toEqual(['Charlie', 'Alice', 'Bob']);
+    });
+
+    it('shows the full dataset again once filterFn goes from defined back to undefined', () => {
+      const fixture = createFixture(unsortedRows, { filterFn: (row) => row.age >= 30 });
+      expect(getNameColumnValues(fixture)).toEqual(['Charlie', 'Bob']);
+
+      fixture.componentRef.setInput('filterFn', undefined);
+      fixture.detectChanges();
+
+      expect(getNameColumnValues(fixture)).toEqual(['Charlie', 'Alice', 'Bob']);
+    });
+  });
+
+  describe('checkbox row selection (selectable)', () => {
+    const rowKey = (row: TestRow) => row.name;
+
+    const fiveRows: TestRow[] = [
+      { name: 'Row1', age: 1 },
+      { name: 'Row2', age: 2 },
+      { name: 'Row3', age: 3 },
+      { name: 'Row4', age: 4 },
+      { name: 'Row5', age: 5 },
+    ];
+
+    it('renders no checkbox at all when selectable is false (the default)', () => {
+      const fixture = createFixture(unsortedRows);
+      expect(root(fixture).querySelectorAll('input[type="checkbox"]').length).toBe(0);
+    });
+
+    describe('selectable without rowKey', () => {
+      let errorSpy: ReturnType<typeof vi.spyOn>;
+
+      beforeEach(() => {
+        errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      });
+
+      afterEach(() => {
+        errorSpy.mockRestore();
+      });
+
+      it('logs a console.error and renders no selection column, treated as selectable=false', () => {
+        const fixture = createFixture(unsortedRows, { selectable: true });
+
+        expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('rowKey'));
+        expect(root(fixture).querySelectorAll('input[type="checkbox"]').length).toBe(0);
+      });
+
+      it('does not log when selectable is false, even without rowKey', () => {
+        createFixture(unsortedRows);
+        expect(errorSpy).not.toHaveBeenCalled();
+      });
+    });
+
+    it('renders a header checkbox and one checkbox per row when selectable and rowKey are both set', () => {
+      const fixture = createFixture(unsortedRows, { selectable: true, rowKey });
+
+      expect(getHeaderCheckbox(fixture)).toBeTruthy();
+      expect(getRowCheckboxes(fixture).length).toBe(unsortedRows.length);
+    });
+
+    it('selecting one row adds only its key to selection(), leaving every other key untouched', () => {
+      const fixture = createFixture(unsortedRows, { selectable: true, rowKey });
+
+      getRowCheckboxes(fixture)[0].click(); // Charlie
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.selection()).toEqual(new Set(['Charlie']));
+    });
+
+    it('deselecting a row removes only its key, leaving every other selected key untouched', () => {
+      const fixture = createFixture(unsortedRows, { selectable: true, rowKey });
+      fixture.componentInstance.selection.set(new Set(['Charlie', 'Bob']));
+      fixture.detectChanges();
+
+      getRowCheckboxes(fixture)[0].click(); // Charlie, currently checked
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.selection()).toEqual(new Set(['Bob']));
+    });
+
+    it('select all adds every key on the current page, without touching a pre-existing key from another page', () => {
+      const fixture = createFixture(fiveRows, { selectable: true, rowKey, pageSize: 2 });
+      // Pretend Row5 (page 3) was already selected from a previous page.
+      fixture.componentInstance.selection.set(new Set(['Row5']));
+      fixture.detectChanges();
+
+      getHeaderCheckbox(fixture).click(); // page 1: Row1, Row2
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.selection()).toEqual(new Set(['Row5', 'Row1', 'Row2']));
+    });
+
+    it('deselect all removes only the current page keys, without touching a key from another page', () => {
+      const fixture = createFixture(fiveRows, { selectable: true, rowKey, pageSize: 2 });
+      fixture.componentInstance.selection.set(new Set(['Row1', 'Row2', 'Row5']));
+      fixture.detectChanges();
+      expect(getHeaderCheckbox(fixture).checked).toBe(true); // page 1 fully selected
+
+      getHeaderCheckbox(fixture).click();
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.selection()).toEqual(new Set(['Row5']));
+    });
+
+    it('shows indeterminate (DOM property) and aria-checked="mixed" when only some rows on the page are selected', () => {
+      const fixture = createFixture(unsortedRows, { selectable: true, rowKey });
+      fixture.componentInstance.selection.set(new Set(['Charlie']));
+      fixture.detectChanges();
+
+      const headerCheckbox = getHeaderCheckbox(fixture);
+      expect(headerCheckbox.checked).toBe(false);
+      expect(headerCheckbox.indeterminate).toBe(true);
+      expect(headerCheckbox.getAttribute('aria-checked')).toBe('mixed');
+    });
+
+    it('the header checkbox is plainly checked/unchecked, no aria-checked attribute, when the page is fully selected or empty of selection', () => {
+      const fixture = createFixture(unsortedRows, { selectable: true, rowKey });
+      expect(getHeaderCheckbox(fixture).hasAttribute('aria-checked')).toBe(false);
+
+      fixture.componentInstance.selection.set(new Set(unsortedRows.map(rowKey)));
+      fixture.detectChanges();
+
+      const headerCheckbox = getHeaderCheckbox(fixture);
+      expect(headerCheckbox.checked).toBe(true);
+      expect(headerCheckbox.indeterminate).toBe(false);
+      expect(headerCheckbox.hasAttribute('aria-checked')).toBe(false);
+    });
+
+    it('reflects a selection() set directly from outside in both the header and row checkboxes', () => {
+      const fixture = createFixture(unsortedRows, { selectable: true, rowKey });
+
+      fixture.componentInstance.selection.set(new Set(['Charlie', 'Alice', 'Bob']));
+      fixture.detectChanges();
+
+      expect(getHeaderCheckbox(fixture).checked).toBe(true);
+      expect(getRowCheckboxes(fixture).every((checkbox) => checkbox.checked)).toBe(true);
+    });
+
+    it('clicking a row checkbox does not trigger rowClick', () => {
+      const fixture = createFixture(unsortedRows, { selectable: true, rowKey });
+      const clicked: TestRow[] = [];
+      fixture.componentInstance.rowClick.subscribe((row) => clicked.push(row));
+
+      getRowCheckboxes(fixture)[0].click();
+      fixture.detectChanges();
+
+      expect(clicked).toEqual([]);
+    });
+
+    it('select all only takes the filtered rows on the current page, not the excluded ones', () => {
+      const fixture = createFixture(unsortedRows, {
+        selectable: true,
+        rowKey,
+        filterFn: (row) => row.age >= 30, // Charlie and Bob match, Alice is excluded
+      });
+
+      getHeaderCheckbox(fixture).click();
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.selection()).toEqual(new Set(['Charlie', 'Bob']));
     });
   });
 

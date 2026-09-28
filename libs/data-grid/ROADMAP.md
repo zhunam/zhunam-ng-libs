@@ -148,3 +148,83 @@
       for this phase, unchanged on purpose; a real server-mode demo,
       e.g. paginating `market-table`'s crypto list server-side, is a
       separate task, not required for this API to ship)
+
+## Phase 3: client-side filtering + row selection (done)
+
+Both shipped together in the same release, on the same branch, as two
+separate tasks.
+
+### In scope
+
+- `filterFn: input<((row: T) => boolean) | undefined>`: row predicate
+  applied before sorting/pagination, `mode="client"` only.
+- `selectable`/`rowKey`/`selection`: a built-in checkbox selection
+  column (header "select all" + one per row), `selection` as a
+  two-way bindable `Set` of row keys.
+
+### Out of scope
+
+- Any built-in search input UI: the app owns that, `filterFn` only
+  takes a predicate.
+- `filterFn` debouncing: the app debounces whatever signal it derives
+  the predicate from, the same way it would before a real request in
+  `mode="server"`.
+- `filterFn` in `mode="server"`: filtering there is the app's own job,
+  the grid renders `data()` unfiltered in that mode.
+- Any bulk action over the selection (delete, export, anything else):
+  the app owns that, reading `selection()` directly. The grid only
+  exposes what's selected.
+- Auto-purging `selection()` when a row leaves `data()`: a stale key
+  just doesn't match any currently loaded row, the app clears it
+  explicitly if that's not the wanted behavior.
+
+### Tasks
+
+- [x] `filterFn` input; new private `filteredData()` computed between
+      `data()` and `sortedData()`; `paginatedData()` in `mode="server"`
+      keeps reading `data()` directly, never `filteredData()`/
+      `sortedData()`, so the filter stays inert there
+      → `data-grid.ts`
+- [x] Unit tests: rows matching `filterFn`, sorting applied over the
+      filtered result (not the full dataset), pagination over the
+      filtered result, auto-reset when a stricter filter empties the
+      current page, inert in `mode="server"`, dataset restored when
+      `filterFn` goes back to `undefined`
+      → `data-grid.spec.ts`
+- [x] README "Client-side filtering" section with a search-input
+      example; JSDoc on `filterFn`
+      → `libs/data-grid/README.md`, `data-grid.ts`
+- [x] `selectable`/`rowKey`/`selection` inputs/model; a checkbox column
+      the grid builds itself (not a `DisplayColumnConfig`, the header
+      has no template hook to place one in); `pageSelectionState()`
+      computed (`'all' | 'none' | 'some'`) drives the header checkbox's
+      `checked`/`indeterminate` (a plain Angular property binding, no
+      `ElementRef` needed) and `aria-checked="mixed"`; "select
+      all"/"deselect all" only ever touch the current page's keys
+      → `data-grid.ts`, `data-grid.html`, `data-grid.scss`
+- [x] `selectAll()`/`selectRow()` added to `DataGridMessages`
+      → `models/data-grid-messages.ts`
+- [x] `console.error` (not thrown) when `selectable` is `true` without
+      `rowKey`, same pattern as the `mode="server"`/`totalCount` check
+      → `data-grid.ts`
+- [x] Unit tests: no checkbox column when `selectable` is `false`
+      (identical to before), missing-`rowKey` validation, selecting/
+      deselecting one row without affecting others, select-all/
+      deselect-all touching only the current page's keys (a
+      pre-existing key from another page survives both), indeterminate
+      (DOM property) and `aria-checked="mixed"` on a partial page
+      selection, `selection()` set from outside reflected in both
+      checkboxes, a row checkbox never triggering `rowClick`, select-all
+      combined with `filterFn`
+      → `data-grid.spec.ts`
+- [x] README "Row selection" section with a full usage example
+      (including reading `selection()` for an external bulk action);
+      JSDoc on `selectable`/`rowKey`/`selection`
+      → `libs/data-grid/README.md`, `data-grid.ts`
+- [x] Verified production build (`nx build data-grid
+      --configuration=production`), `nx build portfolio-showcase
+      --configuration=production` (no existing consumer affected,
+      `selectable` defaults to `false`), lint clean, and a real-browser
+      Playwright check of a real click selecting a row, "select all",
+      and the header checkbox's indeterminate state
+      → see `CHANGELOG.md` `[Unreleased]`
