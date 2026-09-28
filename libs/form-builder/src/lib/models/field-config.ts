@@ -143,6 +143,13 @@ export interface FieldConfig<T> {
    * @default false
    */
   disabled?: boolean;
+
+  /**
+   * Whether a `type: 'password'` field renders a show/hide toggle
+   * button next to its control. Has no effect on any other field type.
+   * @default true
+   */
+  showPasswordToggle?: boolean;
 }
 
 /**

@@ -15,6 +15,10 @@ const COIN_LIST_SIZE = 100;
 
 export const AMOUNT_DEBOUNCE_MS = 500;
 
+const INITIAL_AMOUNT = 1;
+const INITIAL_FROM_COIN_ID = 'bitcoin';
+const INITIAL_TO_CURRENCY = 'usd';
+
 interface ConverterFormValue {
   amount: number | null;
   fromCoinId: string;
@@ -40,21 +44,17 @@ export class CurrencyConverter {
   readonly listsError = this.listsErrorSignal.asReadonly();
 
   // Live current selection: updated on every valueChange, read by
-  // canSwap()/fromCoin(). Distinct from the *Default signals below,
-  // which only feed form-builder's `defaultValue` and are deliberately
-  // NOT touched on every keystroke (see fieldsConfig() below for why).
-  private readonly currentFromCoinIdSignal = signal('bitcoin');
-  private readonly currentToCurrencySignal = signal('usd');
-  private latestAmount: number | null = 1;
+  // canSwap()/fromCoin().
+  private readonly currentFromCoinIdSignal = signal(INITIAL_FROM_COIN_ID);
+  private readonly currentToCurrencySignal = signal(INITIAL_TO_CURRENCY);
+  private latestAmount: number | null = INITIAL_AMOUNT;
 
-  // What the NEXT form-builder rebuild should default to. Only changed
-  // by onSwapClick() (or the initial value here) — never by ordinary
-  // amount typing, or fieldsConfig() would produce a new array on every
-  // keystroke, forcing form-builder to rebuild its FormGroup (and the
-  // <input> to lose focus) mid-type.
-  private readonly amountDefaultSignal = signal(1);
-  private readonly fromCoinIdDefaultSignal = signal('bitcoin');
-  private readonly toCurrencyDefaultSignal = signal('usd');
+  // Fed into form-builder's `value` input to apply a swap without
+  // rebuilding `fields()`. Stays `undefined` until the first swap; each
+  // later swap sets a fresh object, which is what makes form-builder's
+  // value-patch effect fire again (see FormBuilder.value's own JSDoc).
+  private readonly swapValueSignal = signal<ConverterFormValue | undefined>(undefined);
+  readonly swapValue = this.swapValueSignal.asReadonly();
 
   private readonly resultSignal = signal<number | null>(null);
   // The exact form value that produced the current result() — read by
@@ -72,18 +72,17 @@ export class CurrencyConverter {
   private amountDebounceTimer: ReturnType<typeof setTimeout> | undefined;
 
   // Rebuilds (a fresh array reference) only when the coin/currency lists
-  // load or a swap happens — see the *Default signals' own comment.
-  // form-builder's own `formGroup` is itself a computed() over this same
-  // `fields()` input, explicitly designed to rebuild on a new reference
-  // ("fields() can change at runtime, e.g. a wizard swapping steps" —
-  // this is that same mechanism, used here to push swap's new values in,
-  // since form-builder's public contract has no direct setValue API).
+  // load, never on a swap: a swap now goes through the `value` input
+  // instead (see swapValueSignal and onSwapClick()), so form-builder
+  // preserves whatever the user already typed instead of resetting the
+  // whole FormGroup. `defaultValue` here is only the form's initial
+  // state, before the user or a swap ever touches it.
   readonly fieldsConfig = computed<FieldConfig<ConverterFormValue>[]>(() => [
     {
       key: 'amount',
       label: 'Amount',
       type: 'number',
-      defaultValue: this.amountDefaultSignal(),
+      defaultValue: INITIAL_AMOUNT,
       validators: {
         required: true,
         // Number.EPSILON, not 0: Validators.min is inclusive, and 0
@@ -99,7 +98,7 @@ export class CurrencyConverter {
       key: 'fromCoinId',
       label: 'From',
       type: 'select',
-      defaultValue: this.fromCoinIdDefaultSignal(),
+      defaultValue: INITIAL_FROM_COIN_ID,
       options: this.coins().map((coin) => ({
         value: coin.id,
         label: `${coin.name} (${coin.symbol.toUpperCase()})`,
@@ -109,7 +108,7 @@ export class CurrencyConverter {
       key: 'toCurrency',
       label: 'To',
       type: 'select',
-      defaultValue: this.toCurrencyDefaultSignal(),
+      defaultValue: INITIAL_TO_CURRENCY,
       options: this.currencies().map((currency) => ({
         value: currency,
         label: currencyDisplayName(currency, this.coins()),
@@ -209,9 +208,19 @@ export class CurrencyConverter {
     if (!coin || !matchingCoin) {
       return;
     }
-    this.amountDefaultSignal.set(this.latestAmount ?? 1);
-    this.fromCoinIdDefaultSignal.set(matchingCoin.id);
-    this.toCurrencyDefaultSignal.set(coin.symbol.toLowerCase());
+    const swapped: ConverterFormValue = {
+      amount: this.latestAmount ?? INITIAL_AMOUNT,
+      fromCoinId: matchingCoin.id,
+      toCurrency: coin.symbol.toLowerCase(),
+    };
+    // `swapValueSignal` only keeps the displayed form controls (amount,
+    // both selects) in sync via `value`/patchValue, which deliberately
+    // never emits `valueChange` (see FormBuilder.value's own JSDoc).
+    // The conversion itself, and the current-selection signals it reads,
+    // still need driving directly, the same way a real user's own
+    // selection would through onValueChange().
+    this.swapValueSignal.set(swapped);
+    this.onValueChange(swapped);
   }
 
   onRetryListsClick(): void {

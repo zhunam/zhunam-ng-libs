@@ -1,4 +1,4 @@
-<form class="fb-form" [formGroup]="formGroup()" (ngSubmit)="onSubmit()" novalidate>
+<form class="fb-form" [formGroup]="formGroup()" (ngSubmit)="performSubmit()" novalidate>
   <div class="fb-fields-grid" [style.--fb-columns]="columns()">
     @for (field of fields(); track field.key) {
       <div class="fb-field" [class.fb-field--span-2]="field.colSpan === 2">
@@ -41,6 +41,40 @@
                 </label>
               }
             </fieldset>
+          }
+          @case ('password') {
+            <div class="fb-password-wrapper">
+              <input
+                class="fb-control"
+                [id]="fieldId(field)"
+                [type]="passwordInputType(field)"
+                [formControl]="controlFor(field)"
+                [placeholder]="field.placeholder ?? ''"
+                [disabled]="!!field.disabled"
+                [attr.aria-invalid]="activeErrorFor(field) ? true : null"
+                [attr.aria-describedby]="activeErrorFor(field) ? errorId(field) : null"
+              />
+              @if (showPasswordToggleFor(field)) {
+                <button
+                  type="button"
+                  class="fb-password-toggle"
+                  [attr.aria-pressed]="isPasswordVisible(field)"
+                  [attr.aria-label]="isPasswordVisible(field) ? messages.hidePassword() : messages.showPassword()"
+                  (click)="togglePasswordVisibility(field)"
+                >
+                  @if (isPasswordVisible(field)) {
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18M10.58 10.58a2 2 0 002.83 2.83M9.88 4.24A9.9 9.9 0 0112 4c5 0 9 4 10 8-.32 1.12-.86 2.19-1.57 3.14M6.6 6.6C3.9 8.14 2.06 10.6 2 12c.66 2.34 2.19 4.34 4.19 5.68M14.12 14.12A3 3 0 019.88 9.88" />
+                    </svg>
+                  } @else {
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
+                      <circle cx="12" cy="12" r="3" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  }
+                </button>
+              }
+            </div>
           }
           @case ('textarea') {
             <textarea
@@ -88,5 +122,7 @@
     }
   </div>
 
-  <button type="submit" class="fb-submit" [disabled]="isSubmitDisabled()">{{ messages.submit() }}</button>
+  @if (!hideSubmit()) {
+    <button type="submit" class="fb-submit" [disabled]="isSubmitDisabled()">{{ submitLabel() ?? messages.submit() }}</button>
+  }
 </form>

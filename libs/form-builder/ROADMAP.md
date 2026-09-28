@@ -77,3 +77,21 @@
       línea con el mismo valor que su `:host`. Sin alias de
       compatibilidad hacia los nombres viejos (breaking change, bump de
       versión major). Tabla completa de renames en `CHANGELOG.md`.
+- [x] Botón de envío configurable (`submitLabel`, `hideSubmit`,
+      `loading`, método público `submit()`) + `--zhunam-submit-width`;
+      toggle de mostrar/ocultar contraseña en campos `password`
+      (`showPasswordToggle` por campo, `messages.showPassword()` /
+      `hidePassword()`); `--zhunam-accent` independiente de
+      `--zhunam-primary` para el accent-color de radio/checkbox; input
+      `value: input<T>` para aplicar un valor externo sin recrear el
+      formulario (`patchValue` con `emitEvent: false`, nunca dispara
+      `valueChange` en modo `'live'`); y `formGroup` migrado de
+      `computed()` a `linkedSignal()` para que un rebuild de `fields()`
+      conserve el valor de cada control cuya key sigue existiendo, en
+      vez de resetearlo a `defaultValue` (breaking change de
+      comportamiento, sin cambio de forma en la API pública existente).
+      `currency-converter` (`apps/portfolio-showcase`) migrado para usar
+      `value` en su swap en vez de reconstruir `fields()` con nuevos
+      `defaultValue`, mismo resultado visible. Todavía necesita bump de
+      versión (major, por el cambio de comportamiento en el rebuild) y
+      republicación antes de que un consumidor externo lo reciba.

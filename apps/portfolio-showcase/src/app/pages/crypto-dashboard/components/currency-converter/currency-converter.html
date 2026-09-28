@@ -8,6 +8,7 @@
       <lib-form-builder
         class="w-full"
         [fields]="fieldsConfig()"
+        [value]="swapValue()"
         mode="live"
         (valueChange)="onValueChange($event)"
       />
