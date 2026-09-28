@@ -37,6 +37,19 @@ export interface DataGridMessages {
    * part of normal table navigation.
    */
   selectRow(): string;
+
+  /**
+   * Default text shown in place of the rows while `loading` is `true`,
+   * when no `loadingTemplate` is provided.
+   */
+  loading(): string;
+
+  /**
+   * Default text shown in place of the rows when there's nothing to
+   * display (`loading` is `false` and there are no rows on the current
+   * page), when no `emptyTemplate` is provided.
+   */
+  empty(): string;
 }
 
 /**
@@ -49,6 +62,8 @@ export const DATA_GRID_MESSAGES_EN: DataGridMessages = {
   pageStatus: (current, total) => `Page ${current} of ${total}`,
   selectAll: () => 'Select all rows on this page',
   selectRow: () => 'Select row',
+  loading: () => 'Loading...',
+  empty: () => 'No data to display',
 };
 
 /**
@@ -62,4 +77,6 @@ export const DATA_GRID_MESSAGES_ES: DataGridMessages = {
   pageStatus: (current, total) => `Página ${current} de ${total}`,
   selectAll: () => 'Seleccionar todas las filas de esta página',
   selectRow: () => 'Seleccionar fila',
+  loading: () => 'Cargando...',
+  empty: () => 'No hay datos para mostrar',
 };

@@ -149,10 +149,10 @@
       e.g. paginating `market-table`'s crypto list server-side, is a
       separate task, not required for this API to ship)
 
-## Phase 3: client-side filtering + row selection (done)
+## Phase 3: client-side filtering + row selection + loading/empty states (done)
 
-Both shipped together in the same release, on the same branch, as two
-separate tasks.
+All three shipped together in the same release, on the same branch, as
+three separate tasks.
 
 ### In scope
 
@@ -161,6 +161,10 @@ separate tasks.
 - `selectable`/`rowKey`/`selection`: a built-in checkbox selection
   column (header "select all" + one per row), `selection` as a
   two-way bindable `Set` of row keys.
+- `loading`/`loadingTemplate`/`emptyTemplate`: a loading state that
+  wins over the empty state regardless of `data()`'s size, and an
+  empty state that triggers automatically off `paginatedData()`'s
+  size, both replacing only `<tbody>`'s content.
 
 ### Out of scope
 
@@ -177,6 +181,10 @@ separate tasks.
 - Auto-purging `selection()` when a row leaves `data()`: a stale key
   just doesn't match any currently loaded row, the app clears it
   explicitly if that's not the wanted behavior.
+- Migrating `market-table` (`apps/portfolio-showcase`) to the grid's
+  own `loading`: it keeps its existing pattern of replacing the whole
+  `<lib-data-grid>` from outside with a spinner component, a separate
+  decision, not part of this task.
 
 ### Tasks
 
@@ -227,4 +235,43 @@ separate tasks.
       `selectable` defaults to `false`), lint clean, and a real-browser
       Playwright check of a real click selecting a row, "select all",
       and the header checkbox's indeterminate state
+      → see `CHANGELOG.md` `[Unreleased]`
+- [x] `loading`/`loadingTemplate`/`emptyTemplate` inputs; `tbodyState()`
+      computed (`'loading' | 'empty' | 'rows'`, `loading` wins
+      unconditionally) and `tbodyColspan()` computed
+      (`columns().length + (showSelectionColumn() ? 1 : 0)`, using
+      `showSelectionColumn()` rather than `selectable()` alone so the
+      colspan stays correct even when `selectable` is `true` without a
+      `rowKey`); both states replace only `<tbody>`'s content via
+      `@switch`, `<thead>` and the pagination stay visible
+      → `data-grid.ts`, `data-grid.html`, `data-grid.scss`
+- [x] `loading()`/`empty()` added to `DataGridMessages`
+      → `models/data-grid-messages.ts`
+- [x] `[disabled]` on the pagination buttons, every sortable header
+      button, and the selection checkboxes now also includes
+      `loading()`, the same template-level pattern already used for
+      the pagination boundaries, no new guard added in any TypeScript
+      method
+      → `data-grid.html`
+- [x] Unit tests: default loading/empty messages, loading winning over
+      the empty state (including with a custom `emptyTemplate` set at
+      the same time), custom `loadingTemplate`/`emptyTemplate`,
+      translated loading/empty text (`DATA_GRID_MESSAGES_ES`, partial
+      override), colspan correct across all four combinations
+      (with/without `selectable`, loading/empty), pagination buttons/
+      sortable headers/header checkbox disabled while `loading`. Not
+      tested: the row checkbox's `[disabled]="loading()"` binding,
+      unreachable in practice since no row (or its checkbox) renders
+      at all while `loading` is `true`
+      → `data-grid.spec.ts`
+- [x] README "Loading and empty states" section with a fetch-driven
+      `loading` example and a custom `emptyTemplate` with a
+      call-to-action; JSDoc on `loading`/`loadingTemplate`/
+      `emptyTemplate`
+      → `libs/data-grid/README.md`, `data-grid.ts`
+- [x] Verified production build (both `data-grid` and
+      `portfolio-showcase`), lint clean, and a real-browser Playwright
+      check toggling `loading` on/off and emptying the dataset,
+      confirming the loading row, the empty row, and the disabled
+      pagination buttons
       → see `CHANGELOG.md` `[Unreleased]`

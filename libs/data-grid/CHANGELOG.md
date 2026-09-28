@@ -5,6 +5,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
 
 ## [Unreleased]
 
+## [4.2.0] - 2026-09-28
+
 ### Added
 - `filterFn` input: a row predicate applied before sorting/pagination,
   in `mode="client"` only. No effect in `mode="server"`, filtering
@@ -18,6 +20,16 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
   selection" section.
 - `selectAll()` and `selectRow()` added to `DataGridMessages`: labels
   for the selection column's checkboxes.
+- `loading` input: shows a loading state in place of the rows,
+  regardless of `data()`'s size. When `loading` is `false` and the
+  current page has zero rows, an empty state shows automatically.
+  `loadingTemplate`/`emptyTemplate` inputs for custom content in
+  either state, falling back to plain text otherwise. Disables the
+  pagination buttons, sortable headers, and selection checkboxes
+  while `loading` is `true`. See the README's "Loading and empty
+  states" section.
+- `loading()` and `empty()` added to `DataGridMessages`: default text
+  for the loading and empty states.
 
 ## [4.1.0] - 2026-09-28
 

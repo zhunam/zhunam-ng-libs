@@ -37,6 +37,7 @@ function createFixture(
     filterFn?: (row: TestRow) => boolean;
     selectable?: boolean;
     rowKey?: (row: TestRow) => string | number;
+    loading?: boolean;
   } = {},
 ): ComponentFixture<DataGrid<TestRow>> {
   const fixture = TestBed.createComponent(DataGrid<TestRow>);
@@ -60,6 +61,9 @@ function createFixture(
   if (options.rowKey !== undefined) {
     fixture.componentRef.setInput('rowKey', options.rowKey);
   }
+  if (options.loading !== undefined) {
+    fixture.componentRef.setInput('loading', options.loading);
+  }
   fixture.detectChanges();
   return fixture;
 }
@@ -69,13 +73,20 @@ function root(fixture: ComponentFixture<DataGrid<TestRow>>): HTMLElement {
 }
 
 function getNameColumnValues(fixture: ComponentFixture<DataGrid<TestRow>>): string[] {
-  return Array.from(root(fixture).querySelectorAll<HTMLElement>('tbody tr td:first-child')).map(
+  // Scoped to `.dg-row` (real data rows), not just any `tbody tr`: the
+  // loading/empty state also renders as a `<tr>` in `<tbody>` (`.dg-state-row`),
+  // which would otherwise be misread as a data row with a "name" cell.
+  return Array.from(root(fixture).querySelectorAll<HTMLElement>('tbody tr.dg-row td:first-child')).map(
     (cell) => cell.textContent?.trim() ?? '',
   );
 }
 
 function getRowCount(fixture: ComponentFixture<DataGrid<TestRow>>): number {
-  return root(fixture).querySelectorAll('tbody tr').length;
+  return root(fixture).querySelectorAll('tbody tr.dg-row').length;
+}
+
+function getStateRow(fixture: ComponentFixture<DataGrid<TestRow>>): HTMLElement | null {
+  return root(fixture).querySelector('.dg-state-row');
 }
 
 function getPageInfo(fixture: ComponentFixture<DataGrid<TestRow>>): string {
@@ -535,6 +546,168 @@ describe('DataGrid', () => {
     });
   });
 
+  describe('loading and empty states', () => {
+    it('shows the default loading message and renders no real rows, regardless of data() size', () => {
+      const fixture = createFixture(unsortedRows, { loading: true });
+
+      expect(getRowCount(fixture)).toBe(0);
+      expect(getStateRow(fixture)?.textContent?.trim()).toBe('Loading...');
+    });
+
+    it('shows the default empty message when loading is false and there are no rows', () => {
+      const fixture = createFixture([]);
+
+      expect(getRowCount(fixture)).toBe(0);
+      expect(getStateRow(fixture)?.textContent?.trim()).toBe('No data to display');
+    });
+
+    it('shows the empty message when filterFn excludes every row, not the loading one', () => {
+      const fixture = createFixture(unsortedRows, { filterFn: () => false });
+
+      expect(getStateRow(fixture)?.textContent?.trim()).toBe('No data to display');
+    });
+
+    it('loading takes priority over the empty state when data() also happens to be empty', () => {
+      const fixture = createFixture([], { loading: true });
+
+      expect(getStateRow(fixture)?.textContent?.trim()).toBe('Loading...');
+    });
+
+    describe('colspan', () => {
+      it('spans every column while loading, without a selection column', () => {
+        const fixture = createFixture(unsortedRows, { loading: true }); // 2 columns
+        expect(getStateRow(fixture)?.querySelector('td')?.getAttribute('colspan')).toBe('2');
+      });
+
+      it('spans every column plus the selection column while loading, when selectable is on', () => {
+        const fixture = createFixture(unsortedRows, {
+          loading: true,
+          selectable: true,
+          rowKey: (row) => row.name,
+        });
+        expect(getStateRow(fixture)?.querySelector('td')?.getAttribute('colspan')).toBe('3');
+      });
+
+      it('spans every column while empty, without a selection column', () => {
+        const fixture = createFixture([]); // 2 columns
+        expect(getStateRow(fixture)?.querySelector('td')?.getAttribute('colspan')).toBe('2');
+      });
+
+      it('spans every column plus the selection column while empty, when selectable is on', () => {
+        const fixture = createFixture([], { selectable: true, rowKey: (row) => row.name });
+        expect(getStateRow(fixture)?.querySelector('td')?.getAttribute('colspan')).toBe('3');
+      });
+    });
+
+    describe('disabled while loading', () => {
+      it('disables both pagination buttons', () => {
+        const fixture = createFixture(unsortedRows, { loading: true });
+        const [previousBtn, nextBtn] = getPageButtons(fixture);
+
+        expect(previousBtn.disabled).toBe(true);
+        expect(nextBtn.disabled).toBe(true);
+      });
+
+      it('disables a sortable header button', () => {
+        const fixture = createFixture(unsortedRows, { loading: true });
+        const nameHeaderButton = root(fixture).querySelectorAll('th')[0].querySelector('button');
+
+        expect(nameHeaderButton?.disabled).toBe(true);
+      });
+
+      it('disables the header select-all checkbox', () => {
+        const fixture = createFixture(unsortedRows, {
+          loading: true,
+          selectable: true,
+          rowKey: (row) => row.name,
+        });
+
+        expect(getHeaderCheckbox(fixture).disabled).toBe(true);
+      });
+
+      // Not tested for the per-row checkbox: rows never render at all while
+      // loading is true (the whole <tbody> is replaced by the state row),
+      // so there is no rendered row checkbox to observe during loading.
+      // The [disabled]="loading()" binding is still on it in the template,
+      // kept for defensive consistency, but it's unreachable in practice
+      // given this component's current all-or-nothing tbody replacement.
+    });
+
+    describe('custom loadingTemplate / emptyTemplate', () => {
+      @Component({
+        template: `
+          <ng-template #loadingTpl><span class="custom-loading">Custom loading</span></ng-template>
+          <ng-template #emptyTpl><span class="custom-empty">Custom empty</span></ng-template>
+          <lib-data-grid
+            [data]="data"
+            [columns]="columns"
+            [loading]="loading()"
+            [loadingTemplate]="loadingTpl"
+            [emptyTemplate]="emptyTpl"
+          />
+        `,
+        imports: [DataGrid],
+      })
+      class HostWithStateTemplates implements OnInit {
+        @ViewChild('loadingTpl', { static: true })
+        loadingTpl!: TemplateRef<void>;
+
+        @ViewChild('emptyTpl', { static: true })
+        emptyTpl!: TemplateRef<void>;
+
+        data: TestRow[] = [];
+        columns: ColumnConfig<TestRow>[] = [];
+        // A signal, not a plain field: reassigning a plain field and
+        // calling detectChanges() right after trips NG0100 in this
+        // Angular/Vitest setup (same root cause and fix as the
+        // currentPage/sortState model()s elsewhere in this file, even
+        // though this is a plain one-way input, not a two-way binding).
+        loading = signal(false);
+
+        ngOnInit(): void {
+          this.columns = columns;
+        }
+      }
+
+      function setupHost(): ComponentFixture<HostWithStateTemplates> {
+        TestBed.configureTestingModule({ imports: [HostWithStateTemplates] });
+        const fixture = TestBed.createComponent(HostWithStateTemplates);
+        fixture.detectChanges();
+        return fixture;
+      }
+
+      it('renders loadingTemplate instead of the default message', () => {
+        const fixture = setupHost();
+        fixture.componentInstance.loading.set(true);
+        fixture.detectChanges();
+
+        const nativeElement = fixture.nativeElement as HTMLElement;
+        expect(nativeElement.querySelector('.custom-loading')?.textContent?.trim()).toBe(
+          'Custom loading',
+        );
+      });
+
+      it('renders emptyTemplate instead of the default message', () => {
+        const fixture = setupHost(); // loading false, data empty by default
+
+        const nativeElement = fixture.nativeElement as HTMLElement;
+        expect(nativeElement.querySelector('.custom-empty')?.textContent?.trim()).toBe(
+          'Custom empty',
+        );
+      });
+
+      it('loading wins over a custom emptyTemplate when data() is also empty', () => {
+        const fixture = setupHost();
+        fixture.componentInstance.loading.set(true);
+        fixture.detectChanges();
+
+        const nativeElement = fixture.nativeElement as HTMLElement;
+        expect(nativeElement.querySelector('.custom-loading')).toBeTruthy();
+        expect(nativeElement.querySelector('.custom-empty')).toBeFalsy();
+      });
+    });
+  });
+
   describe('server mode', () => {
     const fiveRows: TestRow[] = [
       { name: 'Row1', age: 1 },
@@ -890,6 +1063,24 @@ describe('DataGrid i18n', () => {
 
     expect(fixture.componentInstance).toBe(instance);
     expect(getPageButtons(fixture)[1].textContent?.trim()).toBe('Siguiente');
+  });
+
+  it('renders the Spanish empty message with provideDataGridMessages(DATA_GRID_MESSAGES_ES)', () => {
+    const fixture = createFixtureWithMessages([], DATA_GRID_MESSAGES_ES);
+    expect(getStateRow(fixture)?.textContent?.trim()).toBe('No hay datos para mostrar');
+  });
+
+  it('renders the Spanish loading message with provideDataGridMessages(DATA_GRID_MESSAGES_ES)', () => {
+    const fixture = createFixtureWithMessages(unsortedRows, DATA_GRID_MESSAGES_ES);
+    fixture.componentRef.setInput('loading', true);
+    fixture.detectChanges();
+    expect(getStateRow(fixture)?.textContent?.trim()).toBe('Cargando...');
+  });
+
+  it('applies a partial override for empty, leaving the rest in English', () => {
+    const fixture = createFixtureWithMessages([], { empty: () => 'Nothing here' });
+    expect(getStateRow(fixture)?.textContent?.trim()).toBe('Nothing here');
+    expect(getPageInfo(fixture)).toBe('Page 1 of 1');
   });
 });
 
