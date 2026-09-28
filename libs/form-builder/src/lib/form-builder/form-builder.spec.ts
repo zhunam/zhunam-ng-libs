@@ -26,6 +26,10 @@ function createFixture(
     columns?: number;
     serverErrors?: Partial<Record<keyof TestModel, string>>;
     mode?: 'submit' | 'live';
+    submitLabel?: string;
+    hideSubmit?: boolean;
+    loading?: boolean;
+    value?: Partial<TestModel>;
   } = {},
 ): ComponentFixture<FormBuilder<TestModel>> {
   const fixture = TestBed.createComponent(FormBuilder<TestModel>);
@@ -41,6 +45,18 @@ function createFixture(
   }
   if (options.mode) {
     fixture.componentRef.setInput('mode', options.mode);
+  }
+  if (options.submitLabel !== undefined) {
+    fixture.componentRef.setInput('submitLabel', options.submitLabel);
+  }
+  if (options.hideSubmit !== undefined) {
+    fixture.componentRef.setInput('hideSubmit', options.hideSubmit);
+  }
+  if (options.loading !== undefined) {
+    fixture.componentRef.setInput('loading', options.loading);
+  }
+  if (options.value !== undefined) {
+    fixture.componentRef.setInput('value', options.value);
   }
   fixture.detectChanges();
   return fixture;
@@ -71,6 +87,10 @@ function getSelect(fixture: ComponentFixture<FormBuilder<TestModel>>): HTMLSelec
 
 function getSubmitButton(fixture: ComponentFixture<FormBuilder<TestModel>>): HTMLButtonElement {
   return root(fixture).querySelector('.fb-submit') as HTMLButtonElement;
+}
+
+function getPasswordToggle(fixture: ComponentFixture<FormBuilder<TestModel>>): HTMLButtonElement | null {
+  return root(fixture).querySelector('.fb-password-toggle');
 }
 
 function getErrorText(fixture: ComponentFixture<FormBuilder<TestModel>>): string | null {
@@ -795,6 +815,263 @@ describe('FormBuilder', () => {
       expect(emitted.length).toBe(countBeforeDestroy); // no new emission reached the (destroyed) output
     });
   });
+
+  describe('submit button (submitLabel, hideSubmit, loading, submit())', () => {
+    it('uses submitLabel instead of messages.submit() when set', () => {
+      const fixture = createFixture([{ key: 'name', label: 'Name', type: 'text' }], {
+        submitLabel: 'Create account',
+      });
+      expect(getSubmitButton(fixture).textContent?.trim()).toBe('Create account');
+    });
+
+    it('hides the internal button when hideSubmit is true', () => {
+      const fixture = createFixture([{ key: 'name', label: 'Name', type: 'text' }], {
+        hideSubmit: true,
+      });
+      expect(root(fixture).querySelector('.fb-submit')).toBeNull();
+    });
+
+    it('public submit() runs the same logic as the internal button, even when hideSubmit is true', () => {
+      const fixture = createFixture(
+        [{ key: 'name', label: 'Name', type: 'text', validators: { required: true } }],
+        { hideSubmit: true },
+      );
+      setValue(getInput(fixture, 'text'), 'Ada', fixture);
+
+      const emitted: TestModel[] = [];
+      fixture.componentInstance.formSubmit.subscribe((value) => emitted.push(value));
+      fixture.componentInstance.submit();
+
+      expect(emitted).toEqual([{ name: 'Ada' }]);
+    });
+
+    it('public submit() also marks the form submitted (revealing errors) when blocked, same as the internal button', () => {
+      const fixture = createFixture(
+        [{ key: 'name', label: 'Name', type: 'text', validators: { required: true } }],
+        { hideSubmit: true },
+      );
+
+      expect(getErrorText(fixture)).toBeNull();
+      fixture.componentInstance.submit();
+      fixture.detectChanges();
+
+      expect(getErrorText(fixture)).toBe('This field is required.');
+    });
+
+    it('loading disables the internal button', () => {
+      const fixture = createFixture([{ key: 'name', label: 'Name', type: 'text' }], {
+        loading: true,
+      });
+      expect(getSubmitButton(fixture).disabled).toBe(true);
+    });
+
+    it('loading blocks the public submit() method too, via the same guard the button uses', () => {
+      const fixture = createFixture([{ key: 'name', label: 'Name', type: 'text' }], {
+        loading: true,
+      });
+
+      const emitted: TestModel[] = [];
+      fixture.componentInstance.formSubmit.subscribe((value) => emitted.push(value));
+      fixture.componentInstance.submit();
+
+      expect(emitted).toEqual([]);
+    });
+
+    it('a valid form still submits normally once loading goes back to false', () => {
+      const fixture = createFixture([{ key: 'name', label: 'Name', type: 'text' }], {
+        loading: true,
+      });
+      setValue(getInput(fixture, 'text'), 'Ada', fixture);
+      fixture.componentRef.setInput('loading', false);
+      fixture.detectChanges();
+
+      const emitted: TestModel[] = [];
+      fixture.componentInstance.formSubmit.subscribe((value) => emitted.push(value));
+      fixture.componentInstance.submit();
+
+      expect(emitted).toEqual([{ name: 'Ada' }]);
+    });
+  });
+
+  describe('password show/hide toggle', () => {
+    const passwordField: FieldConfig<TestModel>[] = [
+      { key: 'password', label: 'Password', type: 'password' },
+    ];
+
+    it('renders a toggle button for a password field by default', () => {
+      const fixture = createFixture(passwordField);
+      expect(getPasswordToggle(fixture)).not.toBeNull();
+    });
+
+    it('never renders a toggle for a non-password field', () => {
+      const fixture = createFixture([{ key: 'name', label: 'Name', type: 'text' }]);
+      expect(getPasswordToggle(fixture)).toBeNull();
+    });
+
+    it('hides the toggle when showPasswordToggle is false', () => {
+      const fixture = createFixture([
+        { key: 'password', label: 'Password', type: 'password', showPasswordToggle: false },
+      ]);
+      expect(getPasswordToggle(fixture)).toBeNull();
+    });
+
+    it('starts as type="password" with aria-pressed="false" and the "show" label', () => {
+      const fixture = createFixture(passwordField);
+      const input = getInput(fixture, 'password');
+      const toggle = getPasswordToggle(fixture) as HTMLButtonElement;
+
+      expect(input.type).toBe('password');
+      expect(toggle.getAttribute('aria-pressed')).toBe('false');
+      expect(toggle.getAttribute('aria-label')).toBe('Show password');
+    });
+
+    it('clicking the toggle flips the input to type="text" and updates aria-pressed/aria-label', () => {
+      const fixture = createFixture(passwordField);
+      const toggle = getPasswordToggle(fixture) as HTMLButtonElement;
+
+      toggle.click();
+      fixture.detectChanges();
+
+      expect(getInput(fixture, 'text').type).toBe('text');
+      expect(toggle.getAttribute('aria-pressed')).toBe('true');
+      expect(toggle.getAttribute('aria-label')).toBe('Hide password');
+    });
+
+    it('clicking it again flips back to type="password"', () => {
+      const fixture = createFixture(passwordField);
+      const toggle = getPasswordToggle(fixture) as HTMLButtonElement;
+
+      toggle.click();
+      fixture.detectChanges();
+      toggle.click();
+      fixture.detectChanges();
+
+      expect(getInput(fixture, 'password').type).toBe('password');
+      expect(toggle.getAttribute('aria-pressed')).toBe('false');
+    });
+
+    it('toggling one password field does not affect a second one', () => {
+      const fixture = createFixture([
+        { key: 'password', label: 'Password', type: 'password' },
+        { key: 'confirmPassword', label: 'Confirm password', type: 'password' },
+      ]);
+      const toggles = root(fixture).querySelectorAll<HTMLButtonElement>('.fb-password-toggle');
+      const inputs = root(fixture).querySelectorAll<HTMLInputElement>('input');
+
+      toggles[0].click();
+      fixture.detectChanges();
+
+      expect(inputs[0].type).toBe('text');
+      expect(inputs[1].type).toBe('password');
+    });
+  });
+
+  describe('value input (external patch, F10)', () => {
+    it('patches the current form without recreating it', () => {
+      const fixture = createFixture([
+        { key: 'name', label: 'Name', type: 'text' },
+        { key: 'age', label: 'Age', type: 'number' },
+      ]);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const groupBefore = (fixture.componentInstance as any).formGroup();
+
+      fixture.componentRef.setInput('value', { name: 'Ada', age: 30 });
+      fixture.detectChanges();
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const groupAfter = (fixture.componentInstance as any).formGroup();
+      expect(groupAfter).toBe(groupBefore); // same FormGroup instance, not rebuilt
+      expect(getInput(fixture, 'text').value).toBe('Ada');
+      expect(getInput(fixture, 'number').value).toBe('30');
+    });
+
+    it('applies the first value received too, not just later changes', () => {
+      const fixture = TestBed.createComponent(FormBuilder<TestModel>);
+      fixture.componentRef.setInput('fields', [{ key: 'name', label: 'Name', type: 'text' }]);
+      fixture.componentRef.setInput('value', { name: 'Preset' });
+      fixture.detectChanges();
+
+      expect(getInput(fixture, 'text').value).toBe('Preset');
+    });
+
+    it('does not emit valueChange in "live" mode when a value is set externally (no feedback loop)', () => {
+      const fixture = createFixture([{ key: 'name', label: 'Name', type: 'text' }], {
+        mode: 'live',
+      });
+      const emitted: TestModel[] = [];
+      fixture.componentInstance.valueChange.subscribe((value) => emitted.push(value));
+      emitted.length = 0; // discard the initial live emission
+
+      fixture.componentRef.setInput('value', { name: 'From outside' });
+      fixture.detectChanges();
+
+      expect(getInput(fixture, 'text').value).toBe('From outside'); // the patch did apply
+      expect(emitted).toEqual([]); // but it never went through valueChange
+    });
+  });
+
+  describe('fields() rebuild preserves values (F11)', () => {
+    it('keeps the value of a control whose key still exists in the new fields(), instead of resetting to defaultValue', () => {
+      const fixture = createFixture([
+        { key: 'name', label: 'Name', type: 'text', defaultValue: 'Original' },
+      ]);
+      setValue(getInput(fixture, 'text'), 'Typed by the user', fixture);
+
+      // A genuinely new array reference, same key, different label/defaultValue.
+      fixture.componentRef.setInput('fields', [
+        { key: 'name', label: 'Full name', type: 'text', defaultValue: 'Original' },
+      ]);
+      fixture.detectChanges();
+
+      expect(getInput(fixture, 'text').value).toBe('Typed by the user');
+    });
+
+    it('is unaffected by reordering fields, as long as the keys persist', () => {
+      const fixture = createFixture([
+        { key: 'name', label: 'Name', type: 'text' },
+        { key: 'age', label: 'Age', type: 'number' },
+      ]);
+      setValue(getInput(fixture, 'text'), 'Ada', fixture);
+      setValue(getInput(fixture, 'number'), '30', fixture);
+
+      fixture.componentRef.setInput('fields', [
+        { key: 'age', label: 'Age', type: 'number' },
+        { key: 'name', label: 'Name', type: 'text' },
+      ]);
+      fixture.detectChanges();
+
+      expect(getInput(fixture, 'text').value).toBe('Ada');
+      expect(getInput(fixture, 'number').value).toBe('30');
+    });
+
+    it('drops a control whose key no longer exists in the new fields()', () => {
+      const fixture = createFixture([
+        { key: 'name', label: 'Name', type: 'text' },
+        { key: 'age', label: 'Age', type: 'number' },
+      ]);
+
+      fixture.componentRef.setInput('fields', [{ key: 'name', label: 'Name', type: 'text' }]);
+      fixture.detectChanges();
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const group = (fixture.componentInstance as any).formGroup();
+      expect(group.get('age')).toBeNull();
+    });
+
+    it('seeds a brand-new control (key not present before) from its own defaultValue', () => {
+      const fixture = createFixture([{ key: 'name', label: 'Name', type: 'text' }]);
+      setValue(getInput(fixture, 'text'), 'Ada', fixture);
+
+      fixture.componentRef.setInput('fields', [
+        { key: 'name', label: 'Name', type: 'text' },
+        { key: 'age', label: 'Age', type: 'number', defaultValue: 42 },
+      ]);
+      fixture.detectChanges();
+
+      expect(getInput(fixture, 'text').value).toBe('Ada'); // persisting control untouched
+      expect(getInput(fixture, 'number').value).toBe('42'); // new control uses its own default
+    });
+  });
 });
 
 describe('FormBuilder i18n', () => {
@@ -882,6 +1159,32 @@ describe('FormBuilder i18n', () => {
     blur(getInput(fixture, 'text'), fixture);
     expect(getErrorText(fixture)).toBe('Este campo es obligatorio.');
     expect(getSubmitButton(fixture).textContent?.trim()).toBe('Enviar');
+  });
+
+  it('renders the password toggle aria-label from the Spanish preset', () => {
+    const fixture = createFixtureWithMessages(
+      [{ key: 'password', label: 'Password', type: 'password' }],
+      FORM_BUILDER_MESSAGES_ES,
+    );
+    const toggle = root(fixture).querySelector('.fb-password-toggle') as HTMLButtonElement;
+    expect(toggle.getAttribute('aria-label')).toBe('Mostrar contraseña');
+
+    toggle.click();
+    fixture.detectChanges();
+    expect(toggle.getAttribute('aria-label')).toBe('Ocultar contraseña');
+  });
+
+  it('applies a partial override of showPassword/hidePassword and leaves the rest in English', () => {
+    const fixture = createFixtureWithMessages([{ key: 'password', label: 'Password', type: 'password' }], {
+      showPassword: () => 'Reveal',
+      hidePassword: () => 'Conceal',
+    });
+    const toggle = root(fixture).querySelector('.fb-password-toggle') as HTMLButtonElement;
+    expect(toggle.getAttribute('aria-label')).toBe('Reveal');
+
+    toggle.click();
+    fixture.detectChanges();
+    expect(toggle.getAttribute('aria-label')).toBe('Conceal');
   });
 
   it('applies a partial override and leaves the rest in English', () => {

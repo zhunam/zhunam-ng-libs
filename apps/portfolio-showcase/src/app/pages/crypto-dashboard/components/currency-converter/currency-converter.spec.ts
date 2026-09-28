@@ -257,6 +257,18 @@ describe('CurrencyConverter', () => {
     expect(selects[1].selectedIndex).toBe(BTC_CURRENCY_INDEX);
     expect(getAmountInput(fixture).value).toBe('3'); // preserved across the swap-triggered rebuild
     expect(getSimplePriceSpy).toHaveBeenCalledWith('ethereum', 'btc');
+    // The displayed result itself must reflect the new pair, not the one
+    // from before the swap: `value`/patchValue only syncs the form's own
+    // controls (deliberately without emitting `valueChange`), so without
+    // onSwapClick() also calling onValueChange(swapped) directly, this
+    // stays on the pre-swap result even though the controls above already
+    // show the swapped selection. A swap exchanges the same two symbols,
+    // so checking mere presence of "ETH"/"BTC" wouldn't tell the new
+    // pairing apart from the stale one (both contain both substrings,
+    // just in reversed roles) — position matters here, not just presence.
+    const resultText = (root(fixture).querySelector('.text-lg.font-semibold')?.textContent ?? '').trim();
+    expect(resultText.startsWith('3 ETH')).toBe(true);
+    expect(resultText.endsWith('BTC')).toBe(true);
   });
 
   it('shows a loading coin-spinner while the coin/currency lists are still loading', () => {

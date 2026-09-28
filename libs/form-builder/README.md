@@ -36,6 +36,41 @@ For a calculator-style form (no submit action, values used as you type):
 
 `formSubmit` stays available in `'live'` mode too; most `'live'` consumers just won't use it.
 
+### Presetting or replacing the form's value
+
+The `value` input patches the form in place, without rebuilding it, so
+whatever the user already typed in fields that stay unaffected is never
+lost. Useful for a "swap" action or restoring a draft:
+
+```typescript
+swapValue = signal<Partial<User> | undefined>(undefined);
+
+onSwap(): void {
+  this.swapValue.set({ name: this.currentLastValue.name /* ... */ });
+}
+```
+
+```html
+<lib-form-builder [fields]="fields" [value]="swapValue()" mode="live" (valueChange)="onValueChange($event)" />
+```
+
+Rebuilding `fields()` itself (e.g. a wizard changing steps) also keeps
+the current value of every control whose key still exists in the new
+array; only a control whose key disappears is dropped, and only a
+brand-new key falls back to its own `defaultValue`.
+
+### Submitting from outside the component
+
+```html
+<lib-form-builder #form [fields]="fields" [hideSubmit]="true" [loading]="saving()" (formSubmit)="onSave($event)" />
+<button (click)="form.submit()">Continue</button>
+```
+
+`submit()` runs the exact same logic the internal button would: it marks
+the form submitted, validates, and emits `formSubmit` if valid. It's a
+no-op while `loading` is `true`, the same guard that disables the
+internal button.
+
 ## API
 
 ### `FormBuilder<T>`
@@ -49,6 +84,11 @@ For a calculator-style form (no submit action, values used as you type):
 | `formSubmit`           | `output<T>`                                  | N/A          | Emitted with the typed form values, only when the native form and every `crossFieldValidators` check pass. |
 | `mode`                 | `input<'submit' \| 'live'>`                  | `'submit'`   | `'submit'`: only `formSubmit` fires, on submit. `'live'`: `valueChange` also fires continuously as the user edits, in addition to `formSubmit` staying available. |
 | `valueChange`          | `output<T>`                                  | N/A          | Emitted with the typed, valid values on every change, only when `mode` is `'live'`. Fires once immediately if the form starts valid with its defaults. |
+| `submitLabel`          | `input<string>`                              | None         | Custom label for the submit button, instead of `messages.submit()`. |
+| `hideSubmit`           | `input<boolean>`                             | `false`      | Hides the internal submit button; use the public `submit()` method to trigger submission from your own UI. |
+| `loading`              | `input<boolean>`                             | `false`      | Disables the internal button and makes `submit()` a no-op while `true`. |
+| `value`                | `input<T>`                                   | None         | External value patched into the current form (no rebuild, no `valueChange` in `'live'` mode) every time it receives a new, non-`undefined` value. |
+| `submit()`             | `(): void`                                   | N/A          | Public method: runs the same submit logic as the internal button, works whether `hideSubmit` is `true` or `false`. |
 
 ### `FieldConfig<T>`
 
@@ -63,6 +103,7 @@ For a calculator-style form (no submit action, values used as you type):
 | `defaultValue`| `T[keyof T]`            | None      | Initial value assigned to the field before user interaction.                |
 | `colSpan`     | `1 \| 2`                | `1`          | How many grid columns this field spans, when the component's `columns` input is 2 or more. |
 | `disabled`    | `boolean`               | `false`      | Renders the control disabled from the start; still included in the value `formSubmit` emits. |
+| `showPasswordToggle` | `boolean`        | `true`       | For a `type: 'password'` field, whether it renders a show/hide toggle button. No effect on other field types. |
 
 ### `FormBuilderMessages`
 
@@ -76,6 +117,8 @@ For a calculator-style form (no submit action, values used as you type):
 | `maxLength(requiredLength)` | `(requiredLength: number) => string` | Shown when a field's value is longer than `maxLength`. |
 | `pattern()` | `() => string` | Shown when a field's value doesn't match `pattern`. |
 | `submit()` | `() => string` | Label of the submit button. |
+| `showPassword()` | `() => string` | `aria-label` of the password toggle when the value is currently hidden. |
+| `hidePassword()` | `() => string` | `aria-label` of the password toggle when the value is currently shown. |
 
 | Export | Type | Description |
 | ------ | ---- | ------------ |
@@ -96,7 +139,9 @@ inherited CSS custom property.
 
 | Custom property | Default | Description |
 | ------------------------------- | -------- | -------------------------------------------------- |
-| `--zhunam-primary`               | `#3b82f6` | Submit button background, radio/checkbox accent color. |
+| `--zhunam-primary`               | `#3b82f6` | Submit button background, radio/checkbox accent color fallback. |
+| `--zhunam-accent`                | `var(--zhunam-primary)` | Radio/checkbox accent color specifically, independent from `--zhunam-primary`. Falls back to it when unset. |
+| `--zhunam-submit-width`          | `auto`    | Submit button width. |
 | `--zhunam-primary-content`       | `#fff`    | Submit button text/icon color, always painted on top of `--zhunam-primary`. |
 | `--zhunam-focus`                 | `var(--zhunam-primary)` | Focus outline and border on controls, independent from `--zhunam-primary` so a high-contrast focus ring doesn't require changing your brand color. |
 | `--zhunam-text`                  | `#1f2937` | Base text color, radio/checkbox option labels. |

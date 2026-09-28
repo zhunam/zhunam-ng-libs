@@ -4,12 +4,13 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  computed,
   effect,
   inject,
   input,
+  linkedSignal,
   output,
   signal,
+  untracked,
   ViewEncapsulation,
 } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, ValidatorFn, Validators } from '@angular/forms';
@@ -133,10 +134,55 @@ export class FormBuilder<T> {
    */
   serverErrors = input<Partial<Record<keyof T, string>>>({});
 
+  /**
+   * Custom label for the submit button, instead of the injected
+   * FORM_BUILDER_MESSAGES `submit()` text. Takes precedence over both
+   * the messages token and the default English label.
+   * @example
+   * <lib-form-builder [fields]="fields" submitLabel="Create account" />
+   */
+  submitLabel = input<string>();
+
+  /**
+   * Hides the internal submit button entirely, for a consumer that
+   * triggers submission from its own UI instead, via the public
+   * `submit()` method.
+   * @default false
+   * @example
+   * <lib-form-builder #form [fields]="fields" [hideSubmit]="true" />
+   * <button (click)="form.submit()">Continue</button>
+   */
+  hideSubmit = input<boolean>(false);
+
+  /**
+   * Disables the internal submit button and makes the public `submit()`
+   * method a no-op while `true`, e.g. during an in-flight request.
+   * @default false
+   * @example
+   * <lib-form-builder [fields]="fields" [loading]="saving()" (formSubmit)="onSave($event)" />
+   */
+  loading = input<boolean>(false);
+
+  /**
+   * External value applied to the form without recreating it. Every
+   * time this receives a new, non-`undefined` value (including the
+   * first one), it's patched into the current form
+   * (`emitEvent: false`, so it never triggers `valueChange` in `'live'`
+   * mode). Rebuilding `fields()` afterward keeps whatever was patched,
+   * the same as any other value the user typed.
+   * @example
+   * <lib-form-builder [fields]="fields" [value]="presetValue()" />
+   */
+  value = input<T>();
+
   protected readonly messages = inject(FORM_BUILDER_MESSAGES);
 
   protected readonly submitted = signal(false);
   protected readonly crossFieldErrors = signal<Record<string, string>>({});
+
+  // Keys of password fields currently showing plain text instead of
+  // dots, toggled per-field by the user via the show/hide button.
+  private readonly visiblePasswordFields = signal<ReadonlySet<string>>(new Set());
 
   // Snapshot of each server-error field's value at the moment that error
   // appeared. A server error is only ever about a rejected backend
@@ -147,13 +193,15 @@ export class FormBuilder<T> {
   private readonly serverErrorSnapshot = signal<Partial<Record<keyof T, unknown>>>({});
 
   // `fields()` can change at runtime (e.g. a wizard swapping steps), so the
-  // FormGroup is derived with `computed()` rather than built once in the
-  // constructor: it's rebuilt only when the `fields()` array reference
-  // changes. `computed()` fits better than an `effect()` here because
-  // building a FormGroup is a pure derivation with no teardown to manage,
-  // and `computed()` already memoizes it — the same instance is returned
-  // across change-detection cycles until `fields()` itself changes.
-  protected readonly formGroup = computed(() => this.buildFormGroup(this.fields()));
+  // FormGroup is derived rather than built once in the constructor: it's
+  // rebuilt only when the `fields()` array reference changes. `linkedSignal`
+  // (not `computed()`) so `buildFormGroup` can read the previous FormGroup
+  // and carry forward the current value of every control whose key still
+  // exists in the new `fields()`, instead of resetting it to `defaultValue`.
+  protected readonly formGroup = linkedSignal<FieldConfig<T>[], FormGroup>({
+    source: this.fields,
+    computation: (fields, previous) => this.buildFormGroup(fields, previous?.value),
+  });
 
   private static instanceCounter = 0;
   private readonly instanceId = ++FormBuilder.instanceCounter;
@@ -202,13 +250,31 @@ export class FormBuilder<T> {
       const subscription = group.valueChanges.subscribe(emitIfValid);
       onCleanup(() => subscription.unsubscribe());
     });
+
+    // Applies an external `value()` to whichever FormGroup is current at
+    // that moment, without recreating it. `formGroup()` is deliberately
+    // read via `untracked()` so this effect only reacts to `value()`
+    // itself changing, never to a `fields()`-triggered rebuild: `patchValue`
+    // with `emitEvent: false` also means `valueChange` never fires from this.
+    effect(() => {
+      const value = this.value();
+      if (value === undefined) {
+        return;
+      }
+      const group = untracked(() => this.formGroup());
+      group.patchValue(value as Record<string, unknown>, { emitEvent: false });
+    });
   }
 
-  private buildFormGroup(fields: FieldConfig<T>[]): FormGroup {
+  private buildFormGroup(fields: FieldConfig<T>[], previous?: FormGroup): FormGroup {
     const controls: Record<string, FormControl<unknown>> = {};
     for (const field of fields) {
-      const initialValue = field.defaultValue ?? (field.type === 'checkbox' ? false : null);
-      controls[String(field.key)] = new FormControl<unknown>(
+      const key = String(field.key);
+      const previousControl = previous?.get(key);
+      const initialValue = previousControl
+        ? previousControl.value
+        : (field.defaultValue ?? (field.type === 'checkbox' ? false : null));
+      controls[key] = new FormControl<unknown>(
         { value: initialValue, disabled: !!field.disabled },
         this.buildValidators(field),
       );
@@ -258,6 +324,29 @@ export class FormBuilder<T> {
 
   protected optionsFor(field: FieldConfig<T>): FieldOption[] {
     return field.options ?? [];
+  }
+
+  protected showPasswordToggleFor(field: FieldConfig<T>): boolean {
+    return field.showPasswordToggle ?? true;
+  }
+
+  protected isPasswordVisible(field: FieldConfig<T>): boolean {
+    return this.visiblePasswordFields().has(String(field.key));
+  }
+
+  protected passwordInputType(field: FieldConfig<T>): 'text' | 'password' {
+    return this.isPasswordVisible(field) ? 'text' : 'password';
+  }
+
+  protected togglePasswordVisibility(field: FieldConfig<T>): void {
+    const key = String(field.key);
+    const next = new Set(this.visiblePasswordFields());
+    if (next.has(key)) {
+      next.delete(key);
+    } else {
+      next.add(key);
+    }
+    this.visiblePasswordFields.set(next);
   }
 
   // Shared by the label's `for`, the control's `id`, and (for radio groups)
@@ -327,7 +416,7 @@ export class FormBuilder<T> {
   }
 
   // Single source of truth for "is an error currently shown for this
-  // field, and what does it say" — both the visible `.fb-error` message
+  // field, and what does it say": both the visible `.fb-error` message
   // and its ARIA wiring (aria-invalid, aria-describedby) read from this,
   // so the two can never drift out of sync with each other.
   protected activeErrorFor(field: FieldConfig<T>): string | null {
@@ -343,10 +432,27 @@ export class FormBuilder<T> {
   }
 
   protected isSubmitDisabled(): boolean {
-    return this.formGroup().invalid || Object.keys(this.crossFieldErrors()).length > 0;
+    return this.loading() || this.formGroup().invalid || Object.keys(this.crossFieldErrors()).length > 0;
   }
 
-  protected onSubmit(): void {
+  /**
+   * Triggers the exact same submit logic the internal button triggers:
+   * marks the form as submitted, runs validation, and emits `formSubmit`
+   * if it passes. Works identically whether `hideSubmit` is `true` or
+   * `false`, and is a no-op while `loading` is `true`.
+   * @example
+   * <lib-form-builder #form [fields]="fields" [hideSubmit]="true" />
+   * <button (click)="form.submit()">Continue</button>
+   */
+  submit(): void {
+    this.performSubmit();
+  }
+
+  protected performSubmit(): void {
+    if (this.loading()) {
+      return;
+    }
+
     this.submitted.set(true);
     const group = this.formGroup();
 
@@ -354,7 +460,7 @@ export class FormBuilder<T> {
       return;
     }
 
-    // `.value` excludes disabled controls entirely — `getRawValue()` keeps
+    // `.value` excludes disabled controls entirely, `getRawValue()` keeps
     // them, so a disabled field with a `defaultValue` still comes through
     // as a complete `T` instead of a hole in the emitted object.
     const value = this.coerceNumberFields(group.getRawValue());
@@ -375,7 +481,7 @@ export class FormBuilder<T> {
   // dynamically, so it never matches, and DefaultValueAccessor (string in,
   // string out) handles the control instead. Fixed up here, at the point
   // the value leaves the component, rather than in how the FormControl
-  // stores it — Validators.min/max already parseFloat internally either
+  // stores it: Validators.min/max already parseFloat internally either
   // way, so correcting the stored value would change nothing there but
   // would still need this same conversion for the emitted object.
   private coerceNumberFields(rawValue: unknown): T {

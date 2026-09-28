@@ -52,6 +52,18 @@ export interface FormBuilderMessages {
    * Label of the submit button.
    */
   submit(): string;
+
+  /**
+   * `aria-label` of the password visibility toggle when the field's
+   * value is currently hidden (about to reveal it).
+   */
+  showPassword(): string;
+
+  /**
+   * `aria-label` of the password visibility toggle when the field's
+   * value is currently shown (about to hide it).
+   */
+  hidePassword(): string;
 }
 
 /**
@@ -67,6 +79,8 @@ export const FORM_BUILDER_MESSAGES_EN: FormBuilderMessages = {
   maxLength: (requiredLength) => `Must be at most ${requiredLength} characters.`,
   pattern: () => 'The format is not valid.',
   submit: () => 'Submit',
+  showPassword: () => 'Show password',
+  hidePassword: () => 'Hide password',
 };
 
 /**
@@ -83,4 +97,6 @@ export const FORM_BUILDER_MESSAGES_ES: FormBuilderMessages = {
   maxLength: (requiredLength) => `Debe tener como máximo ${requiredLength} caracteres.`,
   pattern: () => 'El formato no es válido.',
   submit: () => 'Enviar',
+  showPassword: () => 'Mostrar contraseña',
+  hidePassword: () => 'Ocultar contraseña',
 };

@@ -5,7 +5,40 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
 
 ## [Unreleased]
 
+### Added
+- `submitLabel: input<string>`, `hideSubmit: input<boolean>` (default
+  `false`), `loading: input<boolean>` (default `false`), and a public
+  `submit()` method: a consumer can now trigger submission from its own
+  UI (`hideSubmit`), customize the button's text, or disable it during
+  an in-flight request. `submit()` runs the exact same logic the
+  internal button does, guarded by `loading` either way.
+- `--zhunam-submit-width` custom property (default `auto`): the submit
+  button's width.
+- Show/hide toggle on `type: 'password'` fields, on by default. New
+  `FieldConfig.showPasswordToggle` (default `true`) disables it per
+  field. New `FormBuilderMessages.showPassword()` / `hidePassword()`
+  supply the toggle's `aria-label` in both states (English/Spanish
+  presets included); the toggle also reflects its state via
+  `aria-pressed`.
+- `--zhunam-accent` custom property (default `var(--zhunam-primary)`):
+  radio/checkbox accent color, independent from `--zhunam-primary`.
+- `value: input<T>`: an external value patched into the current form
+  (`patchValue` with `emitEvent: false`, so it never triggers
+  `valueChange` in `'live'` mode) every time a new, non-`undefined`
+  value is received, without rebuilding the form. Useful for a "swap"
+  or "restore a draft" action that shouldn't reset fields the user
+  already touched.
+
 ### Changed
+- Rebuilding `fields()` (e.g. a wizard changing steps) no longer resets
+  the value of a control whose key still exists in the new array back
+  to its `defaultValue`: the current value is now carried forward. Only
+  a control whose key disappears from the new `fields()` is dropped; a
+  brand-new key still seeds from its own `defaultValue`. Existing
+  consumers who relied on a `fields()` rebuild also resetting field
+  values (uncommon, since `fields()` changing at runtime was documented
+  as a wizard-style scenario, not a general reset mechanism) need to
+  reset explicitly via `value` instead.
 - **BREAKING**: default language of every validation message and the
   submit button label is now English instead of Spanish. Use
   `provideFormBuilderMessages(FORM_BUILDER_MESSAGES_ES)` to restore the

@@ -105,7 +105,44 @@ select.fb-control {
 // intrinsic size), but they're just as interactive - focus must stay visible.
 .fb-radio-option input,
 .fb-checkbox-option input {
-  accent-color: var(--zhunam-primary, $default-primary);
+  accent-color: var(--zhunam-accent, var(--zhunam-primary, $default-primary));
+
+  &:focus-visible {
+    outline: 2px solid var(--zhunam-focus, var(--zhunam-primary, $default-primary));
+    outline-offset: 2px;
+  }
+}
+
+.fb-password-wrapper {
+  position: relative;
+  display: flex;
+}
+
+.fb-password-wrapper .fb-control {
+  // Room for the toggle button so typed text never runs under it.
+  padding-right: calc(var(--zhunam-form-control-padding-x, $default-form-control-padding-x) + 1.75rem);
+}
+
+.fb-password-toggle {
+  appearance: none;
+  position: absolute;
+  top: 50%;
+  right: var(--zhunam-form-control-padding-x, $default-form-control-padding-x);
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--zhunam-text-secondary, $default-text-secondary);
+  padding: 0;
+  cursor: pointer;
+  line-height: 0;
+
+  svg {
+    width: 1.125rem;
+    height: 1.125rem;
+  }
 
   &:focus-visible {
     outline: 2px solid var(--zhunam-focus, var(--zhunam-primary, $default-primary));
@@ -122,6 +159,7 @@ select.fb-control {
 .fb-submit {
   appearance: none;
   align-self: flex-start;
+  width: var(--zhunam-submit-width, auto);
   border: none;
   border-radius: var(--zhunam-radius, $default-radius);
   background: var(--zhunam-primary, $default-primary);
