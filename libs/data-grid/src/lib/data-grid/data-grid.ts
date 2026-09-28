@@ -7,6 +7,7 @@ import {
   input,
   model,
   output,
+  TemplateRef,
   ViewEncapsulation,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
@@ -127,6 +128,44 @@ export class DataGrid<T> {
    * rowKey = (user: User) => user.id;
    */
   rowKey = input<((row: T) => string | number) | undefined>(undefined);
+
+  /**
+   * Whether the grid is waiting on data. Takes priority over the empty
+   * state regardless of `data()`'s size: while `true`, the loading state
+   * always shows, even if `data()` happens to already hold rows (e.g. a
+   * refetch that hasn't replaced the old page yet). Also disables every
+   * interactive control (pagination buttons, sortable headers, selection
+   * checkboxes) at the template level, the same `[disabled]` pattern
+   * already used for pagination boundaries.
+   * @default false
+   * @example
+   * <lib-data-grid [data]="users()" [columns]="columns" [loading]="isFetching()" />
+   */
+  loading = input<boolean>(false);
+
+  /**
+   * Custom content shown in place of the rows while `loading` is `true`.
+   * No context (`$implicit`): unlike `cellTemplate`, there's no row to
+   * bind, this is the first template in this library without one. Falls
+   * back to `DataGridMessages.loading()` as plain text when not set.
+   * @default undefined
+   * @example
+   * <ng-template #spinner><lib-spinner /></ng-template>
+   * <lib-data-grid [loadingTemplate]="spinner" [loading]="isFetching()" ... />
+   */
+  loadingTemplate = input<TemplateRef<void> | undefined>(undefined);
+
+  /**
+   * Custom content shown in place of the rows when there's nothing to
+   * display: `loading` is `false` and the current page has zero rows,
+   * checked automatically, no separate input needed. Falls back to
+   * `DataGridMessages.empty()` as plain text when not set.
+   * @default undefined
+   * @example
+   * <ng-template #noResults>No results. <button (click)="clearFilters()">Clear filters</button></ng-template>
+   * <lib-data-grid [emptyTemplate]="noResults" ... />
+   */
+  emptyTemplate = input<TemplateRef<void> | undefined>(undefined);
 
   /**
    * Emitted when the user clicks a row.
@@ -273,6 +312,30 @@ export class DataGrid<T> {
     }
     return selectedCount === rows.length ? 'all' : 'some';
   });
+
+  /**
+   * What `<tbody>` actually renders. `'loading'` wins regardless of
+   * `paginatedData()`'s size; `'empty'` triggers automatically off
+   * `paginatedData().length`, no separate input needed; `'rows'` is the
+   * normal case. Exposed to the template only.
+   */
+  protected readonly tbodyState = computed<'loading' | 'empty' | 'rows'>(() => {
+    if (this.loading()) {
+      return 'loading';
+    }
+    return this.paginatedData().length === 0 ? 'empty' : 'rows';
+  });
+
+  /**
+   * `colspan` for the single-cell loading/empty row, so it visually
+   * spans every real column plus the selection column when one renders.
+   * `columns()` itself never includes the selection column, that one is
+   * rendered separately from `showSelectionColumn()`, not added to the
+   * `columns()` array.
+   */
+  protected readonly tbodyColspan = computed(
+    () => this.columns().length + (this.showSelectionColumn() ? 1 : 0),
+  );
 
   constructor() {
     // Sorting, a new `data()`, or a different `pageSize()` can all shrink

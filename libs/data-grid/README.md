@@ -41,6 +41,9 @@ const columns: ColumnConfig<User>[] = [{ key: 'name', label: 'Name', sortable: t
 | `selectable`  | `input<boolean>`                             | `false`    | Renders the grid's own checkbox column (header "select all" + one per row). Requires `rowKey`, see "Row selection" below. |
 | `rowKey`      | `input<((row: T) => string \| number) \| undefined>` | `undefined` | Extracts a stable identifier from a row, used as the key in `selection`. Required in practice when `selectable` is `true`. |
 | `selection`   | `model<Set<string \| number>>`               | `new Set()`| Keys of every selected row, across every page. Two-way bindable; the app reads it to act on the selection, the grid never acts on it itself. |
+| `loading`     | `input<boolean>`                             | `false`    | Shows the loading state in place of the rows, regardless of `data()`'s size. See "Loading and empty states" below. |
+| `loadingTemplate` | `input<TemplateRef<void> \| undefined>`  | `undefined`| Custom content for the loading state. Falls back to `DataGridMessages.loading()` as plain text. |
+| `emptyTemplate`   | `input<TemplateRef<void> \| undefined>`  | `undefined`| Custom content for the empty state (`loading` is `false` and the current page has zero rows). Falls back to `DataGridMessages.empty()` as plain text. |
 | `rowClick`    | `output<T>`                                  | N/A        | Emitted when the user clicks or keyboard-activates (Enter/Space) a row, except when that click or key originates from an interactive element inside one of its cells, see "Display columns" below. |
 
 ### `ColumnConfig<T>`
@@ -87,6 +90,8 @@ type DataGridSortState<T> = { key: string; direction: 'asc' | 'desc' } | null;
 | `pageStatus(current, total)` | `(current: number, total: number) => string` | Status text between the pagination buttons. |
 | `selectAll()` | `() => string` | Accessible label of the header "select all rows on this page" checkbox. |
 | `selectRow()` | `() => string` | Accessible label of an individual row's selection checkbox. |
+| `loading()` | `() => string` | Default text for the loading state, used when `loadingTemplate` isn't set. |
+| `empty()` | `() => string` | Default text for the empty state, used when `emptyTemplate` isn't set. |
 
 | Export | Type | Description |
 | ------ | ---- | ------------ |
@@ -205,6 +210,48 @@ A few things worth calling out:
 - `selection` isn't purged automatically when a row leaves `data()` (a filter excludes it, a server page moves past it, anything else): a stale key just doesn't match any row currently on screen, so it plays no part in the header checkbox's state until that row is visible again. Clear it explicitly (like `deleteSelected()` above) whenever that's not the wanted behavior.
 - `rowKey` is required in practice: without it, `selectable` logs a `console.error` and renders no selection column at all, the same as `mode="server"` without `totalCount`.
 - The row checkbox never triggers `rowClick`, same as any other interactive element inside a cell.
+
+### Loading and empty states
+
+`loading` shows a loading state in place of the rows, regardless of how many rows `data()` actually holds, useful while a refetch is in flight and the previous page's rows haven't been replaced yet. When `loading` is `false` and the current page has zero rows, the empty state shows automatically, no separate input needed.
+
+```typescript
+users = signal<User[]>([]);
+isFetching = signal(false);
+
+constructor() {
+  effect(() => {
+    this.isFetching.set(true);
+    this.fetchUsers().subscribe((rows) => {
+      this.users.set(rows);
+      this.isFetching.set(false);
+    });
+  });
+}
+```
+
+```html
+<ng-template #noResults>
+  <p>No users match your search.</p>
+  <button type="button" (click)="clearSearch()">Clear search</button>
+</ng-template>
+
+<lib-data-grid
+  [data]="users()"
+  [columns]="columns"
+  [loading]="isFetching()"
+  [emptyTemplate]="noResults"
+/>
+```
+
+Both states replace only the rows: `<thead>` and the pagination controls stay visible, spanning the same width via `colspan` (every column, plus the selection column when `selectable` is on).
+
+A few things worth calling out:
+
+- `loading` takes priority over the empty state: if both would apply at once (an in-flight refetch that also happens to have zero rows loaded, e.g. the very first load), the loading state wins.
+- `loadingTemplate`/`emptyTemplate` take no context: unlike `cellTemplate`, there's no row to bind them to.
+- While `loading` is `true`, the pagination buttons, every sortable header, and the selection checkboxes are all disabled, the same `[disabled]` pattern already used for the pagination boundaries.
+- `mode="server"` doesn't do anything special here: `loading` and the empty state work the same way regardless of `mode`, since they only ever look at `paginatedData()`'s size, not at who sorted or paginated it.
 
 ### Server mode
 

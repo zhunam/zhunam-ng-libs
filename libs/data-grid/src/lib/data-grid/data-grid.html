@@ -11,6 +11,7 @@
               [indeterminate]="pageSelectionState() === 'some'"
               [attr.aria-checked]="pageSelectionState() === 'some' ? 'mixed' : null"
               [attr.aria-label]="messages.selectAll()"
+              [disabled]="loading()"
               (change)="toggleSelectAll()"
             />
           </th>
@@ -18,7 +19,12 @@
         @for (column of columns(); track columnId(column)) {
           <th class="dg-th" [class.dg-th--sortable]="column.sortable" scope="col" [attr.aria-sort]="column.sortable ? ariaSortFor(column) : null">
             @if (isDataColumn(column) && column.sortable) {
-              <button type="button" class="dg-th-button dg-th-content" (click)="sortBy(column)">
+              <button
+                type="button"
+                class="dg-th-button dg-th-content"
+                [disabled]="loading()"
+                (click)="sortBy(column)"
+              >
                 <span [class.sr-only]="column.labelHidden">{{ column.label }}</span>
                 <span
                   class="dg-sort-icon"
@@ -38,51 +44,83 @@
       </tr>
     </thead>
     <tbody>
-      @for (row of paginatedData(); track $index) {
-        <tr
-          class="dg-row"
-          tabindex="0"
-          (click)="onRowClickEvent($event, row)"
-          (keydown)="onRowKeydown($event, row)"
-        >
-          @if (showSelectionColumn()) {
-            <td class="dg-td-select">
-              <input
-                type="checkbox"
-                class="dg-select-checkbox"
-                [checked]="isRowSelected(row)"
-                [attr.aria-label]="messages.selectRow()"
-                (change)="toggleRow(row)"
-              />
-            </td>
-          }
-          @for (column of columns(); track columnId(column)) {
-            <td [class]="column.cellClass ? column.cellClass(row) : null">
-              @if (isDataColumn(column)) {
-                @if (column.cellTemplate) {
-                  <ng-container
-                    [ngTemplateOutlet]="column.cellTemplate"
-                    [ngTemplateOutletContext]="{ $implicit: row }"
-                  />
-                } @else {
-                  {{ row[column.key] }}
-                }
+      @switch (tbodyState()) {
+        @case ('loading') {
+          <tr class="dg-state-row">
+            <td [attr.colspan]="tbodyColspan()">
+              @if (loadingTemplate(); as template) {
+                <ng-container [ngTemplateOutlet]="template" />
               } @else {
-                <ng-container
-                  [ngTemplateOutlet]="column.cellTemplate"
-                  [ngTemplateOutletContext]="{ $implicit: row }"
-                />
+                {{ messages.loading() }}
               }
             </td>
+          </tr>
+        }
+        @case ('empty') {
+          <tr class="dg-state-row">
+            <td [attr.colspan]="tbodyColspan()">
+              @if (emptyTemplate(); as template) {
+                <ng-container [ngTemplateOutlet]="template" />
+              } @else {
+                {{ messages.empty() }}
+              }
+            </td>
+          </tr>
+        }
+        @default {
+          @for (row of paginatedData(); track $index) {
+            <tr
+              class="dg-row"
+              tabindex="0"
+              (click)="onRowClickEvent($event, row)"
+              (keydown)="onRowKeydown($event, row)"
+            >
+              @if (showSelectionColumn()) {
+                <td class="dg-td-select">
+                  <input
+                    type="checkbox"
+                    class="dg-select-checkbox"
+                    [checked]="isRowSelected(row)"
+                    [attr.aria-label]="messages.selectRow()"
+                    [disabled]="loading()"
+                    (change)="toggleRow(row)"
+                  />
+                </td>
+              }
+              @for (column of columns(); track columnId(column)) {
+                <td [class]="column.cellClass ? column.cellClass(row) : null">
+                  @if (isDataColumn(column)) {
+                    @if (column.cellTemplate) {
+                      <ng-container
+                        [ngTemplateOutlet]="column.cellTemplate"
+                        [ngTemplateOutletContext]="{ $implicit: row }"
+                      />
+                    } @else {
+                      {{ row[column.key] }}
+                    }
+                  } @else {
+                    <ng-container
+                      [ngTemplateOutlet]="column.cellTemplate"
+                      [ngTemplateOutletContext]="{ $implicit: row }"
+                    />
+                  }
+                </td>
+              }
+            </tr>
           }
-        </tr>
+        }
       }
     </tbody>
   </table>
 </div>
 
 <nav class="dg-pagination">
-  <button type="button" class="dg-page-btn" (click)="previousPage()" [disabled]="currentPage() === 1">
+  <button
+    type="button"
+    class="dg-page-btn"
+    (click)="previousPage()"
+    [disabled]="loading() || currentPage() === 1"
+  >
     {{ messages.previous() }}
   </button>
   <span class="dg-page-info">{{ messages.pageStatus(currentPage(), totalPages()) }}</span>
@@ -90,7 +128,7 @@
     type="button"
     class="dg-page-btn"
     (click)="nextPage()"
-    [disabled]="currentPage() === totalPages()"
+    [disabled]="loading() || currentPage() === totalPages()"
   >
     {{ messages.next() }}
   </button>

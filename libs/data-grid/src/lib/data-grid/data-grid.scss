@@ -119,6 +119,19 @@ td {
 .dg-select-checkbox {
   cursor: pointer;
   margin: 0;
+
+  &:disabled {
+    cursor: not-allowed;
+  }
+}
+
+// The single-cell loading/empty row: centered, muted text. Not `.dg-row`,
+// so it never picks up that class's pointer cursor or hover background,
+// it isn't a real, clickable data row.
+.dg-state-row td {
+  text-align: center;
+  color: var(--zhunam-text-secondary, $default-text-secondary);
+  white-space: normal;
 }
 
 tbody tr:not(:last-child) td {
