@@ -5,6 +5,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
 
 ## [Unreleased]
 
+## [4.2.0] - 2026-09-28
+
 ### Added
 - `filterFn` input: a row predicate applied before sorting/pagination,
   in `mode="client"` only. No effect in `mode="server"`, filtering
