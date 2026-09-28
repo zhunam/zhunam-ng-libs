@@ -20,6 +20,23 @@ export interface DataGridMessages {
    * @param total Total number of pages.
    */
   pageStatus(current: number, total: number): string;
+
+  /**
+   * Accessible label for the "select all rows on this page" checkbox in
+   * the header, shown when `selectable` is `true`.
+   */
+  selectAll(): string;
+
+  /**
+   * Accessible label for an individual row's selection checkbox, shown
+   * when `selectable` is `true`. A single generic label rather than one
+   * naming the row: `DataGrid<T>` has no field designated as a row's
+   * display name (only `rowKey()`, which returns an opaque identifier,
+   * not necessarily human-readable), so there's no generic way to build
+   * a per-row label. The surrounding row content is still announced as
+   * part of normal table navigation.
+   */
+  selectRow(): string;
 }
 
 /**
@@ -30,6 +47,8 @@ export const DATA_GRID_MESSAGES_EN: DataGridMessages = {
   previous: () => 'Previous',
   next: () => 'Next',
   pageStatus: (current, total) => `Page ${current} of ${total}`,
+  selectAll: () => 'Select all rows on this page',
+  selectRow: () => 'Select row',
 };
 
 /**
@@ -41,4 +60,6 @@ export const DATA_GRID_MESSAGES_ES: DataGridMessages = {
   previous: () => 'Anterior',
   next: () => 'Siguiente',
   pageStatus: (current, total) => `Página ${current} de ${total}`,
+  selectAll: () => 'Seleccionar todas las filas de esta página',
+  selectRow: () => 'Seleccionar fila',
 };

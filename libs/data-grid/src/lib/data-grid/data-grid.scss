@@ -108,6 +108,19 @@ td {
   transform: translateY(0) rotate(180deg);
 }
 
+// The selection checkbox column shrinks to its content instead of
+// stretching like a regular data column would under table-layout: auto.
+.dg-th--select,
+.dg-td-select {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.dg-select-checkbox {
+  cursor: pointer;
+  margin: 0;
+}
+
 tbody tr:not(:last-child) td {
   border-bottom: 1px solid var(--zhunam-border, $default-border);
 }

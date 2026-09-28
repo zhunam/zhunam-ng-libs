@@ -15,6 +15,10 @@ qué NO incluye la versión actual.
 - `columns: input.required<ColumnConfig<T>[]>`: configuración de columnas
 - `pageSize: input<number>`: tamaño de página, default 10. Unidireccional
   en los dos modos.
+- `filterFn: input<((row: T) => boolean) | undefined>`: predicado de fila
+  aplicado antes de ordenar/paginar, solo en `mode="client"`. Sin efecto
+  en `mode="server"` (ahí filtrar es responsabilidad de la app). Sin
+  debounce interno.
 - `mode: input<'client' | 'server'>`: default `'client'` (ordena/pagina
   `data()` internamente, sin cambios respecto a antes). `'server'`: la
   grilla renderiza `data()` tal cual llega, sin ordenar ni cortar; reporta
@@ -27,6 +31,17 @@ qué NO incluye la versión actual.
 - `sortState: model<DataGridSortState<T>>`: orden actual
   (`{ key: string; direction: 'asc' | 'desc' } | null`). Mismo criterio
   que `currentPage`.
+- `selectable: input<boolean>`: default false. Agrega la columna propia
+  de checkbox (header "seleccionar todo" + uno por fila). Requiere
+  `rowKey`; sin él, `console.error` y se trata como false.
+- `rowKey: input<((row: T) => string | number) | undefined>`: identificador
+  estable de fila, usado como clave en `selection`. Requerido en la
+  práctica si `selectable` es true.
+- `selection: model<Set<string | number>>`: claves seleccionadas, en
+  todas las páginas, no solo la actual. Bidireccional. No se purga sola
+  cuando una fila deja de estar cargada; la app la limpia si hace falta.
+  "Seleccionar todo" opera solo sobre `paginatedData()` (la página
+  actual ya filtrada/ordenada), nunca sobre el dataset completo.
 - `rowClick: output<T>`: emite el registro clickeado
 - `DataGridModule`: wrapper NgModule para consumidores con arquitectura
   NgModule clásica (`imports: [DataGrid]`, `exports: [DataGrid]`). El
@@ -46,3 +61,20 @@ imposible de expresar en TypeScript sin un getter condicional. Un único
 `currentPage`: sin nada bindeado desde afuera, se comporta como el
 signal interno que reemplaza, verificado con la suite completa de tests
 de modo `client` sin modificar ninguna aserción.
+
+## Selección de filas (`selectable`)
+
+`[indeterminate]` del checkbox de header se resuelve con un binding de
+propiedad normal de Angular (`[indeterminate]="pageSelectionState() === 'some'"`),
+sin `ElementRef`/`viewChild` ni código imperativo: `indeterminate` es una
+propiedad real del DOM de `HTMLInputElement` (no un atributo HTML
+declarativo), y el binding de Angular ya setea propiedades del DOM
+directamente cuando no coincide con un input de alguna directiva.
+Confirmado con un test real que lee `checkbox.indeterminate` (la
+propiedad, no el atributo) después de renderizar, no solo con lectura de
+tipos.
+
+`aria-checked="mixed"` se bindea solo cuando la selección de la página
+es parcial (`[attr.aria-checked]="pageSelectionState() === 'some' ? 'mixed' : null"`);
+en "todas" o "ninguna" no se setea el atributo, la semántica nativa del
+checkbox (`checked`) ya alcanza.

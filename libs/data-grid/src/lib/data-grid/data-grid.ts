@@ -56,6 +56,28 @@ export class DataGrid<T> {
   pageSize = input(10);
 
   /**
+   * Row predicate applied before sorting/pagination, in `mode="client"`
+   * only: a row is rendered when this returns `true` for it, or every
+   * row is rendered when left `undefined`. Has no effect at all in
+   * `mode="server"`, where the app is expected to filter before ever
+   * passing `data()` in, same as it's expected to sort/paginate there.
+   *
+   * Not debounced internally: every new function reference re-runs the
+   * filter over the whole dataset, so an app deriving this from live
+   * text input (e.g. a search box) should debounce that signal itself
+   * before it reaches `filterFn`, the same way it would before making a
+   * real request in `mode="server"`.
+   * @default undefined
+   * @example
+   * searchTerm = signal('');
+   * filterFn = computed(() => {
+   *   const term = this.searchTerm().toLowerCase();
+   *   return term ? (row: User) => row.name.toLowerCase().includes(term) : undefined;
+   * });
+   */
+  filterFn = input<((row: T) => boolean) | undefined>(undefined);
+
+  /**
    * Whether `DataGrid` sorts/paginates `data()` itself (`'client'`) or
    * only renders whatever page the app already sorted/paginated
    * (`'server'`), reporting `currentPage`/`sortState` back so the app
@@ -82,6 +104,29 @@ export class DataGrid<T> {
    * error in `mode="server"` when left unset, see `checkServerModeConfig()`.
    */
   totalCount = input<number>();
+
+  /**
+   * Whether `DataGrid` renders its own row-selection checkbox column: a
+   * "select all" checkbox in the header, one checkbox per row in the
+   * body. Requires `rowKey` to also be set, logs a `console.error` and
+   * renders without the column otherwise, see `checkSelectionConfig()`.
+   * @default false
+   * @example
+   * <lib-data-grid [selectable]="true" [rowKey]="rowKey" [(selection)]="selection" ... />
+   */
+  selectable = input<boolean>(false);
+
+  /**
+   * Extracts a stable, unique identifier from a row, used as the key in
+   * `selection()`. Required in practice when `selectable` is `true`:
+   * there's no other way to track which rows are selected across a sort,
+   * a filter, or a page change, since row objects themselves aren't
+   * guaranteed stable identity (e.g. a fresh array from a server fetch).
+   * @default undefined
+   * @example
+   * rowKey = (user: User) => user.id;
+   */
+  rowKey = input<((row: T) => string | number) | undefined>(undefined);
 
   /**
    * Emitted when the user clicks a row.
@@ -118,9 +163,35 @@ export class DataGrid<T> {
    */
   readonly sortState = model<DataGridSortState<T>>(null);
 
+  /**
+   * Keys (from `rowKey()`) of every currently selected row, across every
+   * page, not just the one visible now: a key that isn't in the rows
+   * currently loaded is simply not reflected in the "select all" checkbox
+   * state, it isn't purged from this set. Two-way bindable, same pattern
+   * as `currentPage`/`sortState`: an app reads this to act on a bulk
+   * selection (this library never acts on it itself), and can also set
+   * it directly, e.g. to clear the selection after a bulk action.
+   * @default new Set()
+   * @example
+   * <lib-data-grid [selectable]="true" [rowKey]="rowKey" [(selection)]="selection" ... />
+   */
+  readonly selection = model<Set<string | number>>(new Set());
+
+  /**
+   * `data()` narrowed by `filterFn()`, or `data()` itself when
+   * `filterFn()` is `undefined`. Only ever read by `sortedData()`, never
+   * by `paginatedData()` directly in `mode="server"`, that's what keeps
+   * `filterFn` inert there.
+   */
+  private readonly filteredData = computed(() => {
+    const predicate = this.filterFn();
+    const rows = this.data();
+    return predicate ? rows.filter(predicate) : rows;
+  });
+
   private readonly sortedData = computed(() => {
     const state = this.sortState();
-    const rows = this.data();
+    const rows = this.filteredData();
     if (!state) {
       return rows;
     }
@@ -146,7 +217,8 @@ export class DataGrid<T> {
 
   /**
    * Total number of pages. In `mode="client"`, derived from
-   * `sortedData().length` and `pageSize()`, unchanged from before. In
+   * `sortedData().length` and `pageSize()` (`sortedData()` already
+   * reflects `filterFn()`, so a filter narrows this too). In
    * `mode="server"`, derived from `totalCount()` and `pageSize()`
    * instead, since the grid never sees the full dataset. Always at least
    * 1, so the page counter never shows a page 0 of 0.
@@ -158,9 +230,11 @@ export class DataGrid<T> {
 
   /**
    * Rows actually rendered for the current page. In `mode="client"`,
-   * `sortedData()` sliced to the current page, unchanged from before. In
-   * `mode="server"`, `data()` as received, with no slicing or sorting:
-   * the app already sent exactly the rows for `currentPage()`.
+   * `sortedData()` sliced to the current page (already filtered and
+   * sorted). In `mode="server"`, `data()` as received directly, never
+   * `filteredData()`/`sortedData()`, with no filtering, slicing, or
+   * sorting: the app already sent exactly the rows for `currentPage()`,
+   * and `filterFn` has no effect in this mode.
    */
   protected readonly paginatedData = computed(() => {
     if (this.mode() === 'server') {
@@ -168,6 +242,36 @@ export class DataGrid<T> {
     }
     const start = (this.currentPage() - 1) * this.pageSize();
     return this.sortedData().slice(start, start + this.pageSize());
+  });
+
+  /**
+   * Whether the selection checkbox column actually renders: `selectable()`
+   * alone isn't enough, `rowKey()` also has to be set, there's no other
+   * way to key `selection()`. Exposed to the template only.
+   */
+  protected readonly showSelectionColumn = computed(
+    () => this.selectable() && this.rowKey() !== undefined,
+  );
+
+  /**
+   * Selection state of the current page as a whole, for the header
+   * "select all" checkbox: `'all'` checks it, `'none'` unchecks it,
+   * `'some'` renders it indeterminate. Always `'none'` when there's no
+   * `rowKey()` or the current page is empty.
+   */
+  protected readonly pageSelectionState = computed<'all' | 'none' | 'some'>(() => {
+    const getKey = this.rowKey();
+    const rows = this.paginatedData();
+    if (!getKey || rows.length === 0) {
+      return 'none';
+    }
+
+    const selected = this.selection();
+    const selectedCount = rows.filter((row) => selected.has(getKey(row))).length;
+    if (selectedCount === 0) {
+      return 'none';
+    }
+    return selectedCount === rows.length ? 'all' : 'some';
   });
 
   constructor() {
@@ -183,6 +287,7 @@ export class DataGrid<T> {
     });
 
     effect(() => this.checkServerModeConfig());
+    effect(() => this.checkSelectionConfig());
   }
 
   /**
@@ -197,6 +302,21 @@ export class DataGrid<T> {
     if (this.mode() === 'server' && this.totalCount() === undefined) {
       console.error(
         '[DataGrid] mode="server" requires totalCount to be set; totalPages() falls back to 1 without it.',
+      );
+    }
+  }
+
+  /**
+   * Warns, without throwing, when `selectable` is `true` without
+   * `rowKey`: `showSelectionColumn()` would otherwise silently render no
+   * selection column at all, with no error to explain why. Same
+   * reasoning as `checkServerModeConfig()`: a `console.error`, not a
+   * thrown error, so a missed input doesn't take down the whole render.
+   */
+  private checkSelectionConfig(): void {
+    if (this.selectable() && this.rowKey() === undefined) {
+      console.error(
+        '[DataGrid] selectable requires rowKey to be set; the selection column will not render without it.',
       );
     }
   }
@@ -300,5 +420,62 @@ export class DataGrid<T> {
 
   protected nextPage(): void {
     this.currentPage.update((page) => Math.min(this.totalPages(), page + 1));
+  }
+
+  /**
+   * Whether a given row is currently selected. `false` whenever `rowKey`
+   * isn't set, the same as the rest of the selection surface.
+   */
+  protected isRowSelected(row: T): boolean {
+    const getKey = this.rowKey();
+    return getKey ? this.selection().has(getKey(row)) : false;
+  }
+
+  /**
+   * Toggles a single row's selection, leaving every other key in
+   * `selection()` untouched, including keys from other pages.
+   */
+  protected toggleRow(row: T): void {
+    const getKey = this.rowKey();
+    if (!getKey) {
+      return;
+    }
+    const key = getKey(row);
+    this.selection.update((current) => {
+      const next = new Set(current);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  }
+
+  /**
+   * Toggles selection for every row on the current page only: adds all
+   * of their keys when the page isn't already fully selected, removes
+   * only those keys otherwise. Never touches a key belonging to a row
+   * outside `paginatedData()`.
+   */
+  protected toggleSelectAll(): void {
+    const getKey = this.rowKey();
+    if (!getKey) {
+      return;
+    }
+    const rows = this.paginatedData();
+    const selectAll = this.pageSelectionState() !== 'all';
+    this.selection.update((current) => {
+      const next = new Set(current);
+      for (const row of rows) {
+        const key = getKey(row);
+        if (selectAll) {
+          next.add(key);
+        } else {
+          next.delete(key);
+        }
+      }
+      return next;
+    });
   }
 }
