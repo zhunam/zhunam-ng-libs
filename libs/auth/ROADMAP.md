@@ -66,3 +66,17 @@
       mismo valor que su `:host`. Sin alias de compatibilidad hacia los
       nombres viejos (breaking change, bump de versión major). Tabla
       completa de renames en `CHANGELOG.md`.
+- [x] Errores normalizados vía `AuthServiceError`/`AUTH_ERROR_CODES`
+      (núcleo): los adaptadores `firebase/` y `supabase/` ya no propagan
+      el error crudo del proveedor, lo mapean a uno de los diez códigos
+      compartidos, con `cause` conservando el error original (breaking
+      change, bump de versión major). `completePasswordReset?()` opcional
+      en `AuthService`, con manejo específico por proveedor (Firebase
+      exige `code`, Supabase lo ignora). `signUp()` acepta un
+      `profile?: AuthSignUpProfile` con `displayName`, `signIn()` acepta
+      `options?: AuthSignInOptions` con `persistent` (solo Firebase,
+      Supabase lo ignora por ser config del cliente). `:focus-visible`
+      agregado a `.auth-link-button` en `LoginForm`, previamente sin
+      estilo propio. `@zhunam/form-builder` peerDependency subido a
+      `^3.0.0`. `MockAuthService` de la demo actualizado para reflejar
+      los nuevos códigos/parámetros sin cambiar ningún texto visible.

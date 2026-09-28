@@ -110,13 +110,18 @@ function createFirebaseHarness(): ProviderHarness {
       sendPasswordResetEmailMock.mockResolvedValue(undefined);
     },
     mockResetPasswordUserNotFound() {
-      // Firebase throws this by default for a non-existent email (unless
-      // "Email enumeration protection" is enabled project-side) — see the
-      // security comment in reset-password-form.ts.
-      sendPasswordResetEmailMock.mockRejectedValue({
-        code: 'auth/user-not-found',
-        message: 'There is no user record corresponding to this identifier.',
-      });
+      // Firebase throws this by default for a non-existent email when the
+      // project does NOT have "Email enumeration protection" enabled
+      // (not the default for projects created after 2023-09-15), see the
+      // security comment in reset-password-form.ts. A real FirebaseError
+      // is always an Error subclass (code as an extra property), not a
+      // plain object, which matters here: FirebaseAuthService's error
+      // mapping reads .message through `instanceof Error`.
+      sendPasswordResetEmailMock.mockRejectedValue(
+        Object.assign(new Error('There is no user record corresponding to this identifier.'), {
+          code: 'auth/user-not-found',
+        }),
+      );
     },
   };
 }

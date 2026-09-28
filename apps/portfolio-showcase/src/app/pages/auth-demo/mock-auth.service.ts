@@ -1,5 +1,5 @@
 import { computed, signal } from '@angular/core';
-import { AuthService, AuthUser } from '@zhunam/auth';
+import { AUTH_ERROR_CODES, AuthService, AuthSignInOptions, AuthSignUpProfile, AuthUser } from '@zhunam/auth';
 
 export const DEMO_EMAIL = 'demo@demo.com';
 export const DEMO_PASSWORD = 'demo1234';
@@ -52,7 +52,8 @@ export class MockAuthService implements AuthService {
   readonly registerResult = this.registerResultSignal.asReadonly();
   readonly resetPasswordResult = this.resetPasswordResultSignal.asReadonly();
 
-  async signIn(email: string, password: string): Promise<AuthUser> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async signIn(email: string, password: string, options?: AuthSignInOptions): Promise<AuthUser> {
     this.loginResultSignal.set(null);
     await this.simulateLatency();
     if (email === DEMO_EMAIL && password === DEMO_PASSWORD) {
@@ -63,22 +64,22 @@ export class MockAuthService implements AuthService {
     }
     const message = 'Invalid email or password.';
     this.loginResultSignal.set({ ok: false, error: message });
-    throw new Error(message);
+    throw Object.assign(new Error(message), { code: AUTH_ERROR_CODES.invalidCredential });
   }
 
-  async signUp(email: string): Promise<AuthUser> {
+  async signUp(email: string, password: string, profile?: AuthSignUpProfile): Promise<AuthUser> {
     this.registerResultSignal.set(null);
     await this.simulateLatency();
     if (this.registeredEmails.has(email)) {
       const message = 'This email is already in use.';
       this.registerResultSignal.set({ ok: false, error: message });
-      throw new Error(message);
+      throw Object.assign(new Error(message), { code: AUTH_ERROR_CODES.emailAlreadyInUse });
     }
     const user: AuthUser = {
       uid: `demo-user-${Date.now()}`,
       email,
       emailVerified: false,
-      displayName: null,
+      displayName: profile?.displayName ?? null,
     };
     this.registeredEmails.add(email);
     this.userSignal.set(user);
@@ -105,7 +106,7 @@ export class MockAuthService implements AuthService {
       // success message — that contrast IS the demonstration.
       const message = 'There is no user record corresponding to this identifier.';
       this.resetPasswordResultSignal.set({ ok: false, error: message });
-      throw Object.assign(new Error(message), { code: 'auth/user-not-found' });
+      throw Object.assign(new Error(message), { code: AUTH_ERROR_CODES.userNotFound });
     }
     this.resetPasswordResultSignal.set({ ok: true, value: undefined });
   }

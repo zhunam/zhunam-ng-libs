@@ -101,11 +101,117 @@ protected onLoginSuccess(user: AuthUser): void {
 | --------------------------------------- | ------------------------- | --------------------------------------------------- |
 | `currentUser`                           | `Signal<AuthUser \| null>` | The current user, read-only, updates reactively.    |
 | `isAuthenticated`                       | `Signal<boolean>`          | Derived from `currentUser`.                         |
-| `signIn(email, password)`               | `Promise<AuthUser>`        | Signs in an existing user.                          |
-| `signUp(email, password)`               | `Promise<AuthUser>`        | Creates a new user account.                         |
+| `signIn(email, password, options?)`     | `Promise<AuthUser>`        | Signs in an existing user. `options`: see `AuthSignInOptions`. |
+| `signUp(email, password, profile?)`     | `Promise<AuthUser>`        | Creates a new user account. `profile`: see `AuthSignUpProfile`. |
 | `signOut()`                              | `Promise<void>`            | Signs out the current user.                         |
 | `resetPassword(email)`                  | `Promise<void>`            | Sends a password reset email via the provider's native flow. |
+| `completePasswordReset?(newPassword, code?)` | `Promise<void>`      | Optional. Completes a reset started by `resetPassword()`. See "Completing a password reset" below, the per-provider behavior differs. |
 | `getIdToken()`                          | `Promise<string \| null>`  | Fresh ID token for authenticated HTTP calls, `null` if signed out. |
+
+`AuthSignUpProfile`
+
+| Field | Type | Description |
+| ----- | ---- | ------------ |
+| `displayName` | `string \| undefined` | Display name to set on the new account, if provided. |
+
+`AuthSignInOptions`
+
+| Field | Type | Description |
+| ----- | ---- | ------------ |
+| `persistent` | `boolean \| undefined` | Whether the session survives closing the browser. Left `undefined`, the provider's own default applies untouched. Firebase only: Supabase ignores this, see "Session persistence" below. |
+
+### Normalized errors: `AUTH_ERROR_CODES` and `AuthServiceError`
+
+Every `AuthService` method rejects with an `AuthServiceError`, never the
+raw error a provider's SDK throws. Branch on `error.code`, which is
+always one of `AUTH_ERROR_CODES`, without needing to import Firebase or
+Supabase types:
+
+```typescript
+import { AUTH_ERROR_CODES, AuthServiceError } from '@zhunam/auth';
+
+try {
+  await authService.signIn(email, password);
+} catch (error) {
+  if (error instanceof AuthServiceError && error.code === AUTH_ERROR_CODES.invalidCredential) {
+    // show a generic "wrong email or password" message
+  }
+}
+```
+
+`AuthServiceError`
+
+| Member | Type | Description |
+| ------ | ---- | ------------ |
+| `code` | `AuthErrorCode` | One of `AUTH_ERROR_CODES`'s values. |
+| `message` | `string` | Copied from the original provider error. |
+| `cause` | `unknown` | The original error the provider threw, for logging or a provider-specific fallback. |
+
+`AUTH_ERROR_CODES` and their real Firebase/Supabase equivalents:
+
+| Code | Firebase | Supabase (`error.code`) |
+| ---- | -------- | ------------------------ |
+| `invalidCredential` (`auth/invalid-credential`) | `auth/invalid-credential`, `auth/wrong-password` | `invalid_credentials` |
+| `emailAlreadyInUse` (`auth/email-already-in-use`) | `auth/email-already-in-use` | `user_already_exists`, `email_exists` |
+| `userNotFound` (`auth/user-not-found`) | `auth/user-not-found` (only reachable without Email Enumeration Protection, see below) | Never: `signInWithPassword` is enumeration-safe by design |
+| `weakPassword` (`auth/weak-password`) | `auth/weak-password` | `weak_password` |
+| `tooManyRequests` (`auth/too-many-requests`) | `auth/too-many-requests` | `over_request_rate_limit`, `over_email_send_rate_limit` |
+| `networkRequestFailed` (`auth/network-request-failed`) | `auth/network-request-failed` | An `AuthRetryableFetchError` instance |
+| `invalidEmail` (`auth/invalid-email`) | `auth/invalid-email` | `email_address_invalid` |
+| `invalidActionCode` (`auth/invalid-action-code`) | `auth/invalid-action-code`, or thrown locally by `completePasswordReset()` when called without a `code` | An `AuthSessionMissingError` instance (see "Completing a password reset") |
+| `expiredActionCode` (`auth/expired-action-code`) | `auth/expired-action-code` | Not applicable |
+| `unknown` (`auth/unknown`) | Any other Firebase code, or an error with no code at all | Any other error |
+
+### Completing a password reset
+
+`completePasswordReset(newPassword, code?)` finishes what
+`resetPassword()` started. The two providers this library supports
+handle it differently, which is why `code` is optional:
+
+- **Firebase**: requires `code`, the `oobCode` query parameter from the
+  reset link. Your app extracts it from the page URL (this library has
+  no routing opinion) and passes it through. Calling this without one
+  fails locally with `AUTH_ERROR_CODES.invalidActionCode`, without ever
+  reaching the Firebase SDK.
+- **Supabase**: ignores `code` entirely. Clicking the reset link already
+  establishes a recovery session client-side, through whatever
+  `detectSessionInUrl`/`flowType` the Supabase client was created with
+  (both default to values that make this work automatically); by the
+  time your app calls this, the session `updateUser()` needs is already
+  active.
+
+### Session persistence
+
+`signIn(email, password, { persistent })` only has an effect with
+Firebase. `true` calls `setPersistence(auth, browserLocalPersistence)`
+before signing in, `false` calls it with `browserSessionPersistence`,
+and leaving it `undefined` never calls `setPersistence()` at all, so the
+Auth instance keeps whatever it already had. `setPersistence()` is
+global to the Firebase Auth instance, not scoped to that one sign-in
+call: it stays in effect for every later sign-in too, until changed
+again or the page reloads.
+
+`persistent: true` forces `browserLocalPersistence` specifically, not
+just "some persistent storage". This differs from Firebase's own
+default when `persistent` is left out entirely: `getAuth()` without
+`setPersistence()` already tries `indexedDBLocalPersistence` first,
+falling back to `browserLocalPersistence` only if the browser doesn't
+support IndexedDB (confirmed against the installed `firebase` package's
+own source, `platform_browser/index.ts`, not just its public docs). In
+practice both end up durable across browser restarts, so most apps
+never need to pass `persistent` at all: reach for it only when you
+need an explicit choice between "remember me" and "just this session",
+for example a checkbox in your own login form:
+
+```typescript
+async onSubmit(email: string, password: string, rememberMe: boolean) {
+  await this.authService.signIn(email, password, { persistent: rememberMe });
+}
+```
+
+Supabase ignores `persistent` completely: its `persistSession` is a
+setting on the Supabase client itself, chosen once when the client is
+created, not something a single sign-in call can override.
 
 | Other exports        | Type                            | Description                                                        |
 | --------------------- | -------------------------------- | --------------------------------------------------------------------- |
@@ -233,7 +339,7 @@ any other reactive input.
 | `@angular/router`           | `^20.0.0 \|\| ^21.0.0 \|\| ^22.0.0`     | Always (`authGuard`)                   |
 | `firebase`                  | `^10.0.0 \|\| ^11.0.0 \|\| ^12.0.0`     | Only if using `@zhunam/auth/firebase`  |
 | `@supabase/supabase-js`     | `^2.0.0`                               | Only if using `@zhunam/auth/supabase`  |
-| `@zhunam/form-builder`      | `^2.0.0`                               | Only if using `@zhunam/auth/form-ui`   |
+| `@zhunam/form-builder`      | `^3.0.0`                               | Only if using `@zhunam/auth/form-ui`   |
 
 ## Security
 
@@ -241,6 +347,7 @@ any other reactive input.
 - `AuthUser` is deliberately minimal. It never exposes tokens, credentials, or any provider-specific metadata.
 - `getIdToken()` is the only way to access the current ID token. It's never a passive property on `AuthUser` or `AuthService`, so it can't be read accidentally by code that only needed to check who's signed in.
 - `ResetPasswordForm` always shows the same success message, whether the submitted email is registered or not. This is a deliberate anti-enumeration protection, not a missing feature; you can see it in action in the live demo.
+- `AuthService.signUp()` with an email that's already registered doesn't always fail visibly the same way. Firebase always rejects with `AUTH_ERROR_CODES.emailAlreadyInUse`. Supabase's behavior depends on the project's own email/phone confirmation settings: with both enabled, it can instead resolve with an obfuscated, fake-looking user object rather than an error, by design on Supabase's side. This library doesn't try to paper over that difference: check your Supabase project's settings if you need a consistent signal.
 - Switching providers (Firebase to Supabase or back) never requires touching your application code, thanks to the shared `AuthService` contract. There's no provider-specific type or behavior for your app to depend on.
 
 ## Why this one

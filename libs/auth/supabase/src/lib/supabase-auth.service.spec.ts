@@ -1,6 +1,16 @@
 import { NgZone, provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import type { AuthChangeEvent, Session, SupabaseClient, User } from '@supabase/supabase-js';
+import {
+  AuthApiError,
+  AuthRetryableFetchError,
+  AuthSessionMissingError,
+  AuthWeakPasswordError,
+  type AuthChangeEvent,
+  type Session,
+  type SupabaseClient,
+  type User,
+} from '@supabase/supabase-js';
+import { AUTH_ERROR_CODES, AuthServiceError } from '@zhunam/auth';
 import { SupabaseAuthService } from './supabase-auth.service';
 
 function createSupabaseUser(overrides: Partial<User> = {}): User {
@@ -28,6 +38,7 @@ function createFakeClient() {
       signUp: vi.fn(),
       signOut: vi.fn(),
       resetPasswordForEmail: vi.fn(),
+      updateUser: vi.fn(),
       getSession: vi.fn(),
       onAuthStateChange: vi.fn(),
     },
@@ -127,17 +138,6 @@ describe('SupabaseAuthService', () => {
     expect(Object.keys(result)).toEqual(['uid', 'email', 'emailVerified', 'displayName']);
   });
 
-  it('propagates a Supabase error from signIn as-is, without translating it', async () => {
-    const service = createService();
-    const supabaseError = { name: 'AuthApiError', message: 'Invalid login credentials', status: 400 };
-    (fakeClient.auth.signInWithPassword as ReturnType<typeof vi.fn>).mockResolvedValue({
-      data: { user: null, session: null },
-      error: supabaseError,
-    });
-
-    await expect(service.signIn('user@example.com', 'wrong')).rejects.toBe(supabaseError);
-  });
-
   it('signUp calls signUp with the given credentials and maps only the 4 AuthUser fields', async () => {
     const service = createService();
     const user = createSupabaseUser();
@@ -169,31 +169,11 @@ describe('SupabaseAuthService', () => {
     );
   });
 
-  it('propagates a Supabase error from signUp as-is, without translating it', async () => {
-    const service = createService();
-    const supabaseError = { name: 'AuthApiError', message: 'User already registered', status: 422 };
-    (fakeClient.auth.signUp as ReturnType<typeof vi.fn>).mockResolvedValue({
-      data: { user: null, session: null },
-      error: supabaseError,
-    });
-
-    await expect(service.signUp('user@example.com', 'secret')).rejects.toBe(supabaseError);
-  });
-
   it('signOut resolves when Supabase reports no error', async () => {
     const service = createService();
     (fakeClient.auth.signOut as ReturnType<typeof vi.fn>).mockResolvedValue({ error: null });
 
     await expect(service.signOut()).resolves.toBeUndefined();
-  });
-
-  it('signOut calls Supabase signOut and propagates its error as-is', async () => {
-    const service = createService();
-    const supabaseError = { name: 'AuthApiError', message: 'Network error', status: 500 };
-    (fakeClient.auth.signOut as ReturnType<typeof vi.fn>).mockResolvedValue({ error: supabaseError });
-
-    await expect(service.signOut()).rejects.toBe(supabaseError);
-    expect(fakeClient.auth.signOut).toHaveBeenCalled();
   });
 
   it('resetPassword calls resetPasswordForEmail with the given email', async () => {
@@ -203,14 +183,6 @@ describe('SupabaseAuthService', () => {
     await service.resetPassword('user@example.com');
 
     expect(fakeClient.auth.resetPasswordForEmail).toHaveBeenCalledWith('user@example.com');
-  });
-
-  it('resetPassword propagates a Supabase error as-is', async () => {
-    const service = createService();
-    const supabaseError = { name: 'AuthApiError', message: 'Email rate limit exceeded', status: 429 };
-    (fakeClient.auth.resetPasswordForEmail as ReturnType<typeof vi.fn>).mockResolvedValue({ error: supabaseError });
-
-    await expect(service.resetPassword('user@example.com')).rejects.toBe(supabaseError);
   });
 
   it('getIdToken returns null when there is no active session', async () => {
@@ -234,17 +206,6 @@ describe('SupabaseAuthService', () => {
     await expect(service.getIdToken()).resolves.toBe('access-token-xyz');
   });
 
-  it('getIdToken propagates a Supabase error as-is', async () => {
-    const service = createService();
-    const supabaseError = { name: 'AuthApiError', message: 'Session expired', status: 401 };
-    (fakeClient.auth.getSession as ReturnType<typeof vi.fn>).mockResolvedValue({
-      data: { session: null },
-      error: supabaseError,
-    });
-
-    await expect(service.getIdToken()).rejects.toBe(supabaseError);
-  });
-
   it('maps email to null when the Supabase user has no email', () => {
     const service = createService();
     const user = createSupabaseUser({ email: undefined });
@@ -252,5 +213,151 @@ describe('SupabaseAuthService', () => {
     authStateCallback('SIGNED_IN', createSession(user));
 
     expect(service.currentUser()?.email).toBeNull();
+  });
+
+  describe('A1: normalized errors (AuthServiceError), using real Supabase error instances', () => {
+    it.each([
+      ['invalid_credentials', AUTH_ERROR_CODES.invalidCredential],
+      ['user_already_exists', AUTH_ERROR_CODES.emailAlreadyInUse],
+      ['email_exists', AUTH_ERROR_CODES.emailAlreadyInUse],
+      ['over_request_rate_limit', AUTH_ERROR_CODES.tooManyRequests],
+      ['over_email_send_rate_limit', AUTH_ERROR_CODES.tooManyRequests],
+      ['email_address_invalid', AUTH_ERROR_CODES.invalidEmail],
+    ])('AuthApiError with code %s maps to %s', async (supabaseCode, expectedCode) => {
+      const service = createService();
+      const supabaseError = new AuthApiError('Supabase message', 400, supabaseCode);
+      (fakeClient.auth.signInWithPassword as ReturnType<typeof vi.fn>).mockResolvedValue({
+        data: { user: null, session: null },
+        error: supabaseError,
+      });
+
+      let rejected: unknown;
+      try {
+        await service.signIn('user@example.com', 'wrong');
+      } catch (error) {
+        rejected = error;
+      }
+
+      expect(rejected).toBeInstanceOf(AuthServiceError);
+      expect((rejected as AuthServiceError).code).toBe(expectedCode);
+      expect((rejected as AuthServiceError).message).toBe('Supabase message');
+      expect((rejected as AuthServiceError).cause).toBe(supabaseError);
+    });
+
+    it('a real AuthWeakPasswordError maps to weakPassword', async () => {
+      const service = createService();
+      const supabaseError = new AuthWeakPasswordError('Password too weak', 422, ['length']);
+      (fakeClient.auth.signUp as ReturnType<typeof vi.fn>).mockResolvedValue({
+        data: { user: null, session: null },
+        error: supabaseError,
+      });
+
+      await expect(service.signUp('user@example.com', 'weak')).rejects.toMatchObject({
+        code: AUTH_ERROR_CODES.weakPassword,
+        cause: supabaseError,
+      });
+    });
+
+    it('a real AuthRetryableFetchError maps to networkRequestFailed', async () => {
+      const service = createService();
+      const supabaseError = new AuthRetryableFetchError('Failed to fetch', 0);
+      (fakeClient.auth.signInWithPassword as ReturnType<typeof vi.fn>).mockResolvedValue({
+        data: { user: null, session: null },
+        error: supabaseError,
+      });
+
+      await expect(service.signIn('user@example.com', 'secret')).rejects.toMatchObject({
+        code: AUTH_ERROR_CODES.networkRequestFailed,
+        cause: supabaseError,
+      });
+    });
+
+    it('an unrecognized error code maps to unknown', async () => {
+      const service = createService();
+      const supabaseError = new AuthApiError('Some other failure', 500, 'unexpected_failure');
+      (fakeClient.auth.signOut as ReturnType<typeof vi.fn>).mockResolvedValue({ error: supabaseError });
+
+      await expect(service.signOut()).rejects.toMatchObject({ code: AUTH_ERROR_CODES.unknown });
+    });
+  });
+
+  describe('A2: completePasswordReset', () => {
+    it('calls updateUser with only the new password, code is not part of the call', async () => {
+      const service = createService();
+      (fakeClient.auth.updateUser as ReturnType<typeof vi.fn>).mockResolvedValue({
+        data: { user: createSupabaseUser() },
+        error: null,
+      });
+
+      await service.completePasswordReset('new-password', 'some-firebase-style-code');
+
+      expect(fakeClient.auth.updateUser).toHaveBeenCalledWith({ password: 'new-password' });
+      expect(fakeClient.auth.updateUser).toHaveBeenCalledTimes(1);
+    });
+
+    it('maps a missing recovery session (AuthSessionMissingError) to invalidActionCode', async () => {
+      const service = createService();
+      const supabaseError = new AuthSessionMissingError();
+      (fakeClient.auth.updateUser as ReturnType<typeof vi.fn>).mockResolvedValue({
+        data: { user: null },
+        error: supabaseError,
+      });
+
+      await expect(service.completePasswordReset('new-password')).rejects.toMatchObject({
+        code: AUTH_ERROR_CODES.invalidActionCode,
+        cause: supabaseError,
+      });
+    });
+  });
+
+  describe('A3: signUp with a display name profile', () => {
+    it('sends displayName as options.data.full_name, the same key toAuthUser() reads', async () => {
+      const service = createService();
+      const user = createSupabaseUser({ user_metadata: { full_name: 'Ada Lovelace' } });
+      (fakeClient.auth.signUp as ReturnType<typeof vi.fn>).mockResolvedValue({
+        data: { user, session: createSession(user) },
+        error: null,
+      });
+
+      const result = await service.signUp('new@example.com', 'secret', { displayName: 'Ada Lovelace' });
+
+      expect(fakeClient.auth.signUp).toHaveBeenCalledWith({
+        email: 'new@example.com',
+        password: 'secret',
+        options: { data: { full_name: 'Ada Lovelace' } },
+      });
+      expect(result.displayName).toBe('Ada Lovelace');
+    });
+
+    it('without a profile, calls signUp with no options at all', async () => {
+      const service = createService();
+      const user = createSupabaseUser();
+      (fakeClient.auth.signUp as ReturnType<typeof vi.fn>).mockResolvedValue({
+        data: { user, session: createSession(user) },
+        error: null,
+      });
+
+      await service.signUp('new@example.com', 'secret');
+
+      expect(fakeClient.auth.signUp).toHaveBeenCalledWith({ email: 'new@example.com', password: 'secret' });
+    });
+  });
+
+  describe('A4: signIn options', () => {
+    it('ignores options.persistent entirely, calling signInWithPassword the same as without it', async () => {
+      const service = createService();
+      const user = createSupabaseUser();
+      (fakeClient.auth.signInWithPassword as ReturnType<typeof vi.fn>).mockResolvedValue({
+        data: { user, session: createSession(user) },
+        error: null,
+      });
+
+      await service.signIn('user@example.com', 'secret', { persistent: true });
+
+      expect(fakeClient.auth.signInWithPassword).toHaveBeenCalledWith({
+        email: 'user@example.com',
+        password: 'secret',
+      });
+    });
   });
 });
