@@ -5,6 +5,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
 
 ## [Unreleased]
 
+## [4.1.0] - 2026-09-28
+
 ### Added
 - `mode` input (`'client' | 'server'`, default `'client'`): `'server'` stops
   `DataGrid` from sorting/paginating `data()` itself, rendering it as
