@@ -288,6 +288,29 @@ promoted into the numbered sequence above.
   2026-09-10. Aplica a cualquier app Angular nueva con múltiples
   rutas, agregar esta configuración desde el principio.
 
+- **Correr `npm ci` desde WSL sobre un `node_modules` compartido con
+  Windows rompe `npx nx` del lado Windows.** Encontrado el 2026-09-28
+  agregando el modo servidor a `data-grid`: tras un `npm ci` en WSL
+  (necesario porque los binarios nativos de `node_modules` ya estaban
+  compilados para Windows y Vitest no arrancaba ahí, ver la nota de
+  más arriba sobre Windows nativo), `npx nx` en Windows empezó a
+  fallar con `"nx" no se reconoce como un comando interno o externo`.
+  Causa: WSL, al reinstalar sobre el mismo `node_modules` montado en
+  el filesystem de Windows, genera symlinks POSIX en `node_modules/
+  .bin` en vez de los shims `.cmd`/`.ps1` que Windows necesita para
+  ejecutar un binario vía `npx`. Un `node_modules` compartido entre
+  Windows y WSL no puede tener ambos toolchains funcionando a la vez:
+  el que instaló último "gana" y rompe al otro. Solución real usada:
+  correr `npm install` nativo en Windows (no en WSL) después de
+  terminar la corrida de tests en WSL, lo que regenera los shims
+  `.cmd` correctos sin cambiar ninguna versión del lockfile. Advertencia:
+  revisar el diff de `package-lock.json` después de este `npm install`
+  de reparación, puede aparecer ruido de deduplicación de dependencias
+  anidadas (entradas duplicadas de un mismo paquete bajo distintos
+  `node_modules/<paquete>/node_modules/<dep>`) sin ningún cambio real
+  de versión; si es así, es seguro revertirlo con `git checkout --
+  package-lock.json` antes de commitear.
+
 ## Recurring maintenance notes
 
 - Review each library's `peerDependencies` whenever Angular releases a

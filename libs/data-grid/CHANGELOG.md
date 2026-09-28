@@ -5,6 +5,32 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
 
 ## [Unreleased]
 
+### Added
+- `mode` input (`'client' | 'server'`, default `'client'`): `'server'` stops
+  `DataGrid` from sorting/paginating `data()` itself, rendering it as
+  received instead, for an app that owns the real fetch. See the README's
+  new "Server mode" section.
+- `totalCount` input: total row count across every page, required in
+  practice for `mode="server"` (there's no other way to derive
+  `totalPages()`), ignored in `mode="client"`. Logs a `console.error`
+  (not a thrown error) when `mode="server"` and `totalCount` is left
+  unset.
+- `DataGridSortState<T>` type, exported from the public barrel:
+  `{ key: string; direction: 'asc' | 'desc' } | null`, the shape of the
+  new `sortState` model.
+
+### Changed
+- `currentPage` is now a `model()` (two-way bindable) instead of an
+  internal signal. Not a breaking change: existing markup that never
+  binds `currentPage` (every consumer in this workspace, as of this
+  release) keeps behaving identically in `mode="client"`, the default.
+  Only a consumer that needs to read or drive the current page from
+  outside needs `[(currentPage)]`, previously impossible.
+- `sortState` (the toggle a sortable header's click already drove) is
+  now a `model()` too, of type `DataGridSortState<T>`, for the same
+  reason and with the same non-breaking guarantee: unbound, it behaves
+  exactly like the internal state it replaces.
+
 ## [4.0.0] - 2026-09-26
 
 ### Changed

@@ -5,21 +5,17 @@ import {
   effect,
   inject,
   input,
+  model,
   output,
-  signal,
   ViewEncapsulation,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { ColumnConfig, DataColumnConfig } from '../models/column-config';
 import { columnId, isDataColumn as isDataColumnConfig } from '../internal/column-id';
+import { DataGridSortState } from '../models/sort-state';
 import { DATA_GRID_MESSAGES } from '../tokens/data-grid-messages.token';
 
 type SortDirection = 'asc' | 'desc';
-
-interface SortState<T> {
-  key: keyof T;
-  direction: SortDirection;
-}
 
 // Selectors that opt a click out of rowClick: anything a user would
 // reasonably expect to do its own thing on click, inside a
@@ -52,10 +48,40 @@ export class DataGrid<T> {
   columns = input.required<ColumnConfig<T>[]>();
 
   /**
-   * Number of rows rendered per page.
+   * Number of rows rendered per page. Unidirectional in both `mode`s: the
+   * grid never writes it back, an app that lets the user change it passes
+   * a new value in like any other input.
    * @default 10
    */
   pageSize = input(10);
+
+  /**
+   * Whether `DataGrid` sorts/paginates `data()` itself (`'client'`) or
+   * only renders whatever page the app already sorted/paginated
+   * (`'server'`), reporting `currentPage`/`sortState` back so the app
+   * knows what to fetch next. Fixed for the component's lifetime:
+   * changing it at runtime isn't a supported case (behavior is
+   * undefined, not handled specially).
+   * @default 'client'
+   * @example
+   * <lib-data-grid
+   *   mode="server"
+   *   [data]="page()"
+   *   [totalCount]="totalCount()"
+   *   [(currentPage)]="currentPage"
+   *   [(sortState)]="sortState"
+   * />
+   */
+  mode = input<'client' | 'server'>('client');
+
+  /**
+   * Total number of rows across every page, not just the current one.
+   * Required in practice for `mode="server"` (there's no other way to
+   * derive `totalPages()`); ignored in `mode="client"`, which keeps
+   * deriving its total from `data().length` as before. Logs a console
+   * error in `mode="server"` when left unset, see `checkServerModeConfig()`.
+   */
+  totalCount = input<number>();
 
   /**
    * Emitted when the user clicks a row.
@@ -66,10 +92,31 @@ export class DataGrid<T> {
 
   protected readonly messages = inject(DATA_GRID_MESSAGES);
 
-  private readonly sortState = signal<SortState<T> | null>(null);
+  /**
+   * Current page, 1-based so it maps directly to the "Página X de Y"
+   * label without an off-by-one translation. Two-way bindable in both
+   * `mode`s: in `mode="client"` this is unchanged from the plain internal
+   * signal it used to be if nothing reads or sets it from outside; in
+   * `mode="server"` an app binds `[(currentPage)]` to know which page to
+   * fetch next.
+   * @default 1
+   * @example
+   * <lib-data-grid mode="server" [(currentPage)]="currentPage" ... />
+   */
+  readonly currentPage = model(1);
 
-  // 1-based so it maps directly to the "Página X de Y" label without an off-by-one translation.
-  protected readonly currentPage = signal(1);
+  /**
+   * Current sort state. Two-way bindable in both `mode`s, same reasoning
+   * as `currentPage`: only meaningful to read or write from outside in
+   * `mode="server"`, where the app is the one that actually orders
+   * `data()` before passing it back in. In `mode="client"` `DataGrid`
+   * still decides sorting itself via `sortBy()`; this model reflects that
+   * decision without an app needing to act on it.
+   * @default null
+   * @example
+   * <lib-data-grid mode="server" [(sortState)]="sortState" ... />
+   */
+  readonly sortState = model<DataGridSortState<T>>(null);
 
   private readonly sortedData = computed(() => {
     const state = this.sortState();
@@ -82,8 +129,12 @@ export class DataGrid<T> {
     const factor = direction === 'asc' ? 1 : -1;
 
     return [...rows].sort((a, b) => {
-      const valueA = a[key];
-      const valueB = b[key];
+      // `key` is a column id (string), not `keyof T`: sortBy() only ever
+      // sets it from a sortable DataColumnConfig, whose id is its own
+      // `keyof T` stringified, so this cast reverses that safely.
+      const typedKey = key as keyof T;
+      const valueA = a[typedKey];
+      const valueB = b[typedKey];
       if (valueA === valueB) {
         return 0;
       }
@@ -94,18 +145,27 @@ export class DataGrid<T> {
   });
 
   /**
-   * Total number of pages for the current `sortedData()` length and `pageSize()`.
-   * Always at least 1, so the page counter never shows a page 0 of 0.
+   * Total number of pages. In `mode="client"`, derived from
+   * `sortedData().length` and `pageSize()`, unchanged from before. In
+   * `mode="server"`, derived from `totalCount()` and `pageSize()`
+   * instead, since the grid never sees the full dataset. Always at least
+   * 1, so the page counter never shows a page 0 of 0.
    */
-  protected readonly totalPages = computed(() =>
-    Math.max(1, Math.ceil(this.sortedData().length / this.pageSize())),
-  );
+  protected readonly totalPages = computed(() => {
+    const total = this.mode() === 'server' ? (this.totalCount() ?? 0) : this.sortedData().length;
+    return Math.max(1, Math.ceil(total / this.pageSize()));
+  });
 
   /**
-   * `sortedData()` sliced to the current page. Reads from `sortedData()`
-   * rather than `data()` so sorting is always applied before paginating.
+   * Rows actually rendered for the current page. In `mode="client"`,
+   * `sortedData()` sliced to the current page, unchanged from before. In
+   * `mode="server"`, `data()` as received, with no slicing or sorting:
+   * the app already sent exactly the rows for `currentPage()`.
    */
   protected readonly paginatedData = computed(() => {
+    if (this.mode() === 'server') {
+      return this.data();
+    }
     const start = (this.currentPage() - 1) * this.pageSize();
     return this.sortedData().slice(start, start + this.pageSize());
   });
@@ -113,12 +173,32 @@ export class DataGrid<T> {
   constructor() {
     // Sorting, a new `data()`, or a different `pageSize()` can all shrink
     // `totalPages()` below the page the user was on, fall back to page 1
-    // instead of rendering an empty page.
+    // instead of rendering an empty page. `totalPages()` already derives
+    // from the right source for the active `mode()`, so this needs no
+    // mode-specific branching of its own.
     effect(() => {
       if (this.currentPage() > this.totalPages()) {
         this.currentPage.set(1);
       }
     });
+
+    effect(() => this.checkServerModeConfig());
+  }
+
+  /**
+   * Warns, without throwing, when `mode="server"` is set without
+   * `totalCount`: `totalPages()` would silently fall back to 1 instead of
+   * the real total, and pagination would look broken with no error to
+   * explain why. A `console.error` rather than a thrown error so one
+   * missed input on a real app doesn't take down the entire grid's
+   * render, just the pagination correctness.
+   */
+  private checkServerModeConfig(): void {
+    if (this.mode() === 'server' && this.totalCount() === undefined) {
+      console.error(
+        '[DataGrid] mode="server" requires totalCount to be set; totalPages() falls back to 1 without it.',
+      );
+    }
   }
 
   /**
@@ -143,7 +223,7 @@ export class DataGrid<T> {
       return;
     }
 
-    const key = column.key;
+    const key = columnId(column);
     this.sortState.update((state) =>
       state?.key === key
         ? { key, direction: state.direction === 'asc' ? 'desc' : 'asc' }
@@ -156,7 +236,7 @@ export class DataGrid<T> {
       return null;
     }
     const state = this.sortState();
-    return state?.key === column.key ? state.direction : null;
+    return state?.key === columnId(column) ? state.direction : null;
   }
 
   protected ariaSortFor(column: ColumnConfig<T>): 'ascending' | 'descending' | 'none' {

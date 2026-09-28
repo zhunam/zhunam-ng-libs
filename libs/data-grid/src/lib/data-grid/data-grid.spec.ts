@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DataGrid } from './data-grid';
 import { ColumnConfig } from '../models/column-config';
 import { DataGridMessages, DATA_GRID_MESSAGES_ES } from '../models/data-grid-messages';
+import { DataGridSortState } from '../models/sort-state';
 import { provideDataGridMessages } from '../tokens/data-grid-messages.token';
 
 interface TestRow {
@@ -28,13 +29,24 @@ const unsortedRows: TestRow[] = [
 
 function createFixture(
   data: TestRow[],
-  options: { columns?: ColumnConfig<TestRow>[]; pageSize?: number } = {},
+  options: {
+    columns?: ColumnConfig<TestRow>[];
+    pageSize?: number;
+    mode?: 'client' | 'server';
+    totalCount?: number;
+  } = {},
 ): ComponentFixture<DataGrid<TestRow>> {
   const fixture = TestBed.createComponent(DataGrid<TestRow>);
   fixture.componentRef.setInput('data', data);
   fixture.componentRef.setInput('columns', options.columns ?? columns);
   if (options.pageSize !== undefined) {
     fixture.componentRef.setInput('pageSize', options.pageSize);
+  }
+  if (options.mode !== undefined) {
+    fixture.componentRef.setInput('mode', options.mode);
+  }
+  if (options.totalCount !== undefined) {
+    fixture.componentRef.setInput('totalCount', options.totalCount);
   }
   fixture.detectChanges();
   return fixture;
@@ -280,6 +292,202 @@ describe('DataGrid', () => {
 
       // Full ascending order is Alice, Bob, Charlie; page 2 (pageSize 2) is just Charlie.
       expect(getNameColumnValues(fixture)).toEqual(['Charlie']);
+    });
+  });
+
+  describe('server mode', () => {
+    const fiveRows: TestRow[] = [
+      { name: 'Row1', age: 1 },
+      { name: 'Row2', age: 2 },
+      { name: 'Row3', age: 3 },
+      { name: 'Row4', age: 4 },
+      { name: 'Row5', age: 5 },
+    ];
+
+    it('renders data() entirely, without client-side slicing', () => {
+      // pageSize 2 would slice to 2 rows in client mode; server mode never
+      // slices, the app is expected to have already sent just one page.
+      const fixture = createFixture(fiveRows, { pageSize: 2, mode: 'server', totalCount: 5 });
+      expect(getRowCount(fixture)).toBe(5);
+    });
+
+    it('derives totalPages() from totalCount(), not data().length', () => {
+      // data() here is a single already-fetched page (2 rows), totalCount
+      // reports the real total across every page (5).
+      const fixture = createFixture(fiveRows.slice(0, 2), {
+        pageSize: 2,
+        mode: 'server',
+        totalCount: 5,
+      });
+      expect(getPageInfo(fixture)).toBe('Page 1 of 3');
+    });
+
+    it('does not reorder data() when a sortable header is clicked', () => {
+      const fixture = createFixture(unsortedRows, { mode: 'server', totalCount: unsortedRows.length });
+      clickHeader(fixture, 0);
+      expect(getNameColumnValues(fixture)).toEqual(['Charlie', 'Alice', 'Bob']);
+    });
+
+    it('updates sortState() when a sortable header is clicked, without touching data()', () => {
+      const fixture = createFixture(unsortedRows, { mode: 'server', totalCount: unsortedRows.length });
+      clickHeader(fixture, 0);
+
+      expect(fixture.componentInstance.sortState()).toEqual({ key: 'name', direction: 'asc' });
+      expect(getNameColumnValues(fixture)).toEqual(['Charlie', 'Alice', 'Bob']);
+    });
+
+    it('resets currentPage to 1 when totalCount drops below the current page', () => {
+      const fixture = createFixture(fiveRows, { pageSize: 2, mode: 'server', totalCount: 5 });
+      fixture.componentInstance.currentPage.set(3); // page 3 of 3 (ceil(5/2))
+      fixture.detectChanges();
+      expect(getPageInfo(fixture)).toBe('Page 3 of 3');
+
+      fixture.componentRef.setInput('totalCount', 2); // now only 1 page (ceil(2/2))
+      fixture.detectChanges();
+      expect(getPageInfo(fixture)).toBe('Page 1 of 1');
+    });
+
+    describe('missing totalCount', () => {
+      let errorSpy: ReturnType<typeof vi.spyOn>;
+
+      beforeEach(() => {
+        errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      });
+
+      afterEach(() => {
+        errorSpy.mockRestore();
+      });
+
+      it('logs a console.error when mode is server and totalCount is left unset', () => {
+        createFixture(unsortedRows, { mode: 'server' });
+        expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('totalCount'));
+      });
+
+      it('does not log when totalCount is set in server mode', () => {
+        createFixture(unsortedRows, { mode: 'server', totalCount: unsortedRows.length });
+        expect(errorSpy).not.toHaveBeenCalled();
+      });
+
+      it('does not log in client mode even without totalCount', () => {
+        createFixture(unsortedRows);
+        expect(errorSpy).not.toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe('currentPage / sortState as two-way bindings', () => {
+    it('setting currentPage directly in client mode is reflected in "Page X of Y" (same signal API as server mode)', () => {
+      const fiveRows: TestRow[] = [
+        { name: 'Row1', age: 1 },
+        { name: 'Row2', age: 2 },
+        { name: 'Row3', age: 3 },
+        { name: 'Row4', age: 4 },
+        { name: 'Row5', age: 5 },
+      ];
+      const fixture = createFixture(fiveRows, { pageSize: 2 }); // client mode (default)
+
+      fixture.componentInstance.currentPage.set(2);
+      fixture.detectChanges();
+
+      expect(getPageInfo(fixture)).toBe('Page 2 of 3');
+      expect(getNameColumnValues(fixture)).toEqual(['Row3', 'Row4']);
+    });
+
+    it('setting sortState directly in client mode sorts data(), same as clicking the header', () => {
+      const fixture = createFixture(unsortedRows);
+
+      fixture.componentInstance.sortState.set({ key: 'name', direction: 'asc' });
+      fixture.detectChanges();
+
+      expect(getNameColumnValues(fixture)).toEqual(['Alice', 'Bob', 'Charlie']);
+    });
+
+    @Component({
+      template: `
+        <lib-data-grid
+          [data]="data"
+          [columns]="columns"
+          mode="server"
+          [pageSize]="2"
+          [totalCount]="totalCount"
+          [(currentPage)]="currentPage"
+          [(sortState)]="sortState"
+        />
+      `,
+      imports: [DataGrid],
+    })
+    class HostWithServerModels {
+      data: TestRow[] = [
+        { name: 'Row1', age: 1 },
+        { name: 'Row2', age: 2 },
+      ];
+      columns = twoSortableColumns;
+      totalCount = 4;
+      // Bound to the grid's currentPage/sortState models as signals, not
+      // plain fields: a model() two-way-bound to a plain host property
+      // trips NG0100 (ExpressionChangedAfterItHasBeenCheckedError) in
+      // tests, since detectChanges()'s second no-op verification pass
+      // re-reads a plain field that the grid's own effect()/write already
+      // changed mid-cycle. A signal is read reactively instead, so both
+      // passes agree by construction; Angular's own two-way binding
+      // instructions special-case a signal-valued target for exactly
+      // this reason.
+      currentPage = signal(1);
+      sortState = signal<DataGridSortState<TestRow>>(null);
+    }
+
+    function setupHost(): ComponentFixture<HostWithServerModels> {
+      TestBed.configureTestingModule({ imports: [HostWithServerModels] });
+      const fixture = TestBed.createComponent(HostWithServerModels);
+      fixture.detectChanges();
+      return fixture;
+    }
+
+    function hostRoot(fixture: ComponentFixture<HostWithServerModels>): HTMLElement {
+      return fixture.nativeElement as HTMLElement;
+    }
+
+    it('setting the host currentPage flows into the grid, reflected in "Page X of Y"', () => {
+      const fixture = setupHost();
+      expect(hostRoot(fixture).querySelector('.dg-page-info')?.textContent?.trim()).toBe(
+        'Page 1 of 2',
+      );
+
+      fixture.componentInstance.currentPage.set(2);
+      fixture.detectChanges();
+
+      expect(hostRoot(fixture).querySelector('.dg-page-info')?.textContent?.trim()).toBe(
+        'Page 2 of 2',
+      );
+    });
+
+    it('clicking Next in the grid flows currentPage back out to the host', () => {
+      const fixture = setupHost();
+      const nextButton = hostRoot(fixture).querySelectorAll<HTMLButtonElement>('.dg-page-btn')[1];
+
+      nextButton.click();
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.currentPage()).toBe(2);
+    });
+
+    it('clicking a sortable header flows sortState back out to the host', () => {
+      const fixture = setupHost();
+      const nameHeaderButton = hostRoot(fixture).querySelector<HTMLButtonElement>('th button');
+
+      nameHeaderButton?.click();
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.sortState()).toEqual({ key: 'name', direction: 'asc' });
+    });
+
+    it('setting the host sortState flows into the grid, reflected in aria-sort', () => {
+      const fixture = setupHost();
+      fixture.componentInstance.sortState.set({ key: 'name', direction: 'desc' });
+      fixture.detectChanges();
+
+      const nameHeader = hostRoot(fixture).querySelector('th');
+      expect(nameHeader?.getAttribute('aria-sort')).toBe('descending');
     });
   });
 
