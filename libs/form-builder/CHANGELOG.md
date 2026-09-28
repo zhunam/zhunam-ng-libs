@@ -5,6 +5,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-09-28
+
 ### Added
 - `submitLabel: input<string>`, `hideSubmit: input<boolean>` (default
   `false`), `loading: input<boolean>` (default `false`), and a public
