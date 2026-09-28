@@ -5,6 +5,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-09-28
+
 ### Added
 - `AUTH_ERROR_CODES`, `AuthErrorCode`, `AuthServiceError`: every
   `AuthService` method now rejects with an `AuthServiceError` carrying a
