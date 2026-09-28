@@ -5,6 +5,46 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
 
 ## [Unreleased]
 
+### Added
+- `AUTH_ERROR_CODES`, `AuthErrorCode`, `AuthServiceError`: every
+  `AuthService` method now rejects with an `AuthServiceError` carrying a
+  normalized `code` (one of `AUTH_ERROR_CODES`) and the original
+  provider error as `cause`, instead of a raw Firebase/Supabase error.
+  Exported from the core.
+- `AuthSignUpProfile` and a new optional third parameter on
+  `signUp(email, password, profile?)`: set `displayName` on the new
+  account at sign-up time. Firebase calls `updateProfile()` right after
+  creating the account and reflects the name in `currentUser`
+  immediately (`onAuthStateChanged` doesn't re-fire on its own for a
+  profile-only change). Supabase sends it as `options.data.full_name`.
+  If Firebase's `updateProfile()` itself fails, sign-up still resolves,
+  with `displayName: null`, since the account was already created
+  successfully by that point.
+- `AuthSignInOptions` and a new optional third parameter on
+  `signIn(email, password, options?)`: `persistent` controls session
+  persistence for Firebase (`setPersistence()` with
+  `browserLocalPersistence`/`browserSessionPersistence`, only called at
+  all when `persistent` is explicitly set). Supabase ignores it, its
+  persistence is a client-wide setting.
+- `AuthService.completePasswordReset?(newPassword, code?)`: optional
+  method that completes a reset started by `resetPassword()`. Firebase
+  requires `code` (the reset link's `oobCode`, extracted by the
+  consumer); Supabase ignores it, since the recovery session is already
+  established client-side by the time this runs. See the README for the
+  full per-provider explanation.
+
+### Changed (`@zhunam/auth/firebase`, `@zhunam/auth/supabase`)
+- **BREAKING**: both adapters now throw `AuthServiceError` (see Added
+  above) instead of propagating the provider's raw error unchanged. Code
+  that inspected a caught error's shape directly (e.g. Firebase's
+  `error.code` string, or Supabase's `AuthApiError` instance) needs to
+  read `error.code` against `AUTH_ERROR_CODES` instead, or read
+  `error.cause` for the original error.
+- `@zhunam/form-builder` peer dependency raised to `^3.0.0` (was
+  `^2.0.0`), for `@zhunam/auth/form-ui`'s own use of the new
+  form-builder submit/password-toggle features; see that library's own
+  CHANGELOG.
+
 ### Changed (`@zhunam/auth/form-ui`)
 - **BREAKING**: `LoginForm`, `RegisterForm`, and `ResetPasswordForm`'s
   `fields` are now built from a `computed()` instead of a module-level
@@ -42,6 +82,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
   error banner, success message, and "Forgot your password?" link's own
   text colors, independent from the background/accent role each
   non-`-text` property already had.
+- `LoginForm`'s "Forgot your password?" link now shows a visible
+  `:focus-visible` outline (`--zhunam-focus`, falling back to
+  `--zhunam-primary`), matching the focus treatment already used
+  elsewhere in the `@zhunam/*` libraries. Previously unstyled, relying
+  on whatever default (or none) the browser happened to apply.
 
 ## [2.0.0] - 2026-09-17
 

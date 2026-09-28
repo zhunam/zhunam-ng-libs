@@ -1,6 +1,6 @@
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { AUTH_SERVICE, AuthService } from '@zhunam/auth';
+import { AUTH_ERROR_CODES, AUTH_SERVICE, AuthService, AuthServiceError } from '@zhunam/auth';
 import { FormBuilder } from '@zhunam/form-builder';
 import { ResetPasswordForm } from './reset-password-form';
 import { AUTH_UI_MESSAGES_ES } from './models/auth-ui-messages';
@@ -91,6 +91,23 @@ describe('ResetPasswordForm', () => {
 
     // Must be byte-for-byte identical to the resolved case above — any
     // difference here (wording, presence, timing) is an enumeration leak.
+    expect(messageText(fixture, '.auth-success')).toBe(GENERIC_SUCCESS_MESSAGE);
+    expect(messageText(fixture, '.auth-error')).toBeNull();
+  });
+
+  it('SECURITY: shows the same generic success message for a real AuthServiceError with code userNotFound too', async () => {
+    const authService = createAuthServiceMock();
+    (authService.resetPassword as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new AuthServiceError(
+        AUTH_ERROR_CODES.userNotFound,
+        'There is no user record corresponding to this identifier.',
+        undefined,
+      ),
+    );
+    const fixture = createFixture(authService);
+
+    await submitResetForm(fixture, 'unregistered@example.com');
+
     expect(messageText(fixture, '.auth-success')).toBe(GENERIC_SUCCESS_MESSAGE);
     expect(messageText(fixture, '.auth-error')).toBeNull();
   });

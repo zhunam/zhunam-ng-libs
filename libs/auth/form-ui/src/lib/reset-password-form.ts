@@ -1,22 +1,27 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal, ViewEncapsulation } from '@angular/core';
 import { FieldConfig, FormBuilder } from '@zhunam/form-builder';
-import { AUTH_SERVICE } from '@zhunam/auth';
+import { AUTH_ERROR_CODES, AUTH_SERVICE } from '@zhunam/auth';
 import { AUTH_UI_MESSAGES } from './tokens/auth-ui-messages.token';
 
 interface ResetPasswordFormValue {
   email: string;
 }
 
-// Firebase's sendPasswordResetEmail() throws this code by default for a
-// non-existent email, unless the project has "Email enumeration
-// protection" enabled in the console, which this library can't assume.
+// Both providers' adapters normalize to AUTH_ERROR_CODES.userNotFound
+// (see AuthServiceError), but the check below reads `error.code` on any
+// plain object with that shape too, not just AuthServiceError instances:
+// a caller providing its own AuthService (e.g. a test double) doesn't
+// need to construct a real AuthServiceError for this to keep working.
+//
+// Firebase's sendPasswordResetEmail() only reaches this code by default
+// for a non-existent email when the project does NOT have "Email
+// enumeration protection" enabled (not the default for projects created
+// after 2023-09-15), which this library can't assume either way.
 // Supabase's resetPasswordForEmail() already suppresses this server-side
 // and never throws it, so the check below simply never triggers there;
 // it's kept anyway so behavior stays identical regardless of provider.
-const USER_NOT_FOUND_CODE = 'auth/user-not-found';
-
 function isUserNotFoundError(error: unknown): boolean {
-  return typeof error === 'object' && error !== null && 'code' in error && error.code === USER_NOT_FOUND_CODE;
+  return typeof error === 'object' && error !== null && 'code' in error && error.code === AUTH_ERROR_CODES.userNotFound;
 }
 
 /**

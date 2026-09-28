@@ -24,4 +24,9 @@
   font-size: 0.875rem;
   cursor: pointer;
   text-decoration: underline;
+
+  &:focus-visible {
+    outline: 2px solid var(--zhunam-focus, var(--zhunam-primary, $default-primary));
+    outline-offset: 2px;
+  }
 }
