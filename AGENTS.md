@@ -367,15 +367,53 @@ styling setups, without friction.
   forbidden. The consumer may not have them installed.
 - All styles go in encapsulated SCSS (`ViewEncapsulation.Emulated`,
   Angular's default).
-- Customization exposed via CSS custom properties with a default value,
-  never via external classes:
+- Customization exposed via CSS custom properties, never via external
+  classes, under one shared namespace across every `@zhunam/*` library:
+  `--zhunam-<role>` (e.g. `--zhunam-primary`, `--zhunam-border`,
+  `--zhunam-text`), never a library-specific prefix. A text color meant
+  to sit on top of a colored surface gets its own `-text` variant,
+  separate from that surface/border color (e.g.
+  `--zhunam-primary-text`, independent from `--zhunam-primary`), so
+  overriding one doesn't silently break contrast on the other.
   ```scss
-  :host {
-    --dg-primary-color: #3b82f6;
+  .some-element {
+    background: var(--zhunam-primary, $default-primary);
   }
   ```
+  Defaults are declared as a `var()` fallback at every usage site,
+  never on the component's own `:host`: a `:host` declaration always
+  wins the cascade over anything a consumer sets on an ancestor
+  selector (even `:root`), regardless of that ancestor's specificity,
+  silently overriding a real consumer override otherwise. Already
+  applied across the 3 libraries with theming (`data-grid`,
+  `form-builder`, `auth/form-ui`); any future library with themeable
+  styles follows this same convention from its first component, not
+  retrofitted later.
 - `apps/*` (the showcase, demos) can freely use Tailwind + DaisyUI; this
   restriction applies only to `libs/*`.
+
+### Translatable text
+
+- Any string a library renders on its own initiative (validation
+  messages, button labels, status text), not text the consumer already
+  supplies directly in their own config, goes through an injectable
+  messages token, never hardcoded in one language: an
+  `InjectionToken<XMessages>` (e.g. `DATA_GRID_MESSAGES`,
+  `FORM_BUILDER_MESSAGES`, `AUTH_UI_MESSAGES`), a
+  `provideXMessages(overrides)` function that merges a partial override
+  on top of the English default preset, and at least an EN and an ES
+  preset (`X_MESSAGES_EN`/`X_MESSAGES_ES`) exported from the public
+  barrel. Every message is a function, evaluated fresh on render, so
+  one that reads a signal (e.g. a language switcher) updates live
+  without recreating the component.
+- This doesn't apply to text the consumer already supplies directly in
+  their own config (a field's `label`, a column's `label`, a hint or an
+  option description): that's the consumer's own content, not the
+  library's, and stays a plain string in the config shape, never routed
+  through the messages token.
+- Already applied in `data-grid`, `form-builder`, and `auth/form-ui`;
+  any future library that renders its own user-facing text follows the
+  same pattern from its first component.
 
 ### Public API (Inputs/Outputs)
 
@@ -532,6 +570,21 @@ alcanza con el tipo.
   ```
 - Also test with a production build (`ng build --configuration
   production`), not just `ng serve`.
+- **In practice, this reuses a persistent pair of plain Angular CLI
+  scaffolds** (not Nx projects), one per end of the supported range
+  (`ng20-verify`, `ng22-verify`), instead of Verdaccio or a CI matrix:
+  they live in the user's own local temp directory
+  (`%LOCALAPPDATA%\Temp\zhunam-verify-scaffolds\` on Windows), outside
+  this repo, not something every session can assume already exists. If
+  they're not there yet, create a minimal Angular CLI app for each
+  version floor/ceiling once, and don't delete them afterward, they're
+  meant to be reused across every future release, not recreated each
+  time. For each release: `npm pack` the library, `npm install
+  <path-to-the-.tgz>` into both scaffolds (confirms no `ERESOLVE` from
+  the real declared `peerDependencies` range), then `ng build
+  --configuration production` in each, adding a small real usage of
+  whatever the release actually added to at least one of them (not just
+  installing the package and leaving it unused).
 
 ---
 
