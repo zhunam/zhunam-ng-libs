@@ -8,36 +8,53 @@
 
         @switch (field.type) {
           @case ('checkbox') {
-            <label class="fb-checkbox-option">
+            <label class="fb-checkbox-option" [class.fb-switch-option]="isSwitch(field)">
               <input
                 type="checkbox"
+                class="fb-checkbox-input"
+                [class.sr-only]="isSwitch(field)"
                 [formControl]="controlFor(field)"
                 [disabled]="!!field.disabled"
                 [attr.aria-invalid]="activeErrorFor(field) ? true : null"
-                [attr.aria-describedby]="activeErrorFor(field) ? errorId(field) : null"
+                [attr.aria-describedby]="describedByFor(field)"
               />
+              @if (isSwitch(field)) {
+                <span class="fb-switch-track" aria-hidden="true">
+                  <span class="fb-switch-thumb"></span>
+                </span>
+              }
               {{ field.label }}
             </label>
           }
           @case ('radio') {
             <fieldset
               class="fb-radio-group"
+              [class.fb-segmented-group]="isSegmented(field)"
               role="radiogroup"
               [attr.aria-labelledby]="legendId(field)"
             >
               <legend class="fb-label" [id]="legendId(field)">{{ field.label }}</legend>
               @for (option of optionsFor(field); track option.value) {
-                <label class="fb-radio-option">
+                <label class="fb-radio-option" [class.fb-segmented-option]="isSegmented(field)">
                   <input
                     type="radio"
+                    class="fb-radio-input"
+                    [class.sr-only]="isSegmented(field)"
                     [formControl]="controlFor(field)"
                     [name]="fieldId(field)"
                     [value]="option.value"
                     [disabled]="!!field.disabled"
                     [attr.aria-invalid]="activeErrorFor(field) ? true : null"
-                    [attr.aria-describedby]="activeErrorFor(field) ? errorId(field) : null"
+                    [attr.aria-describedby]="optionDescribedByFor(field, option)"
                   />
-                  {{ option.label }}
+                  @if (isSegmented(field)) {
+                    <span class="fb-segmented-pill">{{ option.label }}</span>
+                  } @else {
+                    {{ option.label }}
+                  }
+                  @if (option.description; as description) {
+                    <span class="fb-option-description" [id]="optionDescriptionId(field, option)">{{ description }}</span>
+                  }
                 </label>
               }
             </fieldset>
@@ -51,8 +68,9 @@
                 [formControl]="controlFor(field)"
                 [placeholder]="field.placeholder ?? ''"
                 [disabled]="!!field.disabled"
+                [readOnly]="!!field.readonly"
                 [attr.aria-invalid]="activeErrorFor(field) ? true : null"
-                [attr.aria-describedby]="activeErrorFor(field) ? errorId(field) : null"
+                [attr.aria-describedby]="describedByFor(field)"
               />
               @if (showPasswordToggleFor(field)) {
                 <button
@@ -83,8 +101,9 @@
               [formControl]="controlFor(field)"
               [placeholder]="field.placeholder ?? ''"
               [disabled]="!!field.disabled"
+              [readOnly]="!!field.readonly"
               [attr.aria-invalid]="activeErrorFor(field) ? true : null"
-              [attr.aria-describedby]="activeErrorFor(field) ? errorId(field) : null"
+              [attr.aria-describedby]="describedByFor(field)"
             ></textarea>
           }
           @case ('select') {
@@ -94,7 +113,7 @@
               [formControl]="controlFor(field)"
               [disabled]="!!field.disabled"
               [attr.aria-invalid]="activeErrorFor(field) ? true : null"
-              [attr.aria-describedby]="activeErrorFor(field) ? errorId(field) : null"
+              [attr.aria-describedby]="describedByFor(field)"
             >
               @for (option of optionsFor(field); track option.value) {
                 <option [ngValue]="option.value">{{ option.label }}</option>
@@ -109,14 +128,17 @@
               [formControl]="controlFor(field)"
               [placeholder]="field.placeholder ?? ''"
               [disabled]="!!field.disabled"
+              [readOnly]="!!field.readonly"
               [attr.aria-invalid]="activeErrorFor(field) ? true : null"
-              [attr.aria-describedby]="activeErrorFor(field) ? errorId(field) : null"
+              [attr.aria-describedby]="describedByFor(field)"
             />
           }
         }
 
         @if (activeErrorFor(field); as message) {
           <p class="fb-error" [id]="errorId(field)">{{ message }}</p>
+        } @else if (field.hint) {
+          <p class="fb-hint" [id]="hintId(field)">{{ field.hint }}</p>
         }
       </div>
     }
