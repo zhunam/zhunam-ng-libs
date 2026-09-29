@@ -642,6 +642,311 @@ describe('FormBuilder', () => {
     });
   });
 
+  describe('appearance: switch (checkbox)', () => {
+    it('appearance left unset or "default" renders the plain checkbox unchanged', () => {
+      const fixture = createFixture([
+        { key: 'agree', label: 'Agree to terms', type: 'checkbox', appearance: 'default' },
+      ]);
+      const input = getInput(fixture, 'checkbox');
+
+      expect(input.classList.contains('sr-only')).toBe(false);
+      expect(root(fixture).querySelector('.fb-switch-track')).toBeNull();
+    });
+
+    it('renders a real checkbox input, visually hidden, plus a decorative track/thumb', () => {
+      const fixture = createFixture([
+        { key: 'agree', label: 'Agree to terms', type: 'checkbox', appearance: 'switch' },
+      ]);
+      const input = getInput(fixture, 'checkbox');
+
+      expect(input).not.toBeNull();
+      expect(input.classList.contains('sr-only')).toBe(true);
+      expect(root(fixture).querySelector('.fb-switch-track')).not.toBeNull();
+    });
+
+    it('is a real, clickable checkbox: clicking it toggles checked, same as the plain variant', () => {
+      const fixture = createFixture([
+        { key: 'agree', label: 'Agree to terms', type: 'checkbox', appearance: 'switch' },
+      ]);
+      const input = getInput(fixture, 'checkbox');
+
+      expect(input.checked).toBe(false);
+      input.click();
+      fixture.detectChanges();
+      expect(input.checked).toBe(true);
+    });
+
+    it('a required switch left unchecked is invalid, same requiredTrue behavior as the plain checkbox', () => {
+      const fixture = createFixture([
+        {
+          key: 'agree',
+          label: 'Agree to terms',
+          type: 'checkbox',
+          appearance: 'switch',
+          validators: { required: true },
+        },
+      ]);
+      expect(isFormValid(fixture)).toBe(false);
+
+      getInput(fixture, 'checkbox').click();
+      fixture.detectChanges();
+
+      expect(isFormValid(fixture)).toBe(true);
+    });
+
+    it('has no effect on any type other than checkbox', () => {
+      const fixture = createFixture([
+        { key: 'name', label: 'Name', type: 'text', appearance: 'switch' },
+      ]);
+      expect(root(fixture).querySelector('.fb-switch-track')).toBeNull();
+    });
+  });
+
+  describe('appearance: segmented (radio)', () => {
+    const segmentedField: FieldConfig<TestModel> = {
+      key: 'plan',
+      label: 'Plan',
+      type: 'radio',
+      appearance: 'segmented',
+      options: [
+        { value: 1, label: 'Basic' },
+        { value: 2, label: 'Pro' },
+      ],
+    };
+
+    it('appearance left unset or "default" renders the plain vertical radio list unchanged', () => {
+      const fixture = createFixture([{ ...segmentedField, appearance: 'default' }]);
+      const radios = root(fixture).querySelectorAll<HTMLInputElement>('input[type="radio"]');
+
+      expect(radios[0].classList.contains('sr-only')).toBe(false);
+      expect(root(fixture).querySelector('.fb-segmented-pill')).toBeNull();
+    });
+
+    it('renders real radio inputs, visually hidden, plus decorative pills', () => {
+      const fixture = createFixture([segmentedField]);
+      const radios = root(fixture).querySelectorAll<HTMLInputElement>('input[type="radio"]');
+
+      expect(radios.length).toBe(2);
+      expect(radios[0].classList.contains('sr-only')).toBe(true);
+      expect(root(fixture).querySelectorAll('.fb-segmented-pill').length).toBe(2);
+    });
+
+    it('still behaves as a real radio group: selecting one option deselects the other', () => {
+      const fixture = createFixture([segmentedField]);
+      const radios = root(fixture).querySelectorAll<HTMLInputElement>('input[type="radio"]');
+
+      radios[0].click();
+      fixture.detectChanges();
+      expect(radios[0].checked).toBe(true);
+      expect(radios[1].checked).toBe(false);
+
+      radios[1].click();
+      fixture.detectChanges();
+      expect(radios[0].checked).toBe(false);
+      expect(radios[1].checked).toBe(true);
+    });
+
+    it('keeps role="radiogroup" and aria-labelledby, same as the plain radio variant', () => {
+      const fixture = createFixture([segmentedField]);
+      const fieldset = root(fixture).querySelector('fieldset') as HTMLElement;
+      const legend = root(fixture).querySelector('legend') as HTMLElement;
+
+      expect(fieldset.getAttribute('role')).toBe('radiogroup');
+      expect(fieldset.getAttribute('aria-labelledby')).toBe(legend.id);
+    });
+
+    it('has no effect on any type other than radio', () => {
+      const fixture = createFixture([
+        { key: 'name', label: 'Name', type: 'text', appearance: 'segmented' },
+      ]);
+      expect(root(fixture).querySelector('.fb-segmented-pill')).toBeNull();
+    });
+  });
+
+  describe('hint', () => {
+    it('shows the hint when there is no active error', () => {
+      const fixture = createFixture([
+        { key: 'name', label: 'Name', type: 'text', hint: 'Your full legal name' },
+      ]);
+      const input = getInput(fixture, 'text');
+      const hintEl = root(fixture).querySelector('.fb-hint') as HTMLElement;
+
+      expect(hintEl.textContent?.trim()).toBe('Your full legal name');
+      expect(input.getAttribute('aria-describedby')).toBe(hintEl.id);
+      expect(root(fixture).querySelector('.fb-error')).toBeNull();
+    });
+
+    it('hides the hint once an error becomes active, aria-describedby switches to the error', () => {
+      const fixture = createFixture([
+        {
+          key: 'name',
+          label: 'Name',
+          type: 'text',
+          hint: 'Your full legal name',
+          validators: { required: true },
+        },
+      ]);
+      const input = getInput(fixture, 'text');
+      blur(input, fixture);
+
+      const errorEl = root(fixture).querySelector('.fb-error') as HTMLElement;
+      expect(root(fixture).querySelector('.fb-hint')).toBeNull();
+      expect(input.getAttribute('aria-describedby')).toBe(errorEl.id);
+    });
+
+    it('shows the hint again once the error clears, aria-describedby switches back to the hint', () => {
+      const fixture = createFixture([
+        {
+          key: 'name',
+          label: 'Name',
+          type: 'text',
+          hint: 'Your full legal name',
+          validators: { required: true },
+        },
+      ]);
+      const input = getInput(fixture, 'text');
+      blur(input, fixture);
+      expect(root(fixture).querySelector('.fb-error')).not.toBeNull();
+
+      setValue(input, 'Ada', fixture);
+
+      const hintEl = root(fixture).querySelector('.fb-hint') as HTMLElement;
+      expect(root(fixture).querySelector('.fb-error')).toBeNull();
+      expect(hintEl.textContent?.trim()).toBe('Your full legal name');
+      expect(input.getAttribute('aria-describedby')).toBe(hintEl.id);
+    });
+
+    it('sets no aria-describedby at all when there is neither a hint nor an error', () => {
+      const fixture = createFixture([{ key: 'name', label: 'Name', type: 'text' }]);
+      expect(getInput(fixture, 'text').hasAttribute('aria-describedby')).toBe(false);
+    });
+  });
+
+  describe('option description', () => {
+    const fieldWithDescriptions: FieldConfig<TestModel> = {
+      key: 'plan',
+      label: 'Plan',
+      type: 'radio',
+      options: [
+        { value: 1, label: 'Basic', description: 'For individual use' },
+        { value: 2, label: 'Pro' },
+      ],
+    };
+
+    it('renders the description text for the option that has one, not for the one that does not', () => {
+      const fixture = createFixture([fieldWithDescriptions]);
+      const descriptions = root(fixture).querySelectorAll('.fb-option-description');
+
+      expect(descriptions.length).toBe(1);
+      expect(descriptions[0].textContent?.trim()).toBe('For individual use');
+    });
+
+    it("references that option's own description id from that option's own aria-describedby", () => {
+      const fixture = createFixture([fieldWithDescriptions]);
+      const radios = root(fixture).querySelectorAll<HTMLInputElement>('input[type="radio"]');
+      const descriptionEl = root(fixture).querySelector('.fb-option-description') as HTMLElement;
+
+      expect(radios[0].getAttribute('aria-describedby')).toBe(descriptionEl.id);
+      expect(radios[1].hasAttribute('aria-describedby')).toBe(false);
+    });
+
+    it('combines the option description id with the field-level error id when both apply, space-separated', () => {
+      const fixture = createFixture([{ ...fieldWithDescriptions, validators: { required: true } }]);
+      const radios = root(fixture).querySelectorAll<HTMLInputElement>('input[type="radio"]');
+      blur(radios[0], fixture);
+
+      const errorEl = root(fixture).querySelector('.fb-error') as HTMLElement;
+      const descriptionEl = root(fixture).querySelector('.fb-option-description') as HTMLElement;
+
+      expect(radios[0].getAttribute('aria-describedby')).toBe(`${errorEl.id} ${descriptionEl.id}`);
+      // The option with no description still gets the field-level error id alone.
+      expect(radios[1].getAttribute('aria-describedby')).toBe(errorEl.id);
+    });
+  });
+
+  describe('readonly', () => {
+    const readonlyCases: { type: FieldConfig<TestModel>['type']; key: keyof TestModel }[] = [
+      { type: 'text', key: 'name' },
+      { type: 'number', key: 'age' },
+      { type: 'email', key: 'email' },
+      { type: 'password', key: 'password' },
+      { type: 'date', key: 'birthday' },
+    ];
+
+    for (const { type, key } of readonlyCases) {
+      it(`applies the native readonly attribute for type: '${type}'`, () => {
+        const fixture = createFixture([
+          { key, label: 'Field', type, readonly: true } as FieldConfig<TestModel>,
+        ]);
+        const input = getInput(fixture, type);
+
+        expect(input.readOnly).toBe(true);
+      });
+    }
+
+    it('applies the native readonly attribute for type: \'textarea\'', () => {
+      const fixture = createFixture([{ key: 'bio', label: 'Bio', type: 'textarea', readonly: true }]);
+      expect(getTextarea(fixture).readOnly).toBe(true);
+    });
+
+    it('keeps the FormControl enabled while readonly, unlike disabled', () => {
+      const fixture = createFixture([{ key: 'name', label: 'Name', type: 'text', readonly: true }]);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const control = (fixture.componentInstance as any).formGroup().get('name');
+
+      expect(control.disabled).toBe(false);
+    });
+
+    it('still runs validation while readonly: a required, empty, readonly field is still invalid', () => {
+      const fixture = createFixture([
+        { key: 'name', label: 'Name', type: 'text', readonly: true, validators: { required: true } },
+      ]);
+      blur(getInput(fixture, 'text'), fixture);
+
+      expect(getErrorText(fixture)).toBe('This field is required.');
+    });
+
+    it('still includes the readonly field\'s value on submit', () => {
+      const fixture = createFixture([
+        { key: 'name', label: 'Name', type: 'text', readonly: true, defaultValue: 'Ada' },
+      ]);
+      const emitted: TestModel[] = [];
+      fixture.componentInstance.formSubmit.subscribe((value) => emitted.push(value));
+
+      submitForm(fixture);
+
+      expect(emitted[0].name).toBe('Ada');
+    });
+
+    it('has no effect on select, radio, or checkbox: no readOnly property is set on any of them', () => {
+      const fixture = createFixture([
+        {
+          key: 'country',
+          label: 'Country',
+          type: 'select',
+          readonly: true,
+          options: [{ value: 'ar', label: 'Argentina' }],
+        },
+        {
+          key: 'plan',
+          label: 'Plan',
+          type: 'radio',
+          readonly: true,
+          options: [{ value: 1, label: 'Basic' }],
+        },
+        { key: 'agree', label: 'Agree to terms', type: 'checkbox', readonly: true },
+      ]);
+
+      // Neither <select> nor a checkbox/radio <input> has a real `readOnly`
+      // IDL property at all (confirmed against the HTML specification, not
+      // simulated here): the value is simply `undefined`/absent, this
+      // documents that as expected behavior, not a bug to fix.
+      expect((getSelect(fixture) as unknown as { readOnly?: boolean }).readOnly).toBeUndefined();
+      expect(getInput(fixture, 'radio').readOnly).toBe(false);
+      expect(getInput(fixture, 'checkbox').readOnly).toBe(false);
+    });
+  });
+
   describe('security', () => {
     it('renders label, placeholder, and FieldOption.label as plain text, never as HTML', () => {
       const malicious = '<script>alert(1)</script>';

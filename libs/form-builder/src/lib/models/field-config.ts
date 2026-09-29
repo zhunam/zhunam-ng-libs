@@ -25,7 +25,39 @@ export interface FieldOption {
    * Text displayed to the user for this option.
    */
   label: string;
+
+  /**
+   * Short helper text shown below this specific option, for a `radio`
+   * field (has no visible effect for `select`, native `<option>`
+   * elements have nowhere to render it). Shown whenever set, referenced
+   * by that option's own `aria-describedby`, independent of the
+   * field-level `hint`/error.
+   * @example
+   * options: [
+   *   { value: 'personal', label: 'Personal', description: 'For individual use' },
+   *   { value: 'business', label: 'Business', description: 'For teams and invoicing' },
+   * ]
+   */
+  description?: string;
 }
+
+/**
+ * Purely visual variant for a field's control. Only ever changes how
+ * one specific `type` renders; every other `type` ignores it entirely,
+ * same as `default` (the default) does:
+ * - `'switch'`: only affects `type: 'checkbox'`. Renders as a
+ *   track-and-thumb toggle instead of a native checkbox box.
+ * - `'segmented'`: only affects `type: 'radio'`. Renders its options as
+ *   a row of pill buttons instead of a vertical list.
+ *
+ * A real `<input type="checkbox">`/`<input type="radio">` still backs
+ * either variant, visually hidden but focusable, clickable via its
+ * `<label>`, and fully native for validation, keyboard, and screen
+ * readers, only its own visible box is replaced by a sibling element
+ * that reflects `:checked` through CSS, no state duplicated in
+ * TypeScript.
+ */
+export type FieldAppearance = 'default' | 'switch' | 'segmented';
 
 /**
  * Native Angular validation rules applied to a single field.
@@ -150,6 +182,50 @@ export interface FieldConfig<T> {
    * @default true
    */
   showPasswordToggle?: boolean;
+
+  /**
+   * Purely visual variant for this field's control. A flat optional
+   * field rather than a discriminated union tying it to a specific
+   * `type`, the same "optional, only relevant for one type" pattern
+   * already used by `showPasswordToggle`: setting it on a `type` it
+   * doesn't apply to (e.g. `appearance: 'switch'` on a `type: 'text'`
+   * field) is simply ignored, not a compile error or a runtime warning.
+   * See `FieldAppearance` for which `type` each value affects.
+   * @default 'default'
+   * @example
+   * { key: 'subscribe', label: 'Subscribe', type: 'checkbox', appearance: 'switch' }
+   */
+  appearance?: FieldAppearance;
+
+  /**
+   * Short helper text shown below the field, whenever there's no
+   * active error: an active error (`activeErrorFor(field)`) replaces
+   * it visually, and `aria-describedby` follows the same rule, always
+   * pointing at whichever one is currently shown, never both at once.
+   * @example
+   * { key: 'password', label: 'Password', type: 'password', hint: 'At least 8 characters' }
+   */
+  hint?: string;
+
+  /**
+   * Applies the native HTML `readonly` attribute, for `type`
+   * `text`/`number`/`email`/`password`/`date`/`textarea` only: the
+   * value stays visible and the field keeps participating in
+   * validation exactly as before (a `required` field left empty is
+   * still invalid, even while `readonly`), only direct user editing is
+   * blocked. The underlying `FormControl` stays enabled, unlike
+   * `disabled`, `buildFormGroup()` needs no special case for it.
+   *
+   * Has no effect at all on `select`, `radio`, or `checkbox`: the
+   * `readonly` HTML attribute doesn't apply to those elements natively
+   * (confirmed against the HTML specification, not simulated with any
+   * workaround here). Setting it on one of those types is simply
+   * ignored.
+   * @default false
+   * @example
+   * { key: 'referenceCode', label: 'Reference code', type: 'text', readonly: true, defaultValue: 'REF-2026-001' }
+   */
+  readonly?: boolean;
 }
 
 /**

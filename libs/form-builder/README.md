@@ -71,6 +71,60 @@ the form submitted, validates, and emits `formSubmit` if valid. It's a
 no-op while `loading` is `true`, the same guard that disables the
 internal button.
 
+### Switch and segmented appearance
+
+`appearance` changes only how a specific `type` looks, never the control underneath it: a real `<input type="checkbox">`/`<input type="radio">` is always there, visually hidden but focusable, clickable via its label, and fully native for validation, keyboard operation, and screen readers.
+
+```typescript
+fields: FieldConfig<Settings>[] = [
+  { key: 'notifications', label: 'Email notifications', type: 'checkbox', appearance: 'switch' },
+  {
+    key: 'plan',
+    label: 'Plan',
+    type: 'radio',
+    appearance: 'segmented',
+    options: [
+      { value: 'personal', label: 'Personal' },
+      { value: 'business', label: 'Business' },
+    ],
+  },
+];
+```
+
+`'switch'` only changes `type: 'checkbox'`; `'segmented'` only changes `type: 'radio'`. Setting `appearance` on any other `type` (or leaving it unset) has no effect at all, no error, no warning.
+
+### Field hints and option descriptions
+
+`hint` shows short helper text below a field, only while there's no active error: an error replaces it visually, and `aria-describedby` follows the same rule, always pointing at whichever one is currently shown, never both.
+
+```typescript
+{ key: 'password', label: 'Password', type: 'password', hint: 'At least 8 characters', validators: { required: true, minLength: 8 } }
+```
+
+`FieldOption.description` shows helper text below one specific `radio` option, independent of the field-level hint or error:
+
+```typescript
+{
+  key: 'plan',
+  label: 'Plan',
+  type: 'radio',
+  options: [
+    { value: 'personal', label: 'Personal', description: 'For individual use' },
+    { value: 'business', label: 'Business', description: 'For teams and invoicing' },
+  ],
+}
+```
+
+### Read-only fields
+
+`readonly` keeps a field's value visible and its validation running exactly as before, only direct editing is blocked. Unlike `disabled`, the underlying `FormControl` stays enabled, so its value is never excluded from anything.
+
+```typescript
+{ key: 'referenceCode', label: 'Reference code', type: 'text', readonly: true, defaultValue: 'REF-2026-001' }
+```
+
+Only applies to `text`, `number`, `email`, `password`, `date`, and `textarea`: the HTML `readonly` attribute doesn't apply to `select`, `radio`, or `checkbox` natively, and this library doesn't simulate it for those, setting `readonly` on one of them is simply ignored.
+
 ## API
 
 ### `FormBuilder<T>`
@@ -104,6 +158,11 @@ internal button.
 | `colSpan`     | `1 \| 2`                | `1`          | How many grid columns this field spans, when the component's `columns` input is 2 or more. |
 | `disabled`    | `boolean`               | `false`      | Renders the control disabled from the start; still included in the value `formSubmit` emits. |
 | `showPasswordToggle` | `boolean`        | `true`       | For a `type: 'password'` field, whether it renders a show/hide toggle button. No effect on other field types. |
+| `appearance`  | `FieldAppearance` (`'default' \| 'switch' \| 'segmented'`) | `'default'` | Purely visual variant. `'switch'` only affects `type: 'checkbox'`, `'segmented'` only affects `type: 'radio'`. Any other combination is ignored, same as `'default'`. See "Switch and segmented appearance" below. |
+| `hint`        | `string`                | None      | Short helper text shown below the field when there's no active error. See "Field hints and option descriptions" below. |
+| `readonly`    | `boolean`               | `false`      | Native HTML `readonly`, for `text`/`number`/`email`/`password`/`date`/`textarea` only. No effect on `select`/`radio`/`checkbox`. See "Read-only fields" below. |
+
+`FieldOption` also gains an optional `description?: string`, shown below that specific option (for `radio`, see below); `select` has nowhere to render it, so it's ignored there.
 
 ### `FormBuilderMessages`
 
@@ -156,6 +215,7 @@ inherited CSS custom property.
 | `--zhunam-transition-duration`   | `150ms`   | Duration of border/opacity transitions. |
 | `--zhunam-form-control-padding-x` | `0.75rem` | Horizontal padding inside inputs/selects/textareas. |
 | `--zhunam-form-control-padding-y` | `0.5rem`  | Vertical padding inside inputs/selects/textareas. |
+| `--zhunam-segmented-bg`           | `#fff`    | Inactive pill background for a `'segmented'` radio group. The active pill reuses `--zhunam-primary`/`--zhunam-primary-content` instead, same as the submit button. |
 
 `--fb-columns` is an internal implementation detail (it carries the
 `columns` input's value into the field grid's CSS), not a themeable

@@ -431,6 +431,63 @@ export class FormBuilder<T> {
     return `${this.fieldId(field)}-legend`;
   }
 
+  protected hintId(field: FieldConfig<T>): string {
+    return `${this.fieldId(field)}-hint`;
+  }
+
+  protected optionDescriptionId(field: FieldConfig<T>, option: FieldOption): string {
+    return `${this.fieldId(field)}-option-${String(option.value)}-description`;
+  }
+
+  /**
+   * `aria-describedby` for the field's own control: the error's id when
+   * one is currently shown, otherwise the hint's id when `hint` is set,
+   * otherwise `null`. Never both at once, mirroring `activeErrorFor`
+   * being the single source of truth for whether an error is visible.
+   */
+  protected describedByFor(field: FieldConfig<T>): string | null {
+    if (this.activeErrorFor(field)) {
+      return this.errorId(field);
+    }
+    if (field.hint) {
+      return this.hintId(field);
+    }
+    return null;
+  }
+
+  /**
+   * `aria-describedby` for one `radio` option's own control: combines
+   * the field-level id (`describedByFor`) with that option's own
+   * description id when it has one, space-separated (the real HTML/ARIA
+   * syntax for referencing more than one describing element), or just
+   * whichever of the two is actually present, or `null` if neither is.
+   */
+  protected optionDescribedByFor(field: FieldConfig<T>, option: FieldOption): string | null {
+    const ids = [
+      this.describedByFor(field),
+      option.description ? this.optionDescriptionId(field, option) : null,
+    ].filter((id): id is string => id !== null);
+    return ids.length > 0 ? ids.join(' ') : null;
+  }
+
+  /**
+   * Whether `field` renders as a switch instead of a native checkbox
+   * box. `false` for any `type` other than `'checkbox'`, regardless of
+   * `appearance`.
+   */
+  protected isSwitch(field: FieldConfig<T>): boolean {
+    return field.type === 'checkbox' && field.appearance === 'switch';
+  }
+
+  /**
+   * Whether `field`'s options render as a row of pills instead of a
+   * vertical list of native radios. `false` for any `type` other than
+   * `'radio'`, regardless of `appearance`.
+   */
+  protected isSegmented(field: FieldConfig<T>): boolean {
+    return field.type === 'radio' && field.appearance === 'segmented';
+  }
+
   protected isSubmitDisabled(): boolean {
     return this.loading() || this.formGroup().invalid || Object.keys(this.crossFieldErrors()).length > 0;
   }

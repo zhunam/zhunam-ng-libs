@@ -5,6 +5,35 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
 
 ## [Unreleased]
 
+### Added
+- `FieldConfig.appearance` (`'default' | 'switch' | 'segmented'`,
+  default `'default'`): a purely visual variant. `'switch'` renders a
+  `type: 'checkbox'` field as a track-and-thumb toggle instead of a
+  native checkbox box; `'segmented'` renders a `type: 'radio'` field's
+  options as a row of pills instead of a vertical list. A real
+  `<input type="checkbox">`/`<input type="radio">` still backs either
+  variant, visually hidden but focusable, clickable via its label, and
+  fully native for validation, keyboard, and screen readers. See the
+  README's "Switch and segmented appearance" section.
+- `FieldConfig.hint`: short helper text shown below a field whenever
+  there's no active error. `aria-describedby` points at the hint or
+  the error, whichever is currently shown, never both at once. See the
+  README's "Field hints and option descriptions" section.
+- `FieldOption.description`: short helper text shown below one
+  specific `radio` option, with its own id and `aria-describedby`,
+  independent of the field-level hint or error.
+- `FieldConfig.readonly` (default `false`): applies the native HTML
+  `readonly` attribute for `text`/`number`/`email`/`password`/`date`/
+  `textarea` fields. The `FormControl` stays enabled and validation
+  keeps running exactly as before, only direct editing is blocked. No
+  effect on `select`/`radio`/`checkbox`, the `readonly` attribute
+  doesn't apply to those natively. See the README's "Read-only fields"
+  section.
+- `--zhunam-segmented-bg` custom property (default `#fff`): inactive
+  pill background for a `'segmented'` radio group. The active pill
+  reuses the existing `--zhunam-primary`/`--zhunam-primary-content`
+  pair, the same colors the submit button already uses.
+
 ## [3.0.0] - 2026-09-28
 
 ### Added
