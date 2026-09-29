@@ -14,9 +14,14 @@ only reference it.
 ## Active phase
 
 Ninguna fase activa por el momento. Fase 5 (Calendar with Google
-Calendar integration) completada y publicada: `@zhunam/calendar@1.0.0`
-en npm, junto con `@zhunam/auth@1.0.0`, `@zhunam/data-grid@1.1.0`,
-`@zhunam/form-builder@1.1.0`, y `@zhunam/pdf-generator@1.1.0`.
+Calendar integration) completada y publicada.
+
+**Versiones reales en npm, confirmadas contra `package.json` de cada
+librería el 2026-09-29** (esta lista se desactualiza rápido, siempre
+confirmar contra `package.json` real antes de citarla en otro lado, no
+copiarla de memoria): `@zhunam/data-grid@4.2.0`,
+`@zhunam/form-builder@3.1.0`, `@zhunam/auth@3.0.0`,
+`@zhunam/pdf-generator@2.0.0`, `@zhunam/calendar@2.0.0`.
 
 La siguiente y última fase de la secuencia numerada es el dashboard
 financiero/cripto (`apps/`, no publicable), sesión de definición de
@@ -27,30 +32,17 @@ de fases, aplica a todo el repo): `portfolio-showcase` se despliega
 automáticamente a Vercel en cada push a `master`, ver sección
 "Despliegue" en README.md.
 
-**Pendiente de publicar**: `@zhunam/data-grid` tiene cambios reales sin
-publicar (`ColumnConfig<T>.cellTemplate`/`cellClass`, agregados durante
-la fase 6 para que `market-table` pueda mostrar imagen y color por
-celda; ver `libs/data-grid/CHANGELOG.md` → `[Unreleased]`). Sigue en
-`1.1.0` en npm. No bloquea el desarrollo local (`portfolio-showcase`
-importa el código fuente directo vía path mapping, no el paquete
-publicado), pero falta bump a `2.0.0` (**major**, no minor: agrega
-`@angular/common` como peer dependency nueva y requerida, sin marcarla
-opcional en `peerDependenciesMeta`; ver `libs/data-grid/CHANGELOG.md` →
-`[Unreleased]` sección "Changed") y `npm publish` antes de que un
-consumidor externo pueda usar esta capacidad. Esta nota decía
-originalmente "minor, aditivo": era un error de redacción del propio
-commit que la introdujo (`0f7bceec2`, `feat(data-grid)!:` ya usaba el
-marcador de breaking change en el asunto), corregido 2026-09-14 tras
-una verificación cruzada con `git log`/`git blame` y el CHANGELOG
-completo. Plan: publicar al cerrar la fase 6 completa, no ahora mismo,
-para no republicar varias veces por cambios sueltos.
-
-**`@zhunam/form-builder` en la misma situación**: `mode: input<'submit'
-| 'live'>('submit')` + `valueChange: output<T>` agregados durante la
-fase 6 (necesidad real: `currency-converter` necesitaba valores en
-vivo, el contrato submit-only existente no alcanzaba; ver
-`libs/form-builder/CHANGELOG.md` → `[Unreleased]`). Sigue en `1.1.0`
-en npm, mismo plan: publicar (minor) al cerrar la fase 6 completa.
+**Resuelto (histórico, ver `CHANGELOG.md` de cada librería para el
+detalle real):** esta sección solía documentar cambios reales sin
+publicar en `data-grid` (`cellTemplate`/`cellClass`) y `form-builder`
+(`mode`/`valueChange`), ambos agregados durante la fase 6 y publicados
+después junto con varias rondas más de cambios (modo servidor, filtro,
+selección de filas, y carga/vacío en `data-grid`; switch/segmented,
+hints, y solo lectura en `form-builder`). Ambas librerías pasaron por
+varios releases mayores y menores desde entonces (ver la lista de
+versiones reales arriba); la nota puntual sobre esos dos cambios
+específicos ya no aplica, dejada solo como referencia de que esa
+situación existió y se resolvió, no como estado actual.
 
 ## Phases: full sequence
 
@@ -65,18 +57,18 @@ Financial/crypto dashboard, so the dashboard can consume them (auth,
 data-grid, form-builder, pdf-generator) instead of standing alone.
 
 1. **Data Grid** (`libs/data-grid`): Freemium (core here, Pro in a
-   separate private repo). **DONE, published on npm as `@zhunam/data-grid@1.1.0`**
+   separate private repo). **DONE, published on npm as `@zhunam/data-grid@4.2.0`**
 2. **Dynamic Form Builder** (`libs/form-builder`): Freemium + SaaS (paid
-   persistence). **DONE, published on npm as `@zhunam/form-builder@1.1.0`**
+   persistence). **DONE, published on npm as `@zhunam/form-builder@3.1.0`**
 3. **Modular auth system** (`libs/auth`, thin wrapper/starter around
    Firebase/Supabase Auth): 100% free. **DONE, published on npm as
-   `@zhunam/auth@1.0.0`**
+   `@zhunam/auth@3.0.0`**
 4. **Client-side document (PDF) generator** (`libs/pdf-generator`):
    mostly free, possible template sales (Gumroad). **DONE, published on
-   npm as `@zhunam/pdf-generator@1.1.0`**
+   npm as `@zhunam/pdf-generator@2.0.0`**
 5. **Calendar with Google Calendar integration** (`libs/calendar`):
    freemium UI + SaaS sync. **DONE, published on npm as
-   `@zhunam/calendar@1.0.0`**
+   `@zhunam/calendar@2.0.0`**
 6. **Crypto market dashboard** (`apps/`, portfolio piece, not a
    publishable lib): 100% free, not monetizable as a product. Showcases
    data-grid, form-builder, and pdf-generator together over real,
@@ -107,6 +99,15 @@ promoted into the numbered sequence above.
   en inglés, cada mensaje una función evaluada al renderizar. No
   revisado todavía en pdf-generator ni calendar, ninguna afirmación
   sobre esas dos.
+
+  **Aclaración 2026-09-29, tras agregar `hint`/`FieldOption.description`
+  a `form-builder`:** esos dos campos son texto que escribe el propio
+  consumidor en su `FieldConfig`/`FieldOption` (igual que `label`/
+  `placeholder`), no texto genérico de la librería. No pasan por
+  `FORM_BUILDER_MESSAGES` ni tienen que traducirse ahí; esta nota de
+  i18n sigue aplicando solo al texto que la librería misma decide
+  mostrar (validaciones, label del submit, etc.), no a config provista
+  por el consumidor.
 
 - **Extraer el shell de drawer/sidebar de las páginas de demo**: hoy
   triplicado byte a byte entre `data-grid-demo.html`/`.scss`,
@@ -190,15 +191,32 @@ promoted into the numbered sequence above.
   `libs/pdf-generator/vitest.config.ts`). Aplicado proactivamente en
   `pdf-generator` desde el primer spec, sin esperar a que se repita.
 
-- **Vitest no encuentra el runner en Windows nativo (Nx +
-  `@nx/angular:unit-test`)**: confirmado que no es un problema de versión
-  de Node (falla igual con Node 22.23.2 en Windows, la misma versión
-  exacta que corre bien en WSL), ni de config del repo. Es específico de
-  cómo el executor de Nx bootstrapea el proceso worker de Vitest en
-  Windows. Mientras no se investigue más a fondo (o se resuelva upstream
-  en `@nx/angular`), WSL es el entorno de verificación de tests local,
-  igual que CI. Cualquier `nx test` corrido nativo en Windows no es
-  confiable como resultado, ni positivo ni negativo.
+- **Regla vigente desde 2026-09-28: probar siempre primero en Windows
+  nativo, nunca WSL como paso reflejo.** El hallazgo original de más
+  abajo (Vitest sin encontrar el runner en Windows) se había
+  convertido, con el tiempo, en una regla general mal aplicada ("cualquier
+  `nx test` en Windows no es confiable"), citada de memoria en vez de
+  re-verificarse. Re-verificado esa fecha en una sesión de release de
+  `data-grid`: `nx test data-grid` corrió limpio en Windows nativo (60/60
+  tests), sin el error original, en la misma máquina. La causa exacta de
+  por qué el hallazgo original ya no reproduce no se investigó (¿una
+  actualización de `@nx/angular`? ¿una reparación de entorno previa de
+  otra tarea?), pero el resultado real invalida la regla vieja tal como
+  estaba escrita. **Regla nueva:** correr `nx build`/`nx lint`/`nx test`
+  en Windows nativo primero, siempre, sin importar lo que diga esta nota
+  o un prompt con una etiqueta `[WSL]`. Solo caer a WSL si Windows falla
+  de verdad en el momento, con el error real a la vista, nunca como paso
+  reflejo. Costo real medido de ir a WSL sin necesidad: un `npm ci`
+  completo ahí tarda ~18 minutos en este filesystem montado, contra
+  segundos en Windows nativo para el mismo repo, sin contar el problema
+  de shims cruzados documentado más abajo.
+
+  **Hallazgo original (2026-08-25), mantenido como historial, ya no
+  vigente como regla general:** confirmado en su momento que no era un
+  problema de versión de Node (fallaba igual con Node 22.23.2 en
+  Windows, la misma versión exacta que corría bien en WSL), ni de
+  config del repo, sino específico de cómo el executor de Nx
+  bootstrapeaba el proceso worker de Vitest en Windows en ese momento.
 
 - **`nx test portfolio-showcase` falla hoy en 5 de 6 archivos — CERRADO,
   ver fix real más abajo.** Diagnóstico original (confirmado en WSL
@@ -310,6 +328,25 @@ promoted into the numbered sequence above.
   `node_modules/<paquete>/node_modules/<dep>`) sin ningún cambio real
   de versión; si es así, es seguro revertirlo con `git checkout --
   package-lock.json` antes de commitear.
+
+- **Varios tags de release (`<lib>-v<version>`) no son ancestros de
+  `master`.** Confirmado 2026-09-29 con `git merge-base --is-ancestor
+  <tag> master` sobre todos los tags existentes. No es un patrón limpio
+  de "todos los viejos rotos": algunos tags viejos SÍ son ancestros
+  válidos. Estado real confirmado ese día:
+  - Ancestros válidos: `data-grid-v2.0.0`, `data-grid-v4.0.0`,
+    `data-grid-v4.1.0`, `form-builder-v1.2.0`, `form-builder-v3.0.0`,
+    `auth-v3.0.0`.
+  - NO son ancestros de `master` (rotos): `data-grid-v3.0.0`,
+    `form-builder-v2.0.0`, `auth-v2.0.0`, `calendar-v2.0.0`,
+    `pdf-generator-v2.0.0`.
+  - Sin tag todavía para las dos versiones más recientes publicadas
+    esta sesión: `data-grid-v4.2.0` y `form-builder-v3.1.0`.
+  No arreglado en esta tarea (fuera de su alcance, es una tarea de solo
+  documentación). Cualquier tarea futura que dependa de un tag para
+  identificar el commit real de un release debería confirmar con
+  `git merge-base --is-ancestor` antes de asumir que el tag apunta a
+  donde dice apuntar.
 
 ## Recurring maintenance notes
 
