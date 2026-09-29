@@ -15,8 +15,10 @@ import { CoinSpinner } from '../coin-spinner/coin-spinner';
 export class MarketTable implements OnInit {
   coins = input.required<CryptoCoin[]>();
   error = input<string | null>(null);
+  isPaused = input<boolean>(false);
 
   retry = output<void>();
+  resumeClick = output<void>();
 
   @ViewChild('imageCell', { static: true })
   private imageCellTemplate!: TemplateRef<{ $implicit: CryptoCoin }>;
@@ -48,6 +50,10 @@ export class MarketTable implements OnInit {
 
   onRetryClick(): void {
     this.retry.emit();
+  }
+
+  onResumeClick(): void {
+    this.resumeClick.emit();
   }
 
   private changeClassFor(coin: CryptoCoin): string {

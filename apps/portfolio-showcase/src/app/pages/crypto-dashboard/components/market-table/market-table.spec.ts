@@ -135,4 +135,53 @@ describe('MarketTable', () => {
     expect(logoHeader).toBeTruthy();
     expect(logoHeader?.querySelector('.sr-only')).toBeTruthy();
   });
+
+  it('does not show the pause banner while coins() is still empty (initial loading), even if isPaused() is true', () => {
+    fixture.componentRef.setInput('coins', []);
+    fixture.componentRef.setInput('isPaused', true);
+    fixture.detectChanges();
+
+    const nativeElement = fixture.nativeElement as HTMLElement;
+    expect(nativeElement.textContent).toContain('Loading...');
+    expect(nativeElement.textContent).not.toContain('Live updates paused');
+  });
+
+  it('does not show the pause banner while isPaused() is false', () => {
+    fixture.componentRef.setInput('coins', [buildCoin()]);
+    fixture.componentRef.setInput('isPaused', false);
+    fixture.detectChanges();
+
+    const nativeElement = fixture.nativeElement as HTMLElement;
+    expect(nativeElement.textContent).not.toContain('Live updates paused');
+    expect(nativeElement.querySelector('table')).toBeTruthy();
+  });
+
+  it('shows the pause banner (role="status", aria-live="polite") once data has already loaded and isPaused() is true, keeping the table in the DOM underneath', () => {
+    fixture.componentRef.setInput('coins', [buildCoin()]);
+    fixture.componentRef.setInput('isPaused', true);
+    fixture.detectChanges();
+
+    const nativeElement = fixture.nativeElement as HTMLElement;
+    expect(nativeElement.textContent).toContain('Live updates paused. Data may be out of date.');
+    const banner = nativeElement.querySelector('[role="status"]');
+    expect(banner).toBeTruthy();
+    expect(banner?.getAttribute('aria-live')).toBe('polite');
+    expect(nativeElement.querySelector('table')).toBeTruthy(); // dimmed, not removed
+  });
+
+  it('emits resumeClick() when the pause banner\'s Resume button is clicked', () => {
+    fixture.componentRef.setInput('coins', [buildCoin()]);
+    fixture.componentRef.setInput('isPaused', true);
+    fixture.detectChanges();
+
+    let resumeCount = 0;
+    component.resumeClick.subscribe(() => resumeCount++);
+
+    const resumeButton = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('button'),
+    ).find((btn) => btn.textContent?.trim() === 'Resume') as HTMLButtonElement;
+    resumeButton.click();
+
+    expect(resumeCount).toBe(1);
+  });
 });

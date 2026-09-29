@@ -1,13 +1,18 @@
 import { provideRouter } from '@angular/router';
+import { By } from '@angular/platform-browser';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import {
   buildPdfReportData,
   CryptoDashboard,
   formatDateForFilename,
+  INACTIVITY_TIMEOUT_MS,
+  MARKET_COINS_FETCH_SIZE,
   MARKET_TABLE_SIZE,
   REFRESH_INTERVAL_MS,
+  TICKER_COIN_COUNT,
 } from './crypto-dashboard';
 import { CoinGeckoService } from './services/coingecko';
+import { CurrencyConverter } from './components/currency-converter/currency-converter';
 import { CryptoCoin, GlobalMarketStats } from './models/coin';
 
 function buildCoin(overrides: Partial<CryptoCoin> = {}): CryptoCoin {
@@ -33,6 +38,51 @@ const sampleStats: GlobalMarketStats = {
   activeCryptocurrencies: 21084,
 };
 
+// jsdom's `document.hidden` is a getter; redefining it as an own property
+// on the instance shadows that getter without touching the prototype, the
+// standard way to simulate visibilitychange in a browser-less test.
+function setHidden(hidden: boolean): void {
+  Object.defineProperty(document, 'hidden', { value: hidden, configurable: true });
+  document.dispatchEvent(new Event('visibilitychange'));
+}
+
+function dispatchActivity(): void {
+  window.dispatchEvent(new Event('mousemove'));
+}
+
+// REFRESH_INTERVAL_MS (5min) is now longer than INACTIVITY_TIMEOUT_MS
+// (2min): a test that silently advances a full REFRESH_INTERVAL_MS would
+// cross the inactivity threshold first and get correctly paused before the
+// scheduled tick ever arrives, which is the intended interaction, not a
+// bug (see the "pause on visibility/inactivity" tests below). Tests that
+// mean to exercise a normal, actively-used refresh cycle instead advance
+// in steps shorter than INACTIVITY_TIMEOUT_MS, dispatching activity
+// between them, the same way a real visitor moving their mouse
+// periodically would keep the page from ever going idle.
+async function advanceWithActivity(
+  fixture: ComponentFixture<CryptoDashboard>,
+  totalMs: number,
+): Promise<void> {
+  // Resets the inactivity clock relative to right now, regardless of how
+  // long it's been since some earlier call in the same test last touched
+  // it: without this, two separate advanceWithActivity() calls back to
+  // back could leave a gap between the first call's last internal
+  // dispatch and the second call's first one wide enough to still cross
+  // INACTIVITY_TIMEOUT_MS.
+  dispatchActivity();
+  const stepMs = INACTIVITY_TIMEOUT_MS - 1000;
+  let remaining = totalMs;
+  while (remaining > 0) {
+    const step = Math.min(stepMs, remaining);
+    await vi.advanceTimersByTimeAsync(step);
+    fixture.detectChanges();
+    remaining -= step;
+    if (remaining > 0) {
+      dispatchActivity();
+    }
+  }
+}
+
 describe('CryptoDashboard', () => {
   let fixture: ComponentFixture<CryptoDashboard>;
   let getMarketsSpy: ReturnType<typeof vi.fn>;
@@ -40,10 +90,12 @@ describe('CryptoDashboard', () => {
   let getGlobalStatsSpy: ReturnType<typeof vi.fn>;
 
   // This page assembles several components that each inject
-  // CoinGeckoService independently (market-ticker, currency-converter,
-  // market-state) — one shared mock, provided once at the TestBed level,
-  // covers all of them, same instance Angular's DI hands to every
-  // consumer in this test.
+  // CoinGeckoService independently. market-ticker and currency-converter
+  // no longer do (see the fetch-unification block below); market-state
+  // (out of scope for that change) still calls getMarkets('usd', 100) on
+  // its own, which now happens to share the exact same params as the
+  // page's own unified fetch — see totalSharedFetchCalls() below for how
+  // the tests in this file isolate the page's own calls from that.
   function provideMockCoinGecko() {
     getMarketsSpy = vi.fn().mockResolvedValue([buildCoin(), buildCoin({ id: 'ethereum', symbol: 'eth', name: 'Ethereum' })]);
     getTrendingSpy = vi.fn().mockResolvedValue([buildCoin()]);
@@ -67,6 +119,12 @@ describe('CryptoDashboard', () => {
     }).compileComponents();
   });
 
+  afterEach(() => {
+    // Restore jsdom's default so a hidden override from one test never
+    // leaks into another spec file sharing the same jsdom document.
+    Object.defineProperty(document, 'hidden', { value: false, configurable: true });
+  });
+
   async function createSettledFixture(): Promise<ComponentFixture<CryptoDashboard>> {
     const f = TestBed.createComponent(CryptoDashboard);
     f.detectChanges();
@@ -75,17 +133,17 @@ describe('CryptoDashboard', () => {
     return f;
   }
 
-  // getMarketsSpy is shared across every component on this page that
-  // independently injects CoinGeckoService (market-ticker, market-state,
-  // currency-converter — each with its own distinct count param) AND
-  // this page's own effect (MARKET_TABLE_SIZE). Its raw call count
-  // mixes all of them; this isolates just the page's own calls by their
-  // distinctive ('usd', MARKET_TABLE_SIZE) params. getTrendingSpy has no
-  // such aliasing (no other component on this page calls getTrending),
-  // so its raw call count is used directly in the tests below.
-  function pageMarketFetchCount(): number {
+  // getMarketsSpy is shared by every real caller of getMarkets('usd', 100)
+  // on this page: the page's own unified fetch AND market-state's own
+  // (unchanged, out of scope) call. Both now use the exact same params,
+  // so a raw call count mixes them. Every test below either reads this
+  // total as a fixed baseline (2, right after initial load: one from
+  // each) plus deltas from actions that only the page's own effect
+  // reacts to (manual retry, the interval tick, resume), since
+  // market-state never re-fires after its own initial load.
+  function totalSharedFetchCalls(): number {
     return getMarketsSpy.mock.calls.filter(
-      ([vsCurrency, count]) => vsCurrency === 'usd' && count === MARKET_TABLE_SIZE,
+      ([vsCurrency, count]) => vsCurrency === 'usd' && count === MARKET_COINS_FETCH_SIZE,
     ).length;
   }
 
@@ -118,6 +176,57 @@ describe('CryptoDashboard', () => {
     expect(nativeElement.textContent).toContain('BTC');
   });
 
+  describe('unified getMarkets(\'usd\', 100) fetch', () => {
+    it('fetches only once per manual retry from the page itself, not three separate calls (20/11/100) across market-table/market-ticker/currency-converter', async () => {
+      fixture = await createSettledFixture();
+      getMarketsSpy.mockClear();
+
+      fixture.componentInstance.onMarketRetry();
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      const newCalls = getMarketsSpy.mock.calls.filter(
+        ([vsCurrency, count]) => vsCurrency === 'usd' && count === MARKET_COINS_FETCH_SIZE,
+      );
+      expect(newCalls.length).toBe(1);
+    });
+
+    it('never calls getMarkets with the old per-child counts (20 or 11) anymore', async () => {
+      fixture = await createSettledFixture();
+
+      const oldCountCalls = getMarketsSpy.mock.calls.filter(
+        ([vsCurrency, count]) => vsCurrency === 'usd' && (count === MARKET_TABLE_SIZE || count === TICKER_COIN_COUNT),
+      );
+      expect(oldCountCalls.length).toBe(0);
+    });
+
+    it('derives marketTableCoins (top 20) and tickerCoins (top 11) as plain slices of the one shared 100-coin array, in the same order', async () => {
+      const coins = Array.from({ length: MARKET_COINS_FETCH_SIZE }, (_, i) =>
+        buildCoin({ id: `coin-${i}`, symbol: `c${i}`, name: `Coin ${i}` }),
+      );
+      getMarketsSpy.mockResolvedValue(coins);
+      fixture = await createSettledFixture();
+      const component = fixture.componentInstance;
+
+      expect(component.marketCoins().length).toBe(MARKET_COINS_FETCH_SIZE);
+      expect(component.marketTableCoins()).toEqual(coins.slice(0, MARKET_TABLE_SIZE));
+      expect(component.tickerCoins()).toEqual(coins.slice(0, TICKER_COIN_COUNT));
+    });
+
+    it('feeds currency-converter the full 100-coin array, not a slice', async () => {
+      const coins = Array.from({ length: MARKET_COINS_FETCH_SIZE }, (_, i) =>
+        buildCoin({ id: `coin-${i}`, symbol: `c${i}`, name: `Coin ${i}` }),
+      );
+      getMarketsSpy.mockResolvedValue(coins);
+      fixture = await createSettledFixture();
+
+      const converterDebugEl = fixture.debugElement.query(By.directive(CurrencyConverter));
+      expect((converterDebugEl.componentInstance as CurrencyConverter).coins().length).toBe(
+        MARKET_COINS_FETCH_SIZE,
+      );
+    });
+  });
+
   // This app is zoneless (no zone.js dependency), so Angular's own
   // fakeAsync()/tick() can't be used (they're a zone.js testing
   // utility). Vitest's fake timers work independently of Angular's
@@ -126,12 +235,13 @@ describe('CryptoDashboard', () => {
   // its setInterval registration in the constructor) is created, or
   // the real interval already running is invisible to them. Same
   // pattern already established in market-ticker.spec.ts.
-  it('re-triggers both market and trending fetches after REFRESH_INTERVAL_MS elapses', async () => {
+  it('re-triggers both market and trending fetches after REFRESH_INTERVAL_MS elapses (now 5 minutes, a single declaration)', async () => {
     vi.useFakeTimers();
     try {
       fixture = TestBed.createComponent(CryptoDashboard);
       fixture.detectChanges();
-      expect(pageMarketFetchCount()).toBe(1);
+      const baseline = totalSharedFetchCalls(); // this page's own initial fetch + market-state's own, unrelated one
+      expect(baseline).toBe(2);
       expect(getTrendingSpy).toHaveBeenCalledTimes(1);
 
       // The interval callback updates a signal (marketRetryTrigger/
@@ -139,18 +249,34 @@ describe('CryptoDashboard', () => {
       // calls getMarkets()/getTrending() runs on Angular's own next
       // scheduling tick, not synchronously within the timer callback —
       // detectChanges() flushes that, same as any other signal-driven
-      // update in this zoneless app (market-ticker's own equivalent
-      // test skips this because it calls fetchCoins() directly from the
-      // interval, with no signal/effect indirection in between).
-      await vi.advanceTimersByTimeAsync(REFRESH_INTERVAL_MS);
-      fixture.detectChanges();
-      expect(pageMarketFetchCount()).toBe(2);
+      // update in this zoneless app.
+      await advanceWithActivity(fixture, REFRESH_INTERVAL_MS);
+      // +1, not +2: only the page's own interval tick fires again;
+      // market-state has no timer of its own and never re-triggers.
+      expect(totalSharedFetchCalls()).toBe(baseline + 1);
       expect(getTrendingSpy).toHaveBeenCalledTimes(2);
 
-      await vi.advanceTimersByTimeAsync(REFRESH_INTERVAL_MS);
-      fixture.detectChanges();
-      expect(pageMarketFetchCount()).toBe(3);
+      await advanceWithActivity(fixture, REFRESH_INTERVAL_MS);
+      expect(totalSharedFetchCalls()).toBe(baseline + 2);
       expect(getTrendingSpy).toHaveBeenCalledTimes(3);
+
+      fixture.destroy();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('does NOT tick at the old 50s interval anymore', async () => {
+    vi.useFakeTimers();
+    try {
+      fixture = TestBed.createComponent(CryptoDashboard);
+      fixture.detectChanges();
+      const baseline = totalSharedFetchCalls();
+
+      await vi.advanceTimersByTimeAsync(50_000);
+      fixture.detectChanges();
+      expect(totalSharedFetchCalls()).toBe(baseline); // no growth yet, REFRESH_INTERVAL_MS is 300_000 now
+      expect(getTrendingSpy).toHaveBeenCalledTimes(1);
 
       fixture.destroy();
     } finally {
@@ -163,13 +289,13 @@ describe('CryptoDashboard', () => {
     try {
       fixture = TestBed.createComponent(CryptoDashboard);
       fixture.detectChanges();
-      expect(pageMarketFetchCount()).toBe(1);
+      const baseline = totalSharedFetchCalls();
       expect(getTrendingSpy).toHaveBeenCalledTimes(1);
 
       fixture.destroy();
       await vi.advanceTimersByTimeAsync(REFRESH_INTERVAL_MS * 3);
 
-      expect(pageMarketFetchCount()).toBe(1);
+      expect(totalSharedFetchCalls()).toBe(baseline);
       expect(getTrendingSpy).toHaveBeenCalledTimes(1);
     } finally {
       vi.useRealTimers();
@@ -188,21 +314,223 @@ describe('CryptoDashboard', () => {
 
       const second = TestBed.createComponent(CryptoDashboard);
       second.detectChanges();
-      expect(pageMarketFetchCount()).toBe(1); // the second instance's own initial fetch
+      const baseline = totalSharedFetchCalls(); // the second instance's own initial fetch + market-state's
+      expect(baseline).toBe(2);
       expect(getTrendingSpy).toHaveBeenCalledTimes(1);
 
-      await vi.advanceTimersByTimeAsync(REFRESH_INTERVAL_MS);
-      second.detectChanges();
-      // Exactly one more call each: only the second instance's own
-      // interval fired. Two would mean the first instance's interval
-      // leaked and is still running alongside the second's.
-      expect(pageMarketFetchCount()).toBe(2);
+      await advanceWithActivity(second, REFRESH_INTERVAL_MS);
+      // Exactly one more: only the second instance's own interval fired.
+      // Two would mean the first instance's interval leaked and is still
+      // running alongside the second's.
+      expect(totalSharedFetchCalls()).toBe(baseline + 1);
       expect(getTrendingSpy).toHaveBeenCalledTimes(2);
 
       second.destroy();
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  describe('pause on visibility/inactivity', () => {
+    it('pauses immediately when the tab is hidden, with no fetch on the next scheduled tick', async () => {
+      vi.useFakeTimers();
+      try {
+        fixture = TestBed.createComponent(CryptoDashboard);
+        fixture.detectChanges();
+        await vi.advanceTimersByTimeAsync(0);
+        fixture.detectChanges();
+
+        setHidden(true);
+        fixture.detectChanges();
+        expect(fixture.componentInstance.isPaused()).toBe(true);
+
+        const before = totalSharedFetchCalls();
+        await vi.advanceTimersByTimeAsync(REFRESH_INTERVAL_MS);
+        fixture.detectChanges();
+        expect(totalSharedFetchCalls()).toBe(before); // the tick was skipped
+
+        fixture.destroy();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('does not force a refetch on becoming visible again after only a brief hidden period', async () => {
+      vi.useFakeTimers();
+      try {
+        fixture = TestBed.createComponent(CryptoDashboard);
+        fixture.detectChanges();
+        await vi.advanceTimersByTimeAsync(0);
+        fixture.detectChanges();
+
+        setHidden(true);
+        await vi.advanceTimersByTimeAsync(2_000); // well under the 45s cache TTL and the 2min inactivity timeout
+        const before = totalSharedFetchCalls();
+        setHidden(false);
+        fixture.detectChanges();
+
+        expect(totalSharedFetchCalls()).toBe(before);
+        expect(fixture.componentInstance.isPaused()).toBe(false);
+
+        fixture.destroy();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('refetches immediately on becoming visible again once the hidden period exceeds the 45s cache TTL', async () => {
+      vi.useFakeTimers();
+      try {
+        fixture = TestBed.createComponent(CryptoDashboard);
+        fixture.detectChanges();
+        await vi.advanceTimersByTimeAsync(0);
+        fixture.detectChanges();
+
+        setHidden(true);
+        await vi.advanceTimersByTimeAsync(50_000); // past the 45s TTL, still under REFRESH_INTERVAL_MS
+        const before = totalSharedFetchCalls();
+        setHidden(false);
+        await vi.advanceTimersByTimeAsync(0);
+        fixture.detectChanges();
+
+        expect(totalSharedFetchCalls()).toBe(before + 1);
+        expect(fixture.componentInstance.isPaused()).toBe(false);
+
+        fixture.destroy();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('pauses after exactly INACTIVITY_TIMEOUT_MS with no mousemove/keydown/touchstart/scroll while visible', async () => {
+      vi.useFakeTimers();
+      try {
+        fixture = TestBed.createComponent(CryptoDashboard);
+        fixture.detectChanges();
+        await vi.advanceTimersByTimeAsync(0);
+        fixture.detectChanges();
+        expect(fixture.componentInstance.isPaused()).toBe(false);
+
+        await vi.advanceTimersByTimeAsync(INACTIVITY_TIMEOUT_MS);
+        fixture.detectChanges();
+        expect(fixture.componentInstance.isPaused()).toBe(true);
+
+        fixture.destroy();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('resumes and refetches immediately on activity after an inactivity pause, and restarts its own timer', async () => {
+      vi.useFakeTimers();
+      try {
+        fixture = TestBed.createComponent(CryptoDashboard);
+        fixture.detectChanges();
+        await vi.advanceTimersByTimeAsync(0);
+        fixture.detectChanges();
+
+        await vi.advanceTimersByTimeAsync(INACTIVITY_TIMEOUT_MS);
+        fixture.detectChanges();
+        expect(fixture.componentInstance.isPaused()).toBe(true);
+
+        const before = totalSharedFetchCalls();
+        dispatchActivity();
+        await vi.advanceTimersByTimeAsync(0);
+        fixture.detectChanges();
+
+        expect(fixture.componentInstance.isPaused()).toBe(false);
+        expect(totalSharedFetchCalls()).toBe(before + 1);
+
+        // The inactivity timer restarted from this activity: not already
+        // expired, needs a full new INACTIVITY_TIMEOUT_MS of silence.
+        await vi.advanceTimersByTimeAsync(INACTIVITY_TIMEOUT_MS - 1);
+        fixture.detectChanges();
+        expect(fixture.componentInstance.isPaused()).toBe(false);
+
+        fixture.destroy();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('stays paused for the hidden reason while hidden; activity events while hidden have no effect (inactivity is only evaluated while visible)', async () => {
+      vi.useFakeTimers();
+      try {
+        fixture = TestBed.createComponent(CryptoDashboard);
+        fixture.detectChanges();
+        await vi.advanceTimersByTimeAsync(0);
+        fixture.detectChanges();
+
+        setHidden(true);
+        fixture.detectChanges();
+        expect(fixture.componentInstance.isPaused()).toBe(true);
+
+        const before = totalSharedFetchCalls();
+        dispatchActivity();
+        await vi.advanceTimersByTimeAsync(0);
+        fixture.detectChanges();
+        expect(totalSharedFetchCalls()).toBe(before);
+        expect(fixture.componentInstance.isPaused()).toBe(true);
+
+        await vi.advanceTimersByTimeAsync(INACTIVITY_TIMEOUT_MS);
+        fixture.detectChanges();
+        expect(fixture.componentInstance.isPaused()).toBe(true); // still hidden, same reason
+
+        fixture.destroy();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+  });
+
+  describe('market-table pause banner', () => {
+    it('does not show the pause banner during initial loading', () => {
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      getMarketsSpy.mockReturnValue(new Promise(() => {}));
+      fixture = TestBed.createComponent(CryptoDashboard);
+      fixture.detectChanges();
+
+      const nativeElement = fixture.nativeElement as HTMLElement;
+      expect(nativeElement.textContent).toContain('Loading...');
+      expect(nativeElement.textContent).not.toContain('Live updates paused');
+    });
+
+    it('shows the banner once paused after a successful load, and clicking Resume resumes polling and refetches immediately', async () => {
+      vi.useFakeTimers();
+      try {
+        fixture = TestBed.createComponent(CryptoDashboard);
+        fixture.detectChanges();
+        await vi.advanceTimersByTimeAsync(0);
+        fixture.detectChanges();
+
+        await vi.advanceTimersByTimeAsync(INACTIVITY_TIMEOUT_MS);
+        fixture.detectChanges();
+        expect(fixture.componentInstance.isPaused()).toBe(true);
+
+        const nativeElement = fixture.nativeElement as HTMLElement;
+        expect(nativeElement.textContent).toContain('Live updates paused. Data may be out of date.');
+        // The table stays in the DOM underneath the banner, only dimmed.
+        expect(nativeElement.querySelector('app-market-table table')).toBeTruthy();
+
+        const resumeButton = Array.from(nativeElement.querySelectorAll('button')).find(
+          (btn) => btn.textContent?.trim() === 'Resume',
+        ) as HTMLButtonElement;
+        expect(resumeButton).toBeTruthy();
+
+        const before = totalSharedFetchCalls();
+        resumeButton.click();
+        await vi.advanceTimersByTimeAsync(0);
+        fixture.detectChanges();
+
+        expect(fixture.componentInstance.isPaused()).toBe(false);
+        expect(totalSharedFetchCalls()).toBe(before + 1);
+        expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('Live updates paused');
+
+        fixture.destroy();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
   });
 
   it('defaults to the "Trending" tab, feeding the carousel from getTrending()', async () => {
@@ -346,7 +674,7 @@ describe('CryptoDashboard', () => {
 
   it('never adds a repeated getGlobalStats() call from the auto-refresh interval', async () => {
     // getGlobalStatsSpy is shared across every real caller on this page,
-    // same aliasing as getMarketsSpy/pageMarketFetchCount() above:
+    // same aliasing as getMarketsSpy/totalSharedFetchCalls() above:
     // market-state.ts already calls getGlobalStats() on its own (see
     // that component's own file, untouched by this task), and this
     // page's own new fetch is a second, independent real caller. Both
