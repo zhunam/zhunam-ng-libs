@@ -5,6 +5,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
 
 ## [Unreleased]
 
+## [3.1.0] - 2026-09-28
+
 ### Added
 - `FieldConfig.appearance` (`'default' | 'switch' | 'segmented'`,
   default `'default'`): a purely visual variant. `'switch'` renders a
