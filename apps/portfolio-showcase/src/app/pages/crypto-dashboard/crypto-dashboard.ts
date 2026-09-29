@@ -10,23 +10,51 @@ import { TrendingCarousel } from './components/trending-carousel/trending-carous
 import { CurrencyConverter } from './components/currency-converter/currency-converter';
 import { MarketState } from './components/market-state/market-state';
 
-// A reasonable dashboard table size, distinct from market-ticker's own
-// TICKER_COIN_COUNT (that one is sized to fill a marquee, this is sized
-// to be a readable table).
+// The one real fetch size for market-table, market-ticker, and
+// currency-converter's coin list: all three used to call getMarkets()
+// separately with their own count (20/11/100), three real HTTP calls per
+// refresh instead of one. Now the page fetches the top 100 once and each
+// child derives its own slice via computed(), see marketTableCoins/
+// tickerCoins below.
+export const MARKET_COINS_FETCH_SIZE = 100;
+
+// market-table's own display size: still 20, only the meaning changed
+// from "how many to fetch" to "how many of the fetched 100 to slice off
+// for this table", see marketTableCoins below.
 export const MARKET_TABLE_SIZE = 20;
 
-// Same value and reasoning as market-ticker's own REFRESH_INTERVAL_MS
-// (duplicated, not imported/shared, matching this codebase's existing
-// per-file constant convention): slightly above CoinGeckoService's 45s
-// cache TTL, so a poll never lands a moment before expiry and hits the
-// still-cached value for a round trip that returns no new data.
-// market-table and trending-carousel deliberately don't get their own
-// timer: both are pure input()-driven components fed by this page, so
-// centralizing the one interval here (re-triggering the same
-// marketRetryTrigger/trendingRetryTrigger the Retry buttons already
-// use) covers both without duplicating a timer + DestroyRef cleanup
-// pattern three times over.
-export const REFRESH_INTERVAL_MS = 50_000;
+// Same reasoning market-ticker's own (now removed) TICKER_COIN_COUNT
+// used: one full set of coins must be at least as wide as the assumed
+// minimum viewport, or the marquee's duplicated set (for the seamless
+// loop) could show the same coin twice on screen at once. Moved here
+// since the page now decides how many coins each child gets.
+const MIN_VIEWPORT_WIDTH = 1280;
+const ASSUMED_ITEM_WIDTH = 120;
+export const TICKER_COIN_COUNT = Math.ceil(MIN_VIEWPORT_WIDTH / ASSUMED_ITEM_WIDTH);
+
+// Raised from the previous 50s to 5 minutes, and now the only declaration
+// of this constant in the whole page: market-ticker used to duplicate it
+// for its own separate setInterval, but it no longer has one (pure
+// input()-driven now, like market-table always was). Real production
+// quota exhaustion (see ROADMAP.md) is what drove both this increase and
+// the visibility/inactivity pause below, not just the unified fetch.
+export const REFRESH_INTERVAL_MS = 300_000;
+
+// Same value as CoinGeckoService's own CACHE_TTL_MS (duplicated, not
+// imported/shared, matching this file's existing per-file constant
+// convention): if the tab was hidden at least this long, the cached
+// response has already expired, so resuming should refetch immediately
+// instead of waiting for the next scheduled tick.
+const CACHE_TTL_MS = 45_000;
+
+// No real interaction (mousemove/keydown/touchstart/scroll) for this
+// long, while the tab is visible, pauses polling the same way hiding the
+// tab does. Only evaluated while visible: a hidden tab is already paused
+// by isPageVisible below, and there's no way for the user to generate
+// any of these events on a tab they can't see anyway.
+export const INACTIVITY_TIMEOUT_MS = 120_000;
+
+const ACTIVITY_EVENT_NAMES = ['mousemove', 'keydown', 'touchstart', 'scroll'] as const;
 
 // Mirrors trending-carousel's own sparkline constants: duplicated here
 // (not imported/shared) since this task's scope doesn't allow touching
@@ -261,6 +289,25 @@ export class CryptoDashboard {
   readonly marketCoins = this.marketCoinsSignal.asReadonly();
   readonly marketError = this.marketErrorSignal.asReadonly();
 
+  // Per-child slices of the one shared fetch above: market-table keeps
+  // showing the same top 20 it always did, market-ticker the same top 11
+  // it always did, currency-converter the full 100. None of these trigger
+  // their own fetch, they're pure derivations of marketCoinsSignal.
+  readonly marketTableCoins = computed(() => this.marketCoins().slice(0, MARKET_TABLE_SIZE));
+  readonly tickerCoins = computed(() => this.marketCoins().slice(0, TICKER_COIN_COUNT));
+
+  // Paused while the tab is hidden, or while visible but inactive for
+  // INACTIVITY_TIMEOUT_MS: either condition alone is enough (OR), see the
+  // isPageVisible/isInactive signals set in the constructor below.
+  private readonly isPageVisibleSignal = signal(!document.hidden);
+  private readonly isInactiveSignal = signal(false);
+  readonly isPaused = computed(() => !this.isPageVisibleSignal() || this.isInactiveSignal());
+
+  // Plain fields, not signals: neither is ever read by a template or a
+  // computed(), only by the visibility/activity handlers below.
+  private hiddenAt: number | null = null;
+  private inactivityTimer: ReturnType<typeof setTimeout> | undefined;
+
   // The hero's featured coin reuses market-table's own top entry (BTC,
   // since /coins/markets is requested market-cap-desc) instead of a
   // redundant second fetch for the same shape of data.
@@ -365,7 +412,7 @@ export class CryptoDashboard {
   constructor() {
     effect(() => {
       this.marketRetryTrigger();
-      this.coinGecko.getMarkets('usd', MARKET_TABLE_SIZE).then(
+      this.coinGecko.getMarkets('usd', MARKET_COINS_FETCH_SIZE).then(
         (coins) => {
           this.marketCoinsSignal.set(coins);
           this.marketErrorSignal.set(null);
@@ -395,18 +442,36 @@ export class CryptoDashboard {
     );
 
     // Centralized auto-refresh for every input()-driven child fed from
-    // this page (market-table, trending-carousel, and the hero, all
-    // downstream of the two signals above): re-triggers the same
-    // effects the Retry buttons already use, instead of a per-component
-    // timer. One interval per page instance; DestroyRef guarantees it's
-    // cleared when this component is destroyed (navigating away), so
-    // re-entering the route later creates a fresh interval, never a
-    // second one stacked on top of a leaked previous one.
+    // this page (market-table, market-ticker, currency-converter,
+    // trending-carousel, and the hero, all downstream of the two signals
+    // above): re-triggers the same effects the Retry buttons already
+    // use, instead of a per-component timer. One interval per page
+    // instance; DestroyRef guarantees it's cleared when this component is
+    // destroyed (navigating away), so re-entering the route later creates
+    // a fresh interval, never a second one stacked on top of a leaked
+    // previous one. A tick while isPaused() is a no-op: the next tick
+    // still fires on schedule, it just doesn't trigger a fetch this time.
     const intervalId = setInterval(() => {
-      this.marketRetryTrigger.update((n) => n + 1);
-      this.trendingRetryTrigger.update((n) => n + 1);
+      if (this.isPaused()) {
+        return;
+      }
+      this.refetchNow();
     }, REFRESH_INTERVAL_MS);
-    inject(DestroyRef).onDestroy(() => clearInterval(intervalId));
+
+    document.addEventListener('visibilitychange', this.onVisibilityChange);
+    for (const eventName of ACTIVITY_EVENT_NAMES) {
+      window.addEventListener(eventName, this.onUserActivity, { passive: true });
+    }
+    this.resetInactivityTimer();
+
+    inject(DestroyRef).onDestroy(() => {
+      clearInterval(intervalId);
+      clearTimeout(this.inactivityTimer);
+      document.removeEventListener('visibilitychange', this.onVisibilityChange);
+      for (const eventName of ACTIVITY_EVENT_NAMES) {
+        window.removeEventListener(eventName, this.onUserActivity);
+      }
+    });
   }
 
   onMarketRetry(): void {
@@ -415,6 +480,62 @@ export class CryptoDashboard {
 
   onTrendingRetry(): void {
     this.trendingRetryTrigger.update((n) => n + 1);
+  }
+
+  // The banner's Resume button: equivalent to activity being detected
+  // (clears any inactivity pause and restarts its timer) plus an
+  // immediate fetch, without waiting for the next scheduled tick.
+  onResumeClick(): void {
+    this.isInactiveSignal.set(false);
+    this.resetInactivityTimer();
+    this.refetchNow();
+  }
+
+  private refetchNow(): void {
+    this.marketRetryTrigger.update((n) => n + 1);
+    this.trendingRetryTrigger.update((n) => n + 1);
+  }
+
+  private readonly onVisibilityChange = (): void => {
+    const visible = !document.hidden;
+    this.isPageVisibleSignal.set(visible);
+
+    if (!visible) {
+      this.hiddenAt = Date.now();
+      // No point tracking inactivity while hidden: isPaused() is already
+      // true from visibility alone, and there's no way to receive any of
+      // the activity events on a tab the user can't see.
+      clearTimeout(this.inactivityTimer);
+      return;
+    }
+
+    const hiddenDurationMs = this.hiddenAt === null ? 0 : Date.now() - this.hiddenAt;
+    this.hiddenAt = null;
+    this.resetInactivityTimer();
+
+    // A brief tab switch (e.g. 2 seconds) shouldn't force a refetch; only
+    // resume eagerly if the cached response would already be stale, or if
+    // the pause lasted as long as the inactivity timeout would have.
+    if (hiddenDurationMs >= CACHE_TTL_MS || hiddenDurationMs >= INACTIVITY_TIMEOUT_MS) {
+      this.refetchNow();
+    }
+  };
+
+  private readonly onUserActivity = (): void => {
+    if (!this.isPageVisibleSignal()) {
+      return;
+    }
+    const wasInactive = this.isInactiveSignal();
+    this.isInactiveSignal.set(false);
+    this.resetInactivityTimer();
+    if (wasInactive) {
+      this.refetchNow();
+    }
+  };
+
+  private resetInactivityTimer(): void {
+    clearTimeout(this.inactivityTimer);
+    this.inactivityTimer = setTimeout(() => this.isInactiveSignal.set(true), INACTIVITY_TIMEOUT_MS);
   }
 
   setTrendingTab(tab: TrendingTab): void {

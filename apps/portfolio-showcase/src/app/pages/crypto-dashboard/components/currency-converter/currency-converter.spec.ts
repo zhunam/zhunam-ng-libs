@@ -81,7 +81,6 @@ function selectByIndex(
 }
 
 describe('CurrencyConverter', () => {
-  let getMarketsSpy: ReturnType<typeof vi.fn>;
   let getSupportedCurrenciesSpy: ReturnType<typeof vi.fn>;
   let getSimplePriceSpy: ReturnType<typeof vi.fn>;
 
@@ -91,7 +90,6 @@ describe('CurrencyConverter', () => {
   // register effects/timers as soon as they're constructed/first fire.
   beforeEach(async () => {
     vi.useFakeTimers();
-    getMarketsSpy = vi.fn().mockResolvedValue(sampleCoins);
     getSupportedCurrenciesSpy = vi.fn().mockResolvedValue(sampleCurrencies);
     getSimplePriceSpy = vi.fn().mockResolvedValue(65000);
 
@@ -101,7 +99,6 @@ describe('CurrencyConverter', () => {
         {
           provide: CoinGeckoService,
           useValue: {
-            getMarkets: getMarketsSpy,
             getSupportedCurrencies: getSupportedCurrenciesSpy,
             getSimplePrice: getSimplePriceSpy,
           },
@@ -114,10 +111,17 @@ describe('CurrencyConverter', () => {
     vi.useRealTimers();
   });
 
-  async function createSettledFixture(): Promise<ComponentFixture<CurrencyConverter>> {
+  // coins() is now a required input fed by the page (crypto-dashboard.ts
+  // slices from its one shared getMarkets() fetch), not fetched by this
+  // component itself, so every fixture seeds it directly instead of
+  // mocking a service call.
+  async function createSettledFixture(
+    coins: CryptoCoin[] = sampleCoins,
+  ): Promise<ComponentFixture<CurrencyConverter>> {
     const fixture = TestBed.createComponent(CurrencyConverter);
+    fixture.componentRef.setInput('coins', coins);
     fixture.detectChanges();
-    // Flushes: the lists' promises, form-builder's initial 'live'
+    // Flushes: the currency list's promise, form-builder's initial 'live'
     // emission, and this component's own initial (non-debounced, since
     // it's the first "selection") conversion call.
     await vi.advanceTimersByTimeAsync(AMOUNT_DEBOUNCE_MS);
@@ -271,22 +275,65 @@ describe('CurrencyConverter', () => {
     expect(resultText.endsWith('BTC')).toBe(true);
   });
 
-  it('shows a loading coin-spinner while the coin/currency lists are still loading', () => {
-    getMarketsSpy.mockReturnValue(new Promise<never>(() => undefined));
+  it('shows a loading coin-spinner while coins() (fed by the page) is still empty', () => {
     const fixture = TestBed.createComponent(CurrencyConverter);
+    fixture.componentRef.setInput('coins', []);
     fixture.detectChanges();
 
     expect(root(fixture).textContent).toContain('Loading...');
   });
 
-  it('shows an error coin-spinner when the lists fail to load', async () => {
+  it('shows a loading coin-spinner while its own currency list is still loading', () => {
+    getSupportedCurrenciesSpy.mockReturnValue(new Promise<never>(() => undefined));
+    const fixture = TestBed.createComponent(CurrencyConverter);
+    fixture.componentRef.setInput('coins', sampleCoins);
+    fixture.detectChanges();
+
+    expect(root(fixture).textContent).toContain('Loading...');
+  });
+
+  it('shows the page\'s error() (the shared coin list) when set, even if the currency list loaded fine', async () => {
+    const fixture = TestBed.createComponent(CurrencyConverter);
+    fixture.componentRef.setInput('coins', []);
+    fixture.componentRef.setInput('error', 'Could not load market data.');
+    fixture.detectChanges();
+    await vi.advanceTimersByTimeAsync(0);
+    fixture.detectChanges();
+
+    expect(root(fixture).textContent).toContain('Could not load market data.');
+  });
+
+  it('shows its own error when the currency list fails to load, independent of coins()', async () => {
     getSupportedCurrenciesSpy.mockRejectedValue(new Error('network error'));
     const fixture = TestBed.createComponent(CurrencyConverter);
+    fixture.componentRef.setInput('coins', sampleCoins);
     fixture.detectChanges();
     await vi.advanceTimersByTimeAsync(0);
     fixture.detectChanges();
 
     expect(root(fixture).textContent).toContain('Could not load the currency list.');
+  });
+
+  it('clicking Retry on a failed currency list emits retry() (for the page\'s coin list) and refetches its own currency list', async () => {
+    getSupportedCurrenciesSpy.mockRejectedValueOnce(new Error('network error'));
+    const fixture = TestBed.createComponent(CurrencyConverter);
+    fixture.componentRef.setInput('coins', sampleCoins);
+    fixture.detectChanges();
+    await vi.advanceTimersByTimeAsync(0);
+    fixture.detectChanges();
+
+    let retryCount = 0;
+    fixture.componentInstance.retry.subscribe(() => retryCount++);
+
+    getSupportedCurrenciesSpy.mockResolvedValue(sampleCurrencies);
+    const retryButton = root(fixture).querySelector('button') as HTMLButtonElement;
+    retryButton.click();
+    await vi.advanceTimersByTimeAsync(0);
+    fixture.detectChanges();
+
+    expect(retryCount).toBe(1);
+    expect(getSupportedCurrenciesSpy).toHaveBeenCalledTimes(2);
+    expect(root(fixture).textContent).not.toContain('Could not load the currency list.');
   });
 
   it('renders the "To" select with "Name (CODE)" labels, crypto tickers and fiat alike', async () => {
@@ -300,8 +347,7 @@ describe('CurrencyConverter', () => {
   });
 
   it('never renders coin/currency data via innerHTML', async () => {
-    getMarketsSpy.mockResolvedValue([buildCoin({ name: '<b>Bitcoin</b>' })]);
-    const fixture = await createSettledFixture();
+    const fixture = await createSettledFixture([buildCoin({ name: '<b>Bitcoin</b>' })]);
 
     expect(root(fixture).querySelector('b')).toBeNull();
     expect(root(fixture).textContent).toContain('<b>Bitcoin</b>');

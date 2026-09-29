@@ -12,7 +12,7 @@
          stays solid, unlike home's transparent-over-dark hero, so
          there's no need to tuck further back behind it). -->
     <div class="relative left-1/2 right-1/2 -mt-12 ml-[-50vw] mr-[-50vw] w-screen">
-      <app-market-ticker />
+      <app-market-ticker [coins]="tickerCoins()" [error]="marketError()" (retry)="onMarketRetry()" />
     </div>
 
     <!-- Full-bleed dark hero: the featured coin's own price + real
@@ -156,12 +156,18 @@
           }
         </button>
       </div>
-      <app-market-table [coins]="marketCoins()" [error]="marketError()" (retry)="onMarketRetry()" />
+      <app-market-table
+        [coins]="marketTableCoins()"
+        [error]="marketError()"
+        [isPaused]="isPaused()"
+        (retry)="onMarketRetry()"
+        (resumeClick)="onResumeClick()"
+      />
     </div>
 
     <div class="flex flex-col gap-3 lg:w-80 lg:shrink-0">
       <h2 class="text-sm font-semibold text-base-content">Convert</h2>
-      <app-currency-converter />
+      <app-currency-converter [coins]="marketCoins()" [error]="marketError()" (retry)="onMarketRetry()" />
     </div>
   </section>
 </div>

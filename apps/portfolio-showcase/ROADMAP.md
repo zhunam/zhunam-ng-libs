@@ -1003,24 +1003,65 @@ investigación real antes de escribir código)
         por campo siga ganando siempre. Confirmado que el test
         existente (`currency-converter.spec.ts:160`) ya cubría esto
         sin cambios.
-- **Cuota de la API de CoinGecko agotada en `/crypto-dashboard`, nota
-  de deuda, no implementado todavía**:
+- **Cuota de la API de CoinGecko agotada en `/crypto-dashboard`, mitigación
+  implementada (2026-09-28)**:
   - La cuota mensual del plan Demo (10.000 llamadas) se agotó el
     2026-09-20, con consumo real registrado en producción durante días
     sin actividad de desarrollo local.
-  - Pendiente diagnosticar (desglose por endpoint en el panel de
-    CoinGecko + logs de Vercel) si el consumo vino de una pestaña
-    abierta en el sitio en vivo o de uso de la clave fuera de la app
-    (la clave viaja en el JS público del sitio pese a no estar
-    commiteada en el repo).
-  - Mejoras pendientes, en orden: pausar el polling con la Page
-    Visibility API cuando la pestaña no está visible; pausar por
-    inactividad (sin interacción real por N minutos) con aviso
-    accesible y botón para reanudar sin recargar; espaciar el
-    intervalo de refresco de 50s a ~3min; evaluar que market-ticker
-    reutilice la llamada de market-table en vez de la propia. Decisión
-    de arquitectura a futuro, si el consumo resulta ser abuso de la
-    clave o el tráfico real crece: mover a un proxy propio (función
-    serverless con caché en el borde) que además saca la clave del JS
-    público, revisando la decisión "sin backend" de este mismo
-    ROADMAP.
+  - **Diagnóstico por endpoint: no se pudo confirmar, limitación externa,
+    no pendiente propio.** El panel de CoinGecko no retiene logs
+    históricos por endpoint más allá de la ventana corriente, así que no
+    hay forma de reconstruir, a posteriori, si el consumo real vino de una
+    pestaña olvidada abierta en el sitio en vivo o de uso de la clave
+    fuera de la app (la clave viaja en el JS público del sitio pese a no
+    estar commiteada en el repo). Las mejoras de abajo atacan
+    deliberadamente ambos escenarios a la vez en lugar de esperar a un
+    diagnóstico que ya no es recuperable.
+  - **Implementado:**
+    - Unificación de llamadas: `market-table`, `market-ticker`, y la lista
+      de monedas de `currency-converter` pedían `getMarkets()` cada uno
+      por su cuenta con su propio `count` (20/11/100 respectivamente),
+      hasta 3 llamadas reales por ciclo para datos mayormente solapados.
+      Ahora `crypto-dashboard.ts` pide `getMarkets('usd', 100)` una sola
+      vez por ciclo, y cada uno deriva su vista vía `computed()`
+      (`marketTableCoins`/`tickerCoins`, ambos un `.slice()` del mismo
+      array; `currency-converter` recibe el array completo). `market-ticker`
+      y `currency-converter` ya no inyectan `CoinGeckoService` para esta
+      parte ni tienen timer propio, pasan a ser puramente `input()`-driven
+      como ya lo era `market-table`.
+    - `REFRESH_INTERVAL_MS`: de 50s a 5 minutos (`300_000`), y ahora una
+      única declaración en `crypto-dashboard.ts` (antes duplicada también
+      en `market-ticker.ts`, que ya no tiene reloj propio).
+    - Pausa por Page Visibility API (`visibilitychange`): pausa inmediata
+      al ocultar la pestaña, sin depender de ningún timer. Al volver a ser
+      visible, refetch inmediato solo si la pestaña estuvo oculta al
+      menos tanto como el TTL de caché de `CoinGeckoService` (45s) o como
+      `INACTIVITY_TIMEOUT_MS`, para no fetchear de más en un cambio de
+      pestaña de pocos segundos.
+    - Pausa por inactividad (`INACTIVITY_TIMEOUT_MS = 120_000`, 2 min sin
+      mousemove/keydown/touchstart/scroll), evaluada solo mientras la
+      pestaña está visible. Ambos mecanismos combinan por OR en un único
+      `isPaused` derivado (`crypto-dashboard.ts`). Al detectar actividad
+      de nuevo tras una pausa por inactividad: refetch inmediato y
+      reinicio del temporizador.
+    - Aviso accesible en el panel de `market-table` (banner con borde
+      Hairline, ícono de reloj, texto y botón "Resume", `role="status"`
+      `aria-live="polite"`), visible solo una vez que ya hubo una carga
+      exitosa (nunca durante el loading inicial, cubierto por el propio
+      orden de estados de `coin-spinner` que ya existía). La tabla queda
+      debajo, atenuada (`opacity-50`) pero sin desmontarse. El botón
+      Resume fuerza reanudación inmediata más un fetch inmediato.
+  - **Fuera de alcance de este bloque, sin cambios:** `market-state`
+    sigue con su propia llamada independiente a `getMarkets('usd', 100)`
+    (ahora comparte cache key con la llamada unificada de la página, sin
+    llamada real duplicada gracias al caché de 45s de `CoinGeckoService`,
+    pero sigue siendo un caller separado a propósito, no absorbido por
+    este bloque); `currency-converter` conserva su propia
+    `getSupportedCurrencies()` y su estado de conversión de precio, sin
+    tocar.
+  - **Pendiente futuro, solo si el tráfico real lo justifica:** mover a un
+    proxy propio (función serverless con caché en el borde) que además
+    saca la clave del JS público, revisando la decisión "sin backend" de
+    este mismo ROADMAP. No se implementa ahora: las mitigaciones de arriba
+    ya cubren ambos escenarios de consumo planteados (pestaña olvidada y
+    uso externo de la clave) sin necesitar backend propio.

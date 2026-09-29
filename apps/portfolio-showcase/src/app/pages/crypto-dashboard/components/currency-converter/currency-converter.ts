@@ -1,17 +1,10 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { FieldConfig, FormBuilder } from '@zhunam/form-builder';
 import { CoinGeckoService } from '../../services/coingecko';
 import { CryptoCoin } from '../../models/coin';
 import { currencyDisplayName } from '../../utils/currency-display-name';
 import { CoinSpinner } from '../coin-spinner/coin-spinner';
-
-// Reuses getMarkets(), same as market-table, for the "from" dropdown.
-// Not CoinGecko's full ~17,000-coin catalog ("lista completa" read as
-// "same method as market-table", not literally exhaustive): a plain
-// <select> with every coin CoinGecko tracks isn't practical, and the
-// top 100 by market cap covers every coin a real user would convert.
-const COIN_LIST_SIZE = 100;
 
 export const AMOUNT_DEBOUNCE_MS = 500;
 
@@ -35,13 +28,26 @@ interface ConverterFormValue {
 export class CurrencyConverter {
   private readonly coinGecko = inject(CoinGeckoService);
 
-  private readonly coinsSignal = signal<CryptoCoin[]>([]);
+  // The "from" coin list: fetched once by the page (crypto-dashboard.ts)
+  // and shared across market-table/market-ticker/this component, instead
+  // of each of them calling getMarkets() with its own count. error/retry
+  // here cover only that shared fetch; getSupportedCurrencies() below
+  // stays this component's own concern, with its own error/retry.
+  coins = input.required<CryptoCoin[]>();
+  error = input<string | null>(null);
+  retry = output<void>();
+
   private readonly currenciesSignal = signal<string[]>([]);
-  private readonly listsErrorSignal = signal<string | null>(null);
-  private readonly listsRetryTrigger = signal(0);
-  readonly coins = this.coinsSignal.asReadonly();
+  private readonly currenciesErrorSignal = signal<string | null>(null);
+  private readonly currenciesRetryTrigger = signal(0);
   readonly currencies = this.currenciesSignal.asReadonly();
-  readonly listsError = this.listsErrorSignal.asReadonly();
+
+  // Combines both independent failure sources behind the one coin-spinner
+  // the template already renders: the page's shared coin list and this
+  // component's own currency list. Whichever is set is shown; a real user
+  // just sees "something didn't load" and clicks the one Retry button,
+  // which retries both (see onRetryListsClick()).
+  readonly listsError = computed(() => this.error() ?? this.currenciesErrorSignal());
 
   // Live current selection: updated on every valueChange, read by
   // canSwap()/fromCoin().
@@ -149,14 +155,13 @@ export class CurrencyConverter {
 
   constructor() {
     effect(() => {
-      this.listsRetryTrigger();
-      this.coinGecko.getMarkets('usd', COIN_LIST_SIZE).then(
-        (coins) => this.coinsSignal.set(coins),
-        () => this.listsErrorSignal.set('Could not load the coin list.'),
-      );
+      this.currenciesRetryTrigger();
       this.coinGecko.getSupportedCurrencies().then(
-        (currencies) => this.currenciesSignal.set(currencies),
-        () => this.listsErrorSignal.set('Could not load the currency list.'),
+        (currencies) => {
+          this.currenciesSignal.set(currencies);
+          this.currenciesErrorSignal.set(null);
+        },
+        () => this.currenciesErrorSignal.set('Could not load the currency list.'),
       );
     });
   }
@@ -224,7 +229,8 @@ export class CurrencyConverter {
   }
 
   onRetryListsClick(): void {
-    this.listsRetryTrigger.update((n) => n + 1);
+    this.retry.emit();
+    this.currenciesRetryTrigger.update((n) => n + 1);
   }
 
   onRetryConversionClick(): void {
