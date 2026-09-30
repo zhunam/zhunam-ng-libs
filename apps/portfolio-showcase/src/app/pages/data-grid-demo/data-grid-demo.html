@@ -86,10 +86,39 @@
       </section>
 
       <section class="rounded-box border border-slate-200 p-6">
-        <h2 class="mb-3 text-sm font-semibold text-base-content mb-7">Usage</h2>
+        <h2 class="mb-3 text-sm font-semibold text-base-content">Usage</h2>
+        <!-- Same pill selector as crypto-dashboard.html's Trending / Top
+             Movers tabs (see DESIGN.md "Tabs"): replicated here, not
+             extracted into a shared component, since it isn't reusable
+             there either. -->
+        <div class="mb-3 flex items-center gap-2">
+          <button
+            type="button"
+            class="cursor-pointer rounded-full px-4 py-1.5 text-sm font-semibold shadow-[0_2px_10px_rgba(15,37,42,0.08)] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            [class]="usageMode() === 'client' ? 'bg-primary text-primary-content' : 'bg-base-100 text-slate-600'"
+            [attr.aria-pressed]="usageMode() === 'client'"
+            (click)="setUsageMode('client')"
+          >
+            Client mode
+          </button>
+          <button
+            type="button"
+            class="cursor-pointer rounded-full px-4 py-1.5 text-sm font-semibold shadow-[0_2px_10px_rgba(15,37,42,0.08)] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            [class]="usageMode() === 'server' ? 'bg-primary text-primary-content' : 'bg-base-100 text-slate-600'"
+            [attr.aria-pressed]="usageMode() === 'server'"
+            (click)="setUsageMode('server')"
+          >
+            Server mode
+          </button>
+        </div>
+        <!-- max-h-48 (12rem/192px) plus overflow-y-auto: this panel's own
+             content must never push the row taller than its siblings
+             (Edit columns/Edit data, measured at ~310px total including
+             their own heading/description/textarea). Scrolls internally
+             instead, regardless of how long a future snippet gets. -->
         <pre
-          class="overflow-x-auto rounded-md bg-base-content p-4 text-xs leading-relaxed text-slate-100"
-        ><code class="font-mono">{{ usageSnippet }}</code></pre>
+          class="max-h-48 overflow-x-auto overflow-y-auto rounded-md bg-base-content p-4 text-xs leading-relaxed text-slate-100"
+        ><code class="font-mono">{{ activeUsageSnippet() }}</code></pre>
       </section>
     </div>
 </app-library-page-shell>

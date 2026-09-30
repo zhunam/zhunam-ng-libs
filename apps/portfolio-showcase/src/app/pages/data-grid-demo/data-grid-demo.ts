@@ -36,14 +36,54 @@ export class DataGridDemo {
   protected readonly columnsJsonText = signal(JSON.stringify(userColumns, null, 2));
   protected readonly columnsJsonError = signal<string | null>(null);
 
-  protected readonly usageSnippet = `import { DataGrid } from '@zhunam/data-grid';
+  // Which Usage snippet is shown below, toggled by the Client mode / Server
+  // mode pill selector. Same pattern as auth-demo.ts's selectedProvider()
+  // + formUiUsageSnippet(): a plain signal plus a method that switches on
+  // it, not a computed(), since the template just calls it once per render.
+  protected readonly usageMode = signal<'client' | 'server'>('client');
+
+  // Same calibre as form-builder-demo.ts/pdf-generator-demo.ts's own
+  // usageSnippet: the import line plus the <lib-x ... /> tag and its real
+  // bindings, nothing else. No wrapping class/interface/decorator, no
+  // example methods: that's generic Angular boilerplate any consumer
+  // already knows how to write, not part of what this library adds.
+  private readonly clientUsageSnippet = `import { DataGrid } from '@zhunam/data-grid';
 
 <lib-data-grid
-  [data]="users"
+  [data]="users()"
   [columns]="columns"
-  [pageSize]="3"
-  (rowClick)="onUserRowClick($event)"
+  [pageSize]="10"
+  [filterFn]="filterFn()"
+  [selectable]="true"
+  [rowKey]="rowKey"
+  [(selection)]="selection"
+  [loading]="isFetching()"
+  [loadingTemplate]="loadingState"
+  [emptyTemplate]="emptyState"
+  (rowClick)="onRowClick($event)"
 />`;
+
+  private readonly serverUsageSnippet = `import { DataGrid } from '@zhunam/data-grid';
+
+<lib-data-grid
+  mode="server"
+  [data]="page()"
+  [columns]="columns"
+  [pageSize]="pageSize"
+  [totalCount]="totalCount()"
+  [loading]="isFetching()"
+  [(currentPage)]="currentPage"
+  [(sortState)]="sortState"
+  (rowClick)="onRowClick($event)"
+/>`;
+
+  protected activeUsageSnippet(): string {
+    return this.usageMode() === 'client' ? this.clientUsageSnippet : this.serverUsageSnippet;
+  }
+
+  protected setUsageMode(mode: 'client' | 'server'): void {
+    this.usageMode.set(mode);
+  }
 
   protected onUserRowClick(user: Row): void {
     this.selectedUser.set(user);
