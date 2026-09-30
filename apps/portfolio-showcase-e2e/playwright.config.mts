@@ -33,7 +33,7 @@ export default defineConfig({
   webServer: {
     command: 'npx nx run portfolio-showcase:serve',
     url: 'http://localhost:4200',
-    reuseExistingServer: true,
+    reuseExistingServer: !process.env.CI,
     cwd: workspaceRoot
   },
   projects: [
