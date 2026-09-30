@@ -1,0 +1,78 @@
+name: E2E Theming
+
+# Permanent, CI-connected version of the disposable Playwright scripts
+# used during the --zhunam-* theming blocks for data-grid, form-builder,
+# and auth/form-ui (see apps/portfolio-showcase/ROADMAP.md and
+# apps/portfolio-showcase-e2e/src/theming.spec.ts). Detects, automatically
+# from now on, if a future change breaks the CSS custom property cascade
+# these three libraries and portfolio-showcase's own theming hook depend
+# on.
+#
+# Unlike lib-tests.yml/app-tests.yml, this workflow is NOT (yet) a
+# required status check on master, so it does not need their
+# "always trigger, decide internally via git diff" workaround: that
+# pattern exists specifically because GitHub leaves a required check
+# pending forever when a path-filtered trigger never creates a run for an
+# unrelated PR. A plain `on.pull_request.paths` filter is simpler and has
+# no such problem for a non-required check: GitHub just does not create a
+# run at all for a PR that does not touch these paths, which is fine here.
+# If this ever becomes a required check, switch it to the same
+# git-diff-inside-the-job pattern those two workflows already use.
+#
+# Only Chromium is installed, not the 3 browsers playwright.config.mts
+# also declares (firefox, webkit): this spec verifies standard CSS custom
+# property cascade/specificity, not browser-specific rendering, so a
+# single engine is enough per PR. `playwright test --project=chromium`
+# scopes the run to that one project explicitly, so it never tries to
+# launch firefox/webkit binaries that were never installed here.
+on:
+  pull_request:
+    paths:
+      - 'apps/portfolio-showcase/**'
+      - 'apps/portfolio-showcase-e2e/**'
+      - 'libs/data-grid/**'
+      - 'libs/form-builder/**'
+      - 'libs/auth/**'
+
+jobs:
+  test:
+    name: E2E Theming (chromium)
+    runs-on: ubuntu-latest
+    env:
+      # generate-env.mjs (run by Nx as a dependsOn of both
+      # portfolio-showcase:serve and portfolio-showcase:build, which the
+      # webServer step below triggers) reads process.env.COINGECKO_API_KEY
+      # directly before ever falling back to a .env file one level above
+      # the repo root, so setting it here is enough, no other change
+      # needed. Job-level, not step-level: the key is only ever consumed
+      # transitively (Nx's own dependency graph, not a step in this file),
+      # so scoping it to the step that happens to trigger that chain today
+      # would be fragile if that chain ever changes shape.
+      COINGECKO_API_KEY: ${{ secrets.COINGECKO_API_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install workspace dependencies
+        run: npm ci
+
+      - name: Install Playwright (Chromium only)
+        run: npx playwright install --with-deps chromium
+
+      - name: Run theming e2e spec
+        # Invoking `playwright test` directly here, not `nx e2e
+        # portfolio-showcase-e2e`: Nx's own inferred target also declares
+        # a dependsOn on portfolio-showcase:serve (see project.json), on
+        # top of the webServer this config already starts on its own,
+        # and the two collide over port 4200 (confirmed locally: Nx's own
+        # dependency task fails with "Port 4200 is already in use" even
+        # though the actual Playwright run passes). Calling the CLI
+        # directly leaves exactly one thing (Playwright's own webServer)
+        # responsible for starting the server.
+        working-directory: apps/portfolio-showcase-e2e
+        run: npx playwright test --project=chromium

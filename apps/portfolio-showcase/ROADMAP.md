@@ -1003,6 +1003,24 @@ investigación real antes de escribir código)
         por campo siga ganando siempre. Confirmado que el test
         existente (`currency-converter.spec.ts:160`) ya cubría esto
         sin cambios.
+      - **Verificación de theming hecha permanente (2026-09-30)**: las
+        verificaciones de este bloque (herencia de una variable
+        `:root`, la especificidad `(0,1,1)` de un selector externo
+        real tipo `:root :is(lib-data-grid, lib-form-builder,
+        lib-login-form, lib-register-form, lib-reset-password-form)`
+        contra un `:root` plano, y el caso anidado `lib-login-form` →
+        `lib-form-builder` interno en `/auth`) se hicieron con scripts
+        de Playwright descartables, borrados al terminar la tarea. Ya
+        no: quedaron como `apps/portfolio-showcase-e2e/src/theming.spec.ts`,
+        conectado a CI por `.github/workflows/e2e-theming.yml` (trigger
+        `pull_request` con `paths` sobre `apps/portfolio-showcase/**`,
+        `apps/portfolio-showcase-e2e/**`, `libs/data-grid/**`,
+        `libs/form-builder/**`, `libs/auth/**`), no un required check
+        todavía. Corre solo contra `/data-grid`, `/form-builder`, y
+        `/auth` (para el caso anidado), ninguno depende de CoinGecko.
+        No se encontró ninguna nota de deuda previa que actualizar para
+        esto en este archivo ni en el ROADMAP.md raíz, así que se deja
+        esta entrada nueva en su lugar.
 - **Cuota de la API de CoinGecko agotada en `/crypto-dashboard`, mitigación
   implementada (2026-09-28)**:
   - La cuota mensual del plan Demo (10.000 llamadas) se agotó el
