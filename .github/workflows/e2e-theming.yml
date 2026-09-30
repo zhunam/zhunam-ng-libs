@@ -38,6 +38,17 @@ jobs:
   test:
     name: E2E Theming (chromium)
     runs-on: ubuntu-latest
+    env:
+      # generate-env.mjs (run by Nx as a dependsOn of both
+      # portfolio-showcase:serve and portfolio-showcase:build, which the
+      # webServer step below triggers) reads process.env.COINGECKO_API_KEY
+      # directly before ever falling back to a .env file one level above
+      # the repo root, so setting it here is enough, no other change
+      # needed. Job-level, not step-level: the key is only ever consumed
+      # transitively (Nx's own dependency graph, not a step in this file),
+      # so scoping it to the step that happens to trigger that chain today
+      # would be fragile if that chain ever changes shape.
+      COINGECKO_API_KEY: ${{ secrets.COINGECKO_API_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
