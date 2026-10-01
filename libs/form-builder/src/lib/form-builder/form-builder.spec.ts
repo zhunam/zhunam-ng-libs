@@ -700,6 +700,18 @@ describe('FormBuilder', () => {
       ]);
       expect(root(fixture).querySelector('.fb-switch-track')).toBeNull();
     });
+
+    it('sets role="switch" only when appearance is "switch", not "default"', () => {
+      const switchFixture = createFixture([
+        { key: 'agree', label: 'Agree to terms', type: 'checkbox', appearance: 'switch' },
+      ]);
+      expect(getInput(switchFixture, 'checkbox').getAttribute('role')).toBe('switch');
+
+      const defaultFixture = createFixture([
+        { key: 'agree', label: 'Agree to terms', type: 'checkbox', appearance: 'default' },
+      ]);
+      expect(getInput(defaultFixture, 'checkbox').hasAttribute('role')).toBe(false);
+    });
   });
 
   describe('appearance: segmented (radio)', () => {
@@ -1541,5 +1553,83 @@ describe('FormBuilder i18n', () => {
     );
     blur(getInput(fixture, 'text'), fixture);
     expect(getErrorText(fixture)).toBe('Please enter your name');
+  });
+
+  describe('autocomplete', () => {
+    it('sets [attr.autocomplete] on a default-case input when field.autocomplete is defined', () => {
+      const fixture = createFixture([
+        { key: 'name', label: 'Name', type: 'text', autocomplete: 'name' },
+      ]);
+      expect(getInput(fixture, 'text').getAttribute('autocomplete')).toBe('name');
+    });
+
+    it('sets autocomplete on password, textarea, and select controls', () => {
+      const fixture = createFixture([
+        { key: 'password', label: 'Password', type: 'password', autocomplete: 'current-password' },
+        { key: 'bio', label: 'Bio', type: 'textarea', autocomplete: 'off' },
+        {
+          key: 'country',
+          label: 'Country',
+          type: 'select',
+          autocomplete: 'country',
+          options: [{ value: 'ar', label: 'Argentina' }],
+        },
+      ]);
+
+      expect(getInput(fixture, 'password').getAttribute('autocomplete')).toBe('current-password');
+      expect(getTextarea(fixture).getAttribute('autocomplete')).toBe('off');
+      expect(getSelect(fixture).getAttribute('autocomplete')).toBe('country');
+    });
+
+    it('omits the autocomplete attribute entirely when field.autocomplete is not defined', () => {
+      const fixture = createFixture([{ key: 'name', label: 'Name', type: 'text' }]);
+      expect(getInput(fixture, 'text').hasAttribute('autocomplete')).toBe(false);
+    });
+
+    it('never sets autocomplete on checkbox or radio, even when field.autocomplete is defined', () => {
+      const fixture = createFixture([
+        { key: 'agree', label: 'Agree to terms', type: 'checkbox', autocomplete: 'on' },
+        {
+          key: 'plan',
+          label: 'Plan',
+          type: 'radio',
+          autocomplete: 'on',
+          options: [{ value: 1, label: 'Basic' }],
+        },
+      ]);
+
+      expect(getInput(fixture, 'checkbox').hasAttribute('autocomplete')).toBe(false);
+      expect(root(fixture).querySelector('input[type="radio"]')?.hasAttribute('autocomplete')).toBe(
+        false,
+      );
+    });
+  });
+
+  describe('icon (FieldOption)', () => {
+    const segmentedField: FieldConfig<TestModel> = {
+      key: 'plan',
+      label: 'Plan',
+      type: 'radio',
+      appearance: 'segmented',
+      options: [
+        { value: 1, label: 'Basic', icon: 'star' },
+        { value: 2, label: 'Pro' },
+      ],
+    };
+
+    it('renders the icon inside the segmented pill when the option defines one', () => {
+      const fixture = createFixture([segmentedField]);
+      const icons = root(fixture).querySelectorAll('.fb-option-icon');
+
+      expect(icons.length).toBe(1);
+      expect(icons[0].textContent?.trim()).toBe('star');
+    });
+
+    it('omits the icon element entirely for an option with no icon', () => {
+      const fixture = createFixture([segmentedField]);
+      const pills = root(fixture).querySelectorAll('.fb-segmented-pill');
+
+      expect(pills[1].querySelector('.fb-option-icon')).toBeNull();
+    });
   });
 });

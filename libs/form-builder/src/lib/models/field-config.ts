@@ -39,6 +39,22 @@ export interface FieldOption {
    * ]
    */
   description?: string;
+
+  /**
+   * Icon shown next to this option's label, for a `radio` field
+   * rendered with `appearance: 'segmented'` (has no visible effect on
+   * a plain vertical radio list or on `select`). Rendered as the text
+   * content of a decorative `.fb-option-icon` span, meant for an
+   * icon-font system that renders ligatures (e.g. Material Symbols),
+   * never as a CSS class or an `<svg>`; `FormBuilder` never ships an
+   * icon library of its own.
+   * @example
+   * options: [
+   *   { value: 'card', label: 'Card', icon: 'credit_card' },
+   *   { value: 'cash', label: 'Cash', icon: 'payments' },
+   * ]
+   */
+  icon?: string;
 }
 
 /**
@@ -46,9 +62,12 @@ export interface FieldOption {
  * one specific `type` renders; every other `type` ignores it entirely,
  * same as `default` (the default) does:
  * - `'switch'`: only affects `type: 'checkbox'`. Renders as a
- *   track-and-thumb toggle instead of a native checkbox box.
+ *   track-and-thumb toggle instead of a native checkbox box, with
+ *   `role="switch"` added to the underlying input (absent for
+ *   `'default'`).
  * - `'segmented'`: only affects `type: 'radio'`. Renders its options as
- *   a row of pill buttons instead of a vertical list.
+ *   a row of pill buttons instead of a vertical list, each able to show
+ *   a `FieldOption.icon` next to its label.
  *
  * A real `<input type="checkbox">`/`<input type="radio">` still backs
  * either variant, visually hidden but focusable, clickable via its
@@ -226,6 +245,27 @@ export interface FieldConfig<T> {
    * { key: 'referenceCode', label: 'Reference code', type: 'text', readonly: true, defaultValue: 'REF-2026-001' }
    */
   readonly?: boolean;
+
+  /**
+   * Native HTML `autocomplete` attribute, passed through as-is to the
+   * underlying control for `type` `text`/`email`/`password`/`number`/
+   * `date`/`textarea`/`select`. Any value the HTML specification
+   * accepts works (not validated here), typically one of the
+   * standard autofill tokens.
+   *
+   * Has no effect on `checkbox` or `radio`: those render one native
+   * input per option (or a single checkbox), where `autocomplete`
+   * has no meaningful browser autofill behavior, so it's omitted
+   * there on purpose rather than bound and silently ignored by the
+   * browser.
+   * @example
+   * { key: 'email', label: 'Email', type: 'email', autocomplete: 'email' }
+   * { key: 'username', label: 'Username', type: 'text', autocomplete: 'username' }
+   * { key: 'fullName', label: 'Full name', type: 'text', autocomplete: 'name' }
+   * { key: 'password', label: 'Password', type: 'password', autocomplete: 'current-password' }
+   * { key: 'newPassword', label: 'New password', type: 'password', autocomplete: 'new-password' }
+   */
+  autocomplete?: string;
 }
 
 /**

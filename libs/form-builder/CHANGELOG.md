@@ -5,6 +5,38 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
 
 ## [Unreleased]
 
+### Added
+- `FieldConfig.autocomplete` (`string`, optional): passes through to
+  the native HTML `autocomplete` attribute, for `text`/`number`/
+  `email`/`password`/`date`/`textarea`/`select` fields. Not set on
+  `checkbox`/`radio`, where it has no meaningful browser autofill
+  behavior. See the README's "Autocomplete" section.
+- `FieldOption.icon` (`string`, optional): shown next to a `radio`
+  option's label when the field uses `appearance: 'segmented'`,
+  rendered as the text content of a decorative `.fb-option-icon`
+  span (meant for an icon-font ligature system, e.g. Material
+  Symbols). No effect outside `'segmented'`.
+- `role="switch"` on the underlying `<input type="checkbox">` when a
+  field uses `appearance: 'switch'`, the ARIA role screen readers
+  expect for a checkbox presented as a toggle. Absent for `'default'`.
+- `CHANGELOG.md` is now included in the published npm package
+  (`dist/libs/form-builder/CHANGELOG.md`), via `ng-package.json`'s own
+  `assets` option. Previously only `README.md`/`LICENSE` made it into
+  the package (ng-packagr's own default), so anyone installing from
+  npm had no way to read this file without visiting the repo.
+
+### Fixed
+- Removed the `[disabled]="!!field.disabled"` binding from every
+  field's native control in the template. It duplicated the disabled
+  state Angular's `FormControlDirective` (`[formControl]`) already
+  manages from `buildFormGroup()`'s own `disabled: !!field.disabled`,
+  which made Angular log a `console.warn` ("It looks like you're using
+  the disabled attribute with a reactive form directive...") on every
+  field, on every render, regardless of whether that field was
+  actually disabled. No behavior change: a disabled field is still
+  excluded from native validation and still included in the value
+  `formSubmit` emits via `getRawValue()`, exactly as before.
+
 ## [3.1.0] - 2026-09-28
 
 ### Added

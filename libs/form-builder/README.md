@@ -93,6 +93,17 @@ fields: FieldConfig<Settings>[] = [
 
 `'switch'` only changes `type: 'checkbox'`; `'segmented'` only changes `type: 'radio'`. Setting `appearance` on any other `type` (or leaving it unset) has no effect at all, no error, no warning.
 
+A `'switch'` checkbox also carries `role="switch"`, the ARIA role screen readers expect for a checkbox presented as a toggle; a plain `'default'` checkbox has no `role` attribute at all.
+
+A `'segmented'` radio option can show an icon next to its label via `FieldOption.icon`. The value is rendered as the text content of a decorative `.fb-option-icon` span, for an icon-font system that renders ligatures (e.g. Material Symbols), not as a CSS class or an `<svg>`:
+
+```typescript
+options: [
+  { value: 'card', label: 'Card', icon: 'credit_card' },
+  { value: 'cash', label: 'Cash', icon: 'payments' },
+]
+```
+
 ### Field hints and option descriptions
 
 `hint` shows short helper text below a field, only while there's no active error: an error replaces it visually, and `aria-describedby` follows the same rule, always pointing at whichever one is currently shown, never both.
@@ -124,6 +135,22 @@ fields: FieldConfig<Settings>[] = [
 ```
 
 Only applies to `text`, `number`, `email`, `password`, `date`, and `textarea`: the HTML `readonly` attribute doesn't apply to `select`, `radio`, or `checkbox` natively, and this library doesn't simulate it for those, setting `readonly` on one of them is simply ignored.
+
+### Autocomplete
+
+`autocomplete` passes through to the native HTML `autocomplete` attribute, for `text`, `number`, `email`, `password`, `date`, `textarea`, and `select` fields:
+
+```typescript
+fields: FieldConfig<User>[] = [
+  { key: 'username', label: 'Username', type: 'text', autocomplete: 'username' },
+  { key: 'email', label: 'Email', type: 'email', autocomplete: 'email' },
+  { key: 'fullName', label: 'Full name', type: 'text', autocomplete: 'name' },
+  { key: 'password', label: 'Password', type: 'password', autocomplete: 'current-password' },
+  { key: 'newPassword', label: 'New password', type: 'password', autocomplete: 'new-password' },
+];
+```
+
+Any value the HTML specification accepts works; it's passed through as-is, not validated. Not set on `checkbox` or `radio`: those render one native input per option, where `autocomplete` has no meaningful browser autofill behavior, so it's omitted there on purpose.
 
 ## API
 
@@ -161,8 +188,9 @@ Only applies to `text`, `number`, `email`, `password`, `date`, and `textarea`: t
 | `appearance`  | `FieldAppearance` (`'default' \| 'switch' \| 'segmented'`) | `'default'` | Purely visual variant. `'switch'` only affects `type: 'checkbox'`, `'segmented'` only affects `type: 'radio'`. Any other combination is ignored, same as `'default'`. See "Switch and segmented appearance" below. |
 | `hint`        | `string`                | None      | Short helper text shown below the field when there's no active error. See "Field hints and option descriptions" below. |
 | `readonly`    | `boolean`               | `false`      | Native HTML `readonly`, for `text`/`number`/`email`/`password`/`date`/`textarea` only. No effect on `select`/`radio`/`checkbox`. See "Read-only fields" below. |
+| `autocomplete`| `string`                | None      | Native HTML `autocomplete`, for `text`/`number`/`email`/`password`/`date`/`textarea`/`select` only. No effect on `checkbox`/`radio`. See "Autocomplete" below. |
 
-`FieldOption` also gains an optional `description?: string`, shown below that specific option (for `radio`, see below); `select` has nowhere to render it, so it's ignored there.
+`FieldOption` also gains an optional `description?: string`, shown below that specific option (for `radio`, see below), and an optional `icon?: string`, shown next to the label of a `radio` option rendered with `appearance: 'segmented'`; `select` has nowhere to render either, so both are ignored there.
 
 ### `FormBuilderMessages`
 
