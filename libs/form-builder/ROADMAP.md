@@ -178,3 +178,66 @@
       per option, Tab/arrow keyboard navigation), and the hint
       disappearing when the field becomes invalid
       → see `CHANGELOG.md` `[Unreleased]`
+
+## Phase 4: autocomplete, option icon, switch role, disabled warning fix (done)
+
+### In scope
+
+- Fix: removed the `[disabled]="!!field.disabled"` template binding
+  duplicated across every field type, which made Angular log a
+  `console.warn` on every render regardless of the field's actual
+  disabled state. `buildFormGroup()`'s own `disabled: !!field.disabled`
+  stays as the single source of truth.
+- `FieldConfig.autocomplete`: native HTML `autocomplete`, for
+  text/number/email/password/date/textarea/select. Deliberately not
+  bound on checkbox/radio.
+- `FieldOption.icon`: icon next to a `radio` option's label, only for
+  `appearance: 'segmented'`.
+- `role="switch"` on the underlying checkbox input when
+  `appearance: 'switch'`.
+- `CHANGELOG.md` included in the published npm package, via
+  `ng-package.json`'s own `assets` option.
+
+### Out of scope
+
+- The `autocomplete con búsqueda` (typeahead/combobox) item listed
+  under Phase 2's Out of scope (→ Pro/v2) is a different feature: a
+  searchable dropdown widget, not the native HTML `autocomplete`
+  attribute added here. This block's `autocomplete` is a plain
+  passthrough of the browser's own autofill attribute, free and
+  unrelated to that Pro/v2 item.
+
+### Tasks
+
+- [x] Removed the 6 `[disabled]` bindings (checkbox, radio, password,
+      textarea, select, default); `.fb-submit`'s own `[disabled]`
+      (unrelated, tied to `loading()`/`isSubmitDisabled()`) left
+      untouched
+      → `form-builder.html`
+- [x] `FieldConfig.autocomplete` + `[attr.autocomplete]` on the four
+      applicable `@case`s
+      → `field-config.ts`, `form-builder.html`
+- [x] `FieldOption.icon` + markup (`.fb-option-icon`, text content for
+      an icon-font ligature system, not a CSS class or `<svg>`) inside
+      the segmented pill
+      → `field-config.ts`, `form-builder.html`, `form-builder.scss`
+- [x] `role="switch"` via `[attr.role]`, absent for `appearance: 'default'`
+      → `form-builder.html`
+- [x] `ng-package.json` `assets: ["CHANGELOG.md"]`; verified with a
+      real build + `npm pack` that `CHANGELOG.md` lands in the `.tgz`
+      → `ng-package.json`
+- [x] Unit tests: autocomplete present/absent per field and type
+      (including explicit omission on checkbox/radio), icon present/
+      absent per option, role="switch" present only for `'switch'`;
+      existing disabled-field tests confirmed unchanged and still
+      passing (behavior, not the removed binding, was ever the
+      contract)
+      → `form-builder.spec.ts`
+- [x] README "Autocomplete" section, icon/role notes in "Switch and
+      segmented appearance"; JSDoc on every new member; CHANGELOG.md
+      `[Unreleased]`
+      → `README.md`, `field-config.ts`, `CHANGELOG.md`
+- [x] Verified production build, lint clean, and the real warning's
+      disappearance confirmed live against test output (0 occurrences
+      after the fix, versus dozens before, one per field per render)
+      → see `CHANGELOG.md` `[Unreleased]`

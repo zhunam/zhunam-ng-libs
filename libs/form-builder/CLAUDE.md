@@ -52,8 +52,18 @@ Ver ROADMAP.md en esta misma carpeta para el detalle completo.
 - `readonly: boolean`: atributo HTML nativo `readonly`, solo tiene
   efecto en text/number/email/password/date/textarea. Sin efecto en
   select/radio/checkbox (no simulado).
+- `autocomplete: string`: atributo HTML nativo `autocomplete`, pasado
+  tal cual vía `[attr.autocomplete]`. Tiene efecto en text/number/
+  email/password/date/textarea/select. Deliberadamente sin binding en
+  checkbox/radio, donde no tiene comportamiento de autofill real.
 - `FieldOption.description: string`: texto de ayuda bajo una opción de
   radio puntual, con su propio id y `aria-describedby`.
+- `FieldOption.icon: string`: icono mostrado junto al label de una
+  opción de `radio` con `appearance: 'segmented'` (sin efecto en la
+  lista vertical plana ni en `select`). Se renderiza como contenido de
+  texto de un `<span class="fb-option-icon">` decorativo, pensado para
+  un sistema de icon-font por ligaduras (ej. Material Symbols), nunca
+  como clase CSS ni `<svg>`.
 
 ## Decisión: `appearance` como campo plano, no unión discriminada
 
@@ -88,6 +98,11 @@ checkbox nativo está oculto: el track/thumb del switch relee la misma
 variable `--zhunam-accent` pero como `background-color` en vez de
 `accent-color`, para preservar el mismo resultado de color que un
 consumidor ya obtiene hoy overrideando esa property.
+
+El checkbox nativo del switch lleva además `role="switch"` explícito
+(`[attr.role]="isSwitch(field) ? 'switch' : null"`), el rol ARIA que
+un lector de pantalla espera para un checkbox presentado como toggle.
+Un checkbox con `appearance: 'default'` no lleva ningún `role`.
 
 El color de la píldora segmentada activa reusa `--zhunam-primary`/
 `--zhunam-primary-content`, el mismo par que ya usa `.fb-submit`: no es

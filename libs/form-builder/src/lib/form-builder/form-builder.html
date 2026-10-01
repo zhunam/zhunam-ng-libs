@@ -14,7 +14,7 @@
                 class="fb-checkbox-input"
                 [class.sr-only]="isSwitch(field)"
                 [formControl]="controlFor(field)"
-                [disabled]="!!field.disabled"
+                [attr.role]="isSwitch(field) ? 'switch' : null"
                 [attr.aria-invalid]="activeErrorFor(field) ? true : null"
                 [attr.aria-describedby]="describedByFor(field)"
               />
@@ -43,12 +43,16 @@
                     [formControl]="controlFor(field)"
                     [name]="fieldId(field)"
                     [value]="option.value"
-                    [disabled]="!!field.disabled"
                     [attr.aria-invalid]="activeErrorFor(field) ? true : null"
                     [attr.aria-describedby]="optionDescribedByFor(field, option)"
                   />
                   @if (isSegmented(field)) {
-                    <span class="fb-segmented-pill">{{ option.label }}</span>
+                    <span class="fb-segmented-pill">
+                      @if (option.icon) {
+                        <span class="fb-option-icon" aria-hidden="true">{{ option.icon }}</span>
+                      }
+                      {{ option.label }}
+                    </span>
                   } @else {
                     {{ option.label }}
                   }
@@ -67,8 +71,8 @@
                 [type]="passwordInputType(field)"
                 [formControl]="controlFor(field)"
                 [placeholder]="field.placeholder ?? ''"
-                [disabled]="!!field.disabled"
                 [readOnly]="!!field.readonly"
+                [attr.autocomplete]="field.autocomplete ?? null"
                 [attr.aria-invalid]="activeErrorFor(field) ? true : null"
                 [attr.aria-describedby]="describedByFor(field)"
               />
@@ -100,8 +104,8 @@
               [id]="fieldId(field)"
               [formControl]="controlFor(field)"
               [placeholder]="field.placeholder ?? ''"
-              [disabled]="!!field.disabled"
               [readOnly]="!!field.readonly"
+              [attr.autocomplete]="field.autocomplete ?? null"
               [attr.aria-invalid]="activeErrorFor(field) ? true : null"
               [attr.aria-describedby]="describedByFor(field)"
             ></textarea>
@@ -111,7 +115,7 @@
               class="fb-control"
               [id]="fieldId(field)"
               [formControl]="controlFor(field)"
-              [disabled]="!!field.disabled"
+              [attr.autocomplete]="field.autocomplete ?? null"
               [attr.aria-invalid]="activeErrorFor(field) ? true : null"
               [attr.aria-describedby]="describedByFor(field)"
             >
@@ -127,8 +131,8 @@
               [type]="field.type"
               [formControl]="controlFor(field)"
               [placeholder]="field.placeholder ?? ''"
-              [disabled]="!!field.disabled"
               [readOnly]="!!field.readonly"
+              [attr.autocomplete]="field.autocomplete ?? null"
               [attr.aria-invalid]="activeErrorFor(field) ? true : null"
               [attr.aria-describedby]="describedByFor(field)"
             />
