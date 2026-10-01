@@ -5,6 +5,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
 
 ## [Unreleased]
 
+## [3.2.0] - 2026-10-01
+
 ### Added
 - `FieldConfig.autocomplete` (`string`, optional): passes through to
   the native HTML `autocomplete` attribute, for `text`/`number`/
