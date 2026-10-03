@@ -106,6 +106,8 @@ protected onLoginSuccess(user: AuthUser): void {
 | `signOut()`                              | `Promise<void>`            | Signs out the current user.                         |
 | `resetPassword(email)`                  | `Promise<void>`            | Sends a password reset email via the provider's native flow. |
 | `completePasswordReset?(newPassword, code?)` | `Promise<void>`      | Optional. Completes a reset started by `resetPassword()`. See "Completing a password reset" below, the per-provider behavior differs. |
+| `updateProfile?(displayName)`           | `Promise<void>`            | Optional. Updates the signed-in user's display name. See "Updating profile and password" below. |
+| `changePassword?(currentPassword, newPassword)` | `Promise<void>`     | Optional. Changes the signed-in user's password, verifying `currentPassword` first. See "Updating profile and password" below. |
 | `getIdToken()`                          | `Promise<string \| null>`  | Fresh ID token for authenticated HTTP calls, `null` if signed out. |
 
 `AuthSignUpProfile`
@@ -153,14 +155,14 @@ try {
 | ---- | -------- | ------------------------ |
 | `invalidCredential` (`auth/invalid-credential`) | `auth/invalid-credential`, `auth/wrong-password` | `invalid_credentials` |
 | `emailAlreadyInUse` (`auth/email-already-in-use`) | `auth/email-already-in-use` | `user_already_exists`, `email_exists` |
-| `userNotFound` (`auth/user-not-found`) | `auth/user-not-found` (only reachable without Email Enumeration Protection, see below) | Never: `signInWithPassword` is enumeration-safe by design |
+| `userNotFound` (`auth/user-not-found`) | `auth/user-not-found` (only reachable without Email Enumeration Protection, see below); also thrown locally by `updateProfile()`/`changePassword()` when there's no signed-in user (or, for `changePassword()`, no email on it) | Never from the SDK itself: `signInWithPassword` is enumeration-safe by design. Also thrown locally by `updateProfile()`/`changePassword()`, same local guard as Firebase |
 | `weakPassword` (`auth/weak-password`) | `auth/weak-password` | `weak_password` |
 | `tooManyRequests` (`auth/too-many-requests`) | `auth/too-many-requests` | `over_request_rate_limit`, `over_email_send_rate_limit` |
 | `networkRequestFailed` (`auth/network-request-failed`) | `auth/network-request-failed` | An `AuthRetryableFetchError` instance |
 | `invalidEmail` (`auth/invalid-email`) | `auth/invalid-email` | `email_address_invalid` |
 | `invalidActionCode` (`auth/invalid-action-code`) | `auth/invalid-action-code`, or thrown locally by `completePasswordReset()` when called without a `code` | An `AuthSessionMissingError` instance (see "Completing a password reset") |
 | `expiredActionCode` (`auth/expired-action-code`) | `auth/expired-action-code` | Not applicable |
-| `unknown` (`auth/unknown`) | Any other Firebase code, or an error with no code at all | Any other error |
+| `unknown` (`auth/unknown`) | Any other Firebase code, or an error with no code at all | Any other error, including `same_password` (Supabase rejects `changePassword()`'s `newPassword` when it's the same as the current one; this specific case has no dedicated code, check `cause` to distinguish it) |
 
 ### Completing a password reset
 
@@ -179,6 +181,60 @@ handle it differently, which is why `code` is optional:
   (both default to values that make this work automatically); by the
   time your app calls this, the session `updateUser()` needs is already
   active.
+
+### Updating profile and password
+
+`updateProfile(displayName)` and `changePassword(currentPassword, newPassword)`
+are both optional (both current provider entry points implement them).
+Neither ever reaches the provider's SDK if there's no signed-in user:
+both reject locally with `AUTH_ERROR_CODES.userNotFound` first.
+`changePassword()` also rejects the same way if the signed-in user has
+no email at all (e.g. a phone-only account, or one linked only to an
+OAuth provider with no password credential to verify against).
+
+This is a local precondition guard in this library, not the SDK's own
+"no account exists for that email" error (the other situation
+`userNotFound` can also mean, from `signIn()`/`signUp()`, see the table
+above): no network call happens here at all, it's purely "there's
+nothing signed in right now (or nothing with an email) to update".
+
+```typescript
+async onChangePassword(currentPassword: string, newPassword: string) {
+  await this.authService.changePassword?.(currentPassword, newPassword);
+}
+```
+
+- **Firebase**: `changePassword()` always reauthenticates first, with
+  `EmailAuthProvider.credential(email, currentPassword)`, before calling
+  `updatePassword()`. This is what makes a wrong `currentPassword` reject
+  with `AUTH_ERROR_CODES.invalidCredential` specifically (not a generic
+  failure), and what keeps `updatePassword()` from ever surfacing
+  Firebase's own `auth/requires-recent-login`: the ID token is always
+  freshly refreshed by the reauthentication that just happened.
+  `updateProfile()` never reauthenticates: Firebase doesn't treat a
+  display-name-only change as security sensitive.
+- **Supabase**: there's no reliable way to verify `currentPassword`
+  without a live sign-in. `UserAttributes.current_password` exists in
+  the installed SDK's types, but it's silently ignored unless the
+  project enabled "Secure password change" in its auth settings, off by
+  default and something this library can't detect at runtime. Instead,
+  `changePassword()` calls `signInWithPassword({ email, password: currentPassword })`
+  first (this is what actually verifies it, rejecting with
+  `AUTH_ERROR_CODES.invalidCredential` on a wrong one, without calling
+  `updateUser()` at all), then `updateUser({ password: newPassword })`.
+  This emits `SIGNED_IN` and then `USER_UPDATED` to any listener your
+  app has on `onAuthStateChange` (if you're using the Supabase client
+  directly alongside this library), both for the same user; `currentUser()`
+  never passes through `null` in between. The fresh session this
+  creates also happens to satisfy "Secure password change" on projects
+  that do have it enabled: that setting only demands a reauthentication
+  nonce when the session isn't "recently signed in" (created in the
+  last 24 hours), and a session that was just created always is.
+  `updateProfile()` doesn't reauthenticate either, same as Firebase.
+  **Known limitation**: `signInWithPassword()` only ever establishes a
+  first-factor (`aal1`) session. If the user has MFA enrolled,
+  `changePassword()` doesn't step that session up to `aal2`; this
+  library doesn't attempt to solve that here.
 
 ### Session persistence
 
@@ -348,6 +404,7 @@ any other reactive input.
 - `getIdToken()` is the only way to access the current ID token. It's never a passive property on `AuthUser` or `AuthService`, so it can't be read accidentally by code that only needed to check who's signed in.
 - `ResetPasswordForm` always shows the same success message, whether the submitted email is registered or not. This is a deliberate anti-enumeration protection, not a missing feature; you can see it in action in the live demo.
 - `AuthService.signUp()` with an email that's already registered doesn't always fail visibly the same way. Firebase always rejects with `AUTH_ERROR_CODES.emailAlreadyInUse`. Supabase's behavior depends on the project's own email/phone confirmation settings: with both enabled, it can instead resolve with an obfuscated, fake-looking user object rather than an error, by design on Supabase's side. This library doesn't try to paper over that difference: check your Supabase project's settings if you need a consistent signal.
+- `changePassword()` requires a password credential to verify `currentPassword` against. A user signed in without one (a phone-only account, or one linked only to an OAuth/magic-link provider, outside what this library's own `signIn()`/`signUp()` offer but still reachable if your app also uses the Firebase/Supabase SDK directly) gets no special handling: the reauthentication/sign-in step this library always runs first simply fails the same way a wrong password would, rejecting with `AUTH_ERROR_CODES.invalidCredential`.
 - Switching providers (Firebase to Supabase or back) never requires touching your application code, thanks to the shared `AuthService` contract. There's no provider-specific type or behavior for your app to depend on.
 
 ## Why this one

@@ -360,4 +360,159 @@ describe('SupabaseAuthService', () => {
       });
     });
   });
+
+  describe('A5: updateProfile', () => {
+    it('rejects with userNotFound and never calls the SDK when there is no current user', async () => {
+      const service = createService();
+
+      await expect(service.updateProfile('New Name')).rejects.toMatchObject({
+        code: AUTH_ERROR_CODES.userNotFound,
+      });
+      expect(fakeClient.auth.updateUser).not.toHaveBeenCalled();
+    });
+
+    it('calls updateUser with displayName as full_name, and currentUser reflects it once Supabase notifies USER_UPDATED', async () => {
+      const service = createService();
+      const user = createSupabaseUser();
+      authStateCallback('SIGNED_IN', createSession(user));
+
+      (fakeClient.auth.updateUser as ReturnType<typeof vi.fn>).mockImplementation(
+        async (attrs: { data: Record<string, unknown> }) => {
+          // Mirrors the real GoTrueClient: a successful updateUser() call
+          // notifies USER_UPDATED itself, this service never sets the
+          // signal manually for it.
+          const updatedUser = createSupabaseUser({ user_metadata: attrs.data });
+          authStateCallback('USER_UPDATED', createSession(updatedUser));
+          return { data: { user: updatedUser }, error: null };
+        },
+      );
+
+      await service.updateProfile('New Name');
+
+      expect(fakeClient.auth.updateUser).toHaveBeenCalledWith({ data: { full_name: 'New Name' } });
+      expect(service.currentUser()?.displayName).toBe('New Name');
+    });
+
+    it('maps an updateUser failure through the same normalization', async () => {
+      const service = createService();
+      authStateCallback('SIGNED_IN', createSession(createSupabaseUser()));
+      const supabaseError = new AuthApiError('Some other failure', 500, 'unexpected_failure');
+      (fakeClient.auth.updateUser as ReturnType<typeof vi.fn>).mockResolvedValue({
+        data: { user: null },
+        error: supabaseError,
+      });
+
+      await expect(service.updateProfile('New Name')).rejects.toMatchObject({
+        code: AUTH_ERROR_CODES.unknown,
+        cause: supabaseError,
+      });
+    });
+  });
+
+  describe('A6: changePassword', () => {
+    it('rejects with userNotFound and never calls the SDK when there is no current user', async () => {
+      const service = createService();
+
+      await expect(service.changePassword('current-pw', 'new-pw')).rejects.toMatchObject({
+        code: AUTH_ERROR_CODES.userNotFound,
+      });
+      expect(fakeClient.auth.signInWithPassword).not.toHaveBeenCalled();
+      expect(fakeClient.auth.updateUser).not.toHaveBeenCalled();
+    });
+
+    it('rejects with userNotFound when the current user has no email', async () => {
+      const service = createService();
+      authStateCallback('SIGNED_IN', createSession(createSupabaseUser({ email: undefined })));
+
+      await expect(service.changePassword('current-pw', 'new-pw')).rejects.toMatchObject({
+        code: AUTH_ERROR_CODES.userNotFound,
+      });
+      expect(fakeClient.auth.signInWithPassword).not.toHaveBeenCalled();
+    });
+
+    it('happy path: signs in with the current password, then updates with the new one; currentUser never passes through null', async () => {
+      const service = createService();
+      const user = createSupabaseUser();
+      authStateCallback('SIGNED_IN', createSession(user));
+
+      const observedUsers: Array<ReturnType<typeof service.currentUser>> = [];
+      (fakeClient.auth.signInWithPassword as ReturnType<typeof vi.fn>).mockImplementation(async () => {
+        authStateCallback('SIGNED_IN', createSession(user));
+        observedUsers.push(service.currentUser());
+        return { data: { user, session: createSession(user) }, error: null };
+      });
+      (fakeClient.auth.updateUser as ReturnType<typeof vi.fn>).mockImplementation(async () => {
+        authStateCallback('USER_UPDATED', createSession(user));
+        observedUsers.push(service.currentUser());
+        return { data: { user }, error: null };
+      });
+
+      await service.changePassword('current-pw', 'new-pw');
+
+      expect(fakeClient.auth.signInWithPassword).toHaveBeenCalledWith({
+        email: 'user@example.com',
+        password: 'current-pw',
+      });
+      expect(fakeClient.auth.updateUser).toHaveBeenCalledWith({ password: 'new-pw' });
+      expect(observedUsers).toHaveLength(2);
+      expect(observedUsers.every((observed) => observed !== null)).toBe(true);
+      expect(service.currentUser()?.uid).toBe('uid-1');
+    });
+
+    it('a wrong current password rejects with invalidCredential and updateUser is never called', async () => {
+      const service = createService();
+      authStateCallback('SIGNED_IN', createSession(createSupabaseUser()));
+      const supabaseError = new AuthApiError('Invalid login credentials', 400, 'invalid_credentials');
+      (fakeClient.auth.signInWithPassword as ReturnType<typeof vi.fn>).mockResolvedValue({
+        data: { user: null, session: null },
+        error: supabaseError,
+      });
+
+      await expect(service.changePassword('wrong-pw', 'new-pw')).rejects.toMatchObject({
+        code: AUTH_ERROR_CODES.invalidCredential,
+        cause: supabaseError,
+      });
+      expect(fakeClient.auth.updateUser).not.toHaveBeenCalled();
+    });
+
+    it('a weak new password rejects with weakPassword (the server validates, not this library)', async () => {
+      const service = createService();
+      const user = createSupabaseUser();
+      authStateCallback('SIGNED_IN', createSession(user));
+      (fakeClient.auth.signInWithPassword as ReturnType<typeof vi.fn>).mockResolvedValue({
+        data: { user, session: createSession(user) },
+        error: null,
+      });
+      const supabaseError = new AuthWeakPasswordError('Password too weak', 422, ['length']);
+      (fakeClient.auth.updateUser as ReturnType<typeof vi.fn>).mockResolvedValue({
+        data: { user: null },
+        error: supabaseError,
+      });
+
+      await expect(service.changePassword('current-pw', '123')).rejects.toMatchObject({
+        code: AUTH_ERROR_CODES.weakPassword,
+        cause: supabaseError,
+      });
+    });
+
+    it('a new password equal to the previous one falls to unknown, with the real Supabase error in cause', async () => {
+      const service = createService();
+      const user = createSupabaseUser();
+      authStateCallback('SIGNED_IN', createSession(user));
+      (fakeClient.auth.signInWithPassword as ReturnType<typeof vi.fn>).mockResolvedValue({
+        data: { user, session: createSession(user) },
+        error: null,
+      });
+      const supabaseError = new AuthApiError('New password should be different from the old password.', 422, 'same_password');
+      (fakeClient.auth.updateUser as ReturnType<typeof vi.fn>).mockResolvedValue({
+        data: { user: null },
+        error: supabaseError,
+      });
+
+      await expect(service.changePassword('current-pw', 'current-pw')).rejects.toMatchObject({
+        code: AUTH_ERROR_CODES.unknown,
+        cause: supabaseError,
+      });
+    });
+  });
 });

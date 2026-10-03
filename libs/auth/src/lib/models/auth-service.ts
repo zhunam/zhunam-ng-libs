@@ -76,6 +76,47 @@ export interface AuthService {
   completePasswordReset?(newPassword: string, code?: string): Promise<void>;
 
   /**
+   * Updates the signed-in user's display name. Optional: both
+   * `FirebaseAuthService` and `SupabaseAuthService` support it.
+   *
+   * Rejects with `AUTH_ERROR_CODES.userNotFound` without ever reaching
+   * the provider's SDK if no user is currently signed in, the same
+   * local-guard pattern `changePassword()` uses.
+   *
+   * @param displayName The new display name.
+   */
+  updateProfile?(displayName: string): Promise<void>;
+
+  /**
+   * Changes the signed-in user's password, verifying `currentPassword`
+   * first. Optional: both `FirebaseAuthService` and `SupabaseAuthService`
+   * support it.
+   *
+   * Rejects, without changing the password, with one of:
+   * - `AUTH_ERROR_CODES.userNotFound`: no user is currently signed in, or
+   *   the current user has no email (e.g. a phone-only account, or one
+   *   linked only to an OAuth provider with no password credential to
+   *   verify against). Rejected locally, before ever reaching the
+   *   provider's SDK.
+   * - `AUTH_ERROR_CODES.invalidCredential`: `currentPassword` doesn't
+   *   match the signed-in user's actual password.
+   * - `AUTH_ERROR_CODES.weakPassword`: `newPassword` doesn't meet the
+   *   provider's own password policy. Not validated locally by this
+   *   library; the provider's server is the only source of truth for
+   *   password strength.
+   * - `AUTH_ERROR_CODES.unknown`: Supabase only, when the provider
+   *   rejects `newPassword` for being the same as the current one
+   *   (Supabase's own `same_password` error code has no dedicated
+   *   `AUTH_ERROR_CODES` member; `cause` still carries the original
+   *   Supabase error for a consumer that needs to distinguish it).
+   *
+   * @param currentPassword The user's current password, verified before
+   *   the change.
+   * @param newPassword The new password.
+   */
+  changePassword?(currentPassword: string, newPassword: string): Promise<void>;
+
+  /**
    * Gets a fresh ID token for the current user, for use in authenticated
    * HTTP calls.
    * @returns The ID token, or `null` if no user is signed in.
