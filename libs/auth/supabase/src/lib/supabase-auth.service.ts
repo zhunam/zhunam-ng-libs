@@ -45,9 +45,14 @@ function mapSupabaseError(error: unknown): AuthServiceError {
   if (error instanceof AuthRetryableFetchError) {
     return new AuthServiceError(AUTH_ERROR_CODES.networkRequestFailed, message, error);
   }
-  // Only ever reachable from completePasswordReset()'s updateUser() call:
-  // it needs an active recovery session, and this is what Supabase throws
-  // when one isn't present (e.g. the reset link expired or was already used).
+  // Reachable from any updateUser() call in this service
+  // (completePasswordReset, updateProfile, changePassword) that needs an
+  // active session and doesn't have one. For completePasswordReset
+  // specifically, this means the recovery session is missing (e.g. the
+  // reset link expired or was already used); updateProfile/changePassword
+  // already guard against a missing session locally (userNotFound,
+  // before ever reaching this function), so in practice this path is
+  // only still reachable from completePasswordReset.
   if (error instanceof AuthSessionMissingError) {
     return new AuthServiceError(AUTH_ERROR_CODES.invalidActionCode, message, error);
   }
@@ -154,6 +159,60 @@ export class SupabaseAuthService implements AuthService {
   async completePasswordReset(newPassword: string, _code?: string): Promise<void> {
     const { error } = await this.client.auth.updateUser({ password: newPassword });
     if (error) throw mapSupabaseError(error);
+  }
+
+  async updateProfile(displayName: string): Promise<void> {
+    if (!this.userSignal()) {
+      // Same local-guard pattern as changePassword() below: reject
+      // before ever reaching the SDK when there's no signed-in user.
+      throw new AuthServiceError(AUTH_ERROR_CODES.userNotFound, 'No user is currently signed in.', undefined);
+    }
+    // "full_name" matches toAuthUser()'s own read order above. The
+    // server merges this into the user's existing user_metadata rather
+    // than replacing it wholesale (confirmed against the PUT /user REST
+    // endpoint this client calls, not the admin API's replace
+    // semantics), so other metadata keys (e.g. from an OAuth sign-up)
+    // survive this call. onAuthStateChange's own USER_UPDATED listener
+    // (constructor above) updates userSignal, no manual set needed here.
+    const { error } = await this.client.auth.updateUser({ data: { full_name: displayName } });
+    if (error) throw mapSupabaseError(error);
+  }
+
+  /**
+   * Strategy (b): signs in again with the current password first (this
+   * is what actually verifies it, since Supabase's native
+   * `current_password` field on `updateUser()` only does anything when
+   * the project enabled "Secure password change", off by default and
+   * invisible to this library at runtime), then calls `updateUser()`
+   * with the new password.
+   *
+   * This emits `SIGNED_IN` (the fresh sign-in) and then `USER_UPDATED`
+   * (the password change) to any consumer listener, both for the same
+   * user, with `currentUser()` never passing through `null` in between.
+   * The fresh session this creates is also what satisfies "Secure
+   * password change" on projects that do have it enabled: that setting
+   * only demands a reauthentication nonce when the session is NOT
+   * "recently signed in" (created in the last 24 hours), and the
+   * session from the sign-in just above always is.
+   */
+  async changePassword(currentPassword: string, newPassword: string): Promise<void> {
+    const user = this.userSignal();
+    if (!user || !user.email) {
+      // Same local-guard pattern as updateProfile() above: no email
+      // means no password credential exists to verify currentPassword
+      // against (e.g. a phone-only account, or one linked only to an
+      // OAuth provider).
+      throw new AuthServiceError(AUTH_ERROR_CODES.userNotFound, 'No user is currently signed in.', undefined);
+    }
+
+    const { error: signInError } = await this.client.auth.signInWithPassword({
+      email: user.email,
+      password: currentPassword,
+    });
+    if (signInError) throw mapSupabaseError(signInError);
+
+    const { error: updateError } = await this.client.auth.updateUser({ password: newPassword });
+    if (updateError) throw mapSupabaseError(updateError);
   }
 
   async getIdToken(): Promise<string | null> {

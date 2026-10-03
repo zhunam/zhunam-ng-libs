@@ -5,6 +5,35 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
 
 ## [Unreleased]
 
+### Added
+- `AuthService.updateProfile?(displayName)` and
+  `AuthService.changePassword?(currentPassword, newPassword)`: both
+  optional, additive, no breaking change. Implemented in both
+  `FirebaseAuthService` and `SupabaseAuthService`.
+  - Both reject locally with `AUTH_ERROR_CODES.userNotFound`, without
+    ever reaching the provider's SDK, when there's no signed-in user
+    (`changePassword` also when the signed-in user has no email at
+    all, e.g. a phone-only or OAuth-only account).
+  - Firebase's `changePassword` always reauthenticates first with
+    `EmailAuthProvider.credential`, so a wrong `currentPassword`
+    rejects with `AUTH_ERROR_CODES.invalidCredential` and
+    `updatePassword()` never surfaces Firebase's own
+    `auth/requires-recent-login`.
+  - Supabase's `changePassword` signs in again with
+    `currentPassword` first (the only reliable way to verify it;
+    Supabase's native `UserAttributes.current_password` field is a
+    silent no-op unless the project enabled "Secure password change",
+    off by default), then calls `updateUser()` with the new password.
+    Emits `SIGNED_IN` then `USER_UPDATED` to any consumer listener on
+    `onAuthStateChange`, `currentUser()` never passing through `null`.
+    A new password equal to the previous one rejects with
+    `AUTH_ERROR_CODES.unknown` (Supabase's own `same_password` code
+    has no dedicated member; `cause` carries the original error).
+  - See the README's "Updating profile and password" section,
+    including the known limitation that Supabase's `changePassword`
+    doesn't step a session up past `aal1`, so it doesn't satisfy a
+    project's MFA requirement by itself.
+
 ## [3.0.0] - 2026-09-28
 
 ### Added

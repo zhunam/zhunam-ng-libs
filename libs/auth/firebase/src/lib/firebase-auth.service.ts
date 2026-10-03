@@ -5,11 +5,14 @@ import {
   browserSessionPersistence,
   confirmPasswordReset,
   createUserWithEmailAndPassword,
+  EmailAuthProvider,
   onAuthStateChanged,
+  reauthenticateWithCredential,
   sendPasswordResetEmail,
   setPersistence,
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
+  updatePassword,
   updateProfile,
   User,
 } from 'firebase/auth';
@@ -180,6 +183,47 @@ export class FirebaseAuthService implements AuthService {
       );
     }
     return runFirebase(() => confirmPasswordReset(this.auth, code, newPassword));
+  }
+
+  async updateProfile(displayName: string): Promise<void> {
+    const current = this.auth.currentUser;
+    if (!current) {
+      // Same local-guard pattern as completePasswordReset()'s missing
+      // `code` check above, but with userNotFound instead of
+      // invalidActionCode: there's no action code involved here, the
+      // actual precondition is "there's no signed-in user".
+      throw new AuthServiceError(AUTH_ERROR_CODES.userNotFound, 'No user is currently signed in.', undefined);
+    }
+    return runFirebase(async () => {
+      await updateProfile(current, { displayName });
+      // Same reasoning as signUp()'s own explicit update above:
+      // onAuthStateChanged doesn't re-fire just because updateProfile()
+      // changed the current user's displayName, so currentUser() would
+      // otherwise keep reporting the stale value.
+      this.userSignal.set(toAuthUser(this.auth.currentUser ?? current));
+    });
+  }
+
+  async changePassword(currentPassword: string, newPassword: string): Promise<void> {
+    const current = this.auth.currentUser;
+    if (!current || !current.email) {
+      // Same local-guard pattern as above: no email means no password
+      // credential exists to verify currentPassword against (e.g. a
+      // phone-only account, or one linked only to an OAuth provider).
+      throw new AuthServiceError(AUTH_ERROR_CODES.userNotFound, 'No user is currently signed in.', undefined);
+    }
+    const email = current.email;
+    return runFirebase(async () => {
+      // Always reauthenticate first: this is what makes
+      // AUTH_ERROR_CODES.invalidCredential (not a generic failure) the
+      // result of a wrong currentPassword, and what keeps
+      // updatePassword() below from ever hitting Firebase's own
+      // 'auth/requires-recent-login', since the ID token was just
+      // refreshed by this same call.
+      const credential = EmailAuthProvider.credential(email, currentPassword);
+      await reauthenticateWithCredential(current, credential);
+      await updatePassword(current, newPassword);
+    });
   }
 
   async getIdToken(): Promise<string | null> {

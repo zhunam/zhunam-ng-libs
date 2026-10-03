@@ -13,6 +13,9 @@ const {
   updateProfileMock,
   setPersistenceMock,
   confirmPasswordResetMock,
+  reauthenticateWithCredentialMock,
+  updatePasswordMock,
+  emailAuthProviderCredentialMock,
 } = vi.hoisted(() => ({
   onAuthStateChangedMock: vi.fn(),
   signInWithEmailAndPasswordMock: vi.fn(),
@@ -22,6 +25,9 @@ const {
   updateProfileMock: vi.fn(),
   setPersistenceMock: vi.fn(),
   confirmPasswordResetMock: vi.fn(),
+  reauthenticateWithCredentialMock: vi.fn(),
+  updatePasswordMock: vi.fn(),
+  emailAuthProviderCredentialMock: vi.fn(),
 }));
 
 vi.mock('firebase/auth', () => ({
@@ -33,6 +39,9 @@ vi.mock('firebase/auth', () => ({
   updateProfile: updateProfileMock,
   setPersistence: setPersistenceMock,
   confirmPasswordReset: confirmPasswordResetMock,
+  reauthenticateWithCredential: reauthenticateWithCredentialMock,
+  updatePassword: updatePasswordMock,
+  EmailAuthProvider: { credential: emailAuthProviderCredentialMock },
   browserLocalPersistence: 'browserLocalPersistence-sentinel',
   browserSessionPersistence: 'browserSessionPersistence-sentinel',
 }));
@@ -355,6 +364,143 @@ describe('FirebaseAuthService', () => {
       await service.signIn('user@example.com', 'secret');
 
       expect(setPersistenceMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('A5: updateProfile', () => {
+    it('rejects with userNotFound and never calls the Firebase SDK when there is no current user', async () => {
+      const service = createService();
+
+      await expect(service.updateProfile('New Name')).rejects.toMatchObject({
+        code: AUTH_ERROR_CODES.userNotFound,
+      });
+      expect(updateProfileMock).not.toHaveBeenCalled();
+    });
+
+    it('calls Firebase updateProfile and reflects the new display name in currentUser', async () => {
+      const service = createService();
+      const firebaseUser = createFirebaseUser({ displayName: 'Old Name' });
+      setFakeAuthCurrentUser(firebaseUser);
+      authStateCallback(firebaseUser);
+      updateProfileMock.mockImplementation(async (user: User, attrs: { displayName: string }) => {
+        (user as { displayName: string | null }).displayName = attrs.displayName;
+      });
+
+      await service.updateProfile('New Name');
+
+      expect(updateProfileMock).toHaveBeenCalledWith(firebaseUser, { displayName: 'New Name' });
+      expect(service.currentUser()?.displayName).toBe('New Name');
+      setFakeAuthCurrentUser(null);
+    });
+
+    it('normalizes a Firebase updateProfile failure to AuthServiceError, cause preserved', async () => {
+      const service = createService();
+      const firebaseUser = createFirebaseUser();
+      setFakeAuthCurrentUser(firebaseUser);
+      const firebaseError = Object.assign(new Error('Network down.'), {
+        code: 'auth/network-request-failed',
+      });
+      updateProfileMock.mockRejectedValue(firebaseError);
+
+      let rejected: unknown;
+      try {
+        await service.updateProfile('New Name');
+      } catch (error) {
+        rejected = error;
+      }
+
+      expect(rejected).toBeInstanceOf(AuthServiceError);
+      expect((rejected as AuthServiceError).code).toBe(AUTH_ERROR_CODES.networkRequestFailed);
+      expect((rejected as AuthServiceError).cause).toBe(firebaseError);
+      setFakeAuthCurrentUser(null);
+    });
+  });
+
+  describe('A6: changePassword', () => {
+    it('rejects with userNotFound and never calls the SDK when there is no current user', async () => {
+      const service = createService();
+
+      await expect(service.changePassword('current-pw', 'new-pw')).rejects.toMatchObject({
+        code: AUTH_ERROR_CODES.userNotFound,
+      });
+      expect(emailAuthProviderCredentialMock).not.toHaveBeenCalled();
+      expect(reauthenticateWithCredentialMock).not.toHaveBeenCalled();
+      expect(updatePasswordMock).not.toHaveBeenCalled();
+    });
+
+    it('rejects with userNotFound when the current user has no email', async () => {
+      const firebaseUser = createFirebaseUser({ email: null });
+      setFakeAuthCurrentUser(firebaseUser);
+      const service = createService();
+
+      await expect(service.changePassword('current-pw', 'new-pw')).rejects.toMatchObject({
+        code: AUTH_ERROR_CODES.userNotFound,
+      });
+      expect(reauthenticateWithCredentialMock).not.toHaveBeenCalled();
+      setFakeAuthCurrentUser(null);
+    });
+
+    it('happy path: reauthenticates with EmailAuthProvider.credential, then calls updatePassword', async () => {
+      const firebaseUser = createFirebaseUser();
+      setFakeAuthCurrentUser(firebaseUser);
+      const service = createService();
+      emailAuthProviderCredentialMock.mockReturnValue('credential-sentinel');
+      reauthenticateWithCredentialMock.mockResolvedValue({ user: firebaseUser });
+      updatePasswordMock.mockResolvedValue(undefined);
+
+      await service.changePassword('current-pw', 'new-pw');
+
+      expect(emailAuthProviderCredentialMock).toHaveBeenCalledWith('user@example.com', 'current-pw');
+      expect(reauthenticateWithCredentialMock).toHaveBeenCalledWith(firebaseUser, 'credential-sentinel');
+      expect(updatePasswordMock).toHaveBeenCalledWith(firebaseUser, 'new-pw');
+      // Reauthentication must happen before the password is ever touched.
+      expect(reauthenticateWithCredentialMock.mock.invocationCallOrder[0]).toBeLessThan(
+        updatePasswordMock.mock.invocationCallOrder[0],
+      );
+      setFakeAuthCurrentUser(null);
+    });
+
+    it('a wrong current password rejects with invalidCredential, cause preserved, and updatePassword is never called', async () => {
+      const firebaseUser = createFirebaseUser();
+      setFakeAuthCurrentUser(firebaseUser);
+      const service = createService();
+      emailAuthProviderCredentialMock.mockReturnValue('credential-sentinel');
+      const firebaseError = Object.assign(new Error('The supplied auth credential is incorrect.'), {
+        code: 'auth/invalid-credential',
+      });
+      reauthenticateWithCredentialMock.mockRejectedValue(firebaseError);
+
+      let rejected: unknown;
+      try {
+        await service.changePassword('wrong-pw', 'new-pw');
+      } catch (error) {
+        rejected = error;
+      }
+
+      expect(rejected).toBeInstanceOf(AuthServiceError);
+      expect((rejected as AuthServiceError).code).toBe(AUTH_ERROR_CODES.invalidCredential);
+      expect((rejected as AuthServiceError).cause).toBe(firebaseError);
+      expect(updatePasswordMock).not.toHaveBeenCalled();
+      setFakeAuthCurrentUser(null);
+    });
+
+    it('a weak new password rejects with weakPassword (the server validates, not this library) and leaves currentUser unchanged', async () => {
+      const firebaseUser = createFirebaseUser();
+      setFakeAuthCurrentUser(firebaseUser);
+      const service = createService();
+      authStateCallback(firebaseUser);
+      const beforeUser = service.currentUser();
+      emailAuthProviderCredentialMock.mockReturnValue('credential-sentinel');
+      reauthenticateWithCredentialMock.mockResolvedValue({ user: firebaseUser });
+      updatePasswordMock.mockRejectedValue(
+        Object.assign(new Error('Password too weak.'), { code: 'auth/weak-password' }),
+      );
+
+      await expect(service.changePassword('current-pw', '123')).rejects.toMatchObject({
+        code: AUTH_ERROR_CODES.weakPassword,
+      });
+      expect(service.currentUser()).toEqual(beforeUser);
+      setFakeAuthCurrentUser(null);
     });
   });
 });

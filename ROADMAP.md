@@ -218,6 +218,22 @@ promoted into the numbered sequence above.
   config del repo, sino específico de cómo el executor de Nx
   bootstrapeaba el proceso worker de Vitest en Windows en ese momento.
 
+- **Vitest no encuentra el runner en Windows nativo (Nx +
+  `@nx/angular:unit-test`)**: confirmado que no es un problema de versión
+  de Node, ni de config por librería. Inicialmente visto solo en
+  `form-builder`; confirmado 2026-10-03 que `auth` falla con el mismo
+  mensaje exacto (`Vitest failed to find the runner`,
+  `angular:test-bed-init:angular:test-bed-init:12:5`, comparado carácter
+  por carácter contra la corrida de form-builder). Ya no se puede asumir
+  que las demás librerías corren limpias en Windows nativo por defecto:
+  cada librería nueva debe probarse en Windows nativo primero igual, pero
+  el fallback a WSL deja de ser sorpresa si aparece. Sigue sin
+  investigarse la causa raíz (específica de cómo el executor de Nx
+  bootstrapea el worker de Vitest en Windows, no del repo ni de una
+  librería puntual). Mientras no se resuelva, WSL sigue siendo el
+  entorno de verificación válido cuando Windows nativo falla con este
+  error exacto.
+
 - **`nx test portfolio-showcase` falla hoy en 5 de 6 archivos — CERRADO,
   ver fix real más abajo.** Diagnóstico original (confirmado en WSL
   2026-08-25, no un problema del entorno): `app.spec.ts`, `home.spec.ts`,
