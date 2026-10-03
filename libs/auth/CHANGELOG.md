@@ -5,6 +5,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
 
 ## [Unreleased]
 
+## [3.1.0] - 2026-10-02
+
 ### Added
 - `AuthService.updateProfile?(displayName)` and
   `AuthService.changePassword?(currentPassword, newPassword)`: both
