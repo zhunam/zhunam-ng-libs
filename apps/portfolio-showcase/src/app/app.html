@@ -53,7 +53,9 @@
             rel="noopener"
             class="underline hover:text-primary"
           >CoinGecko API</a>. Informational only, not financial advice: verify any price before making decisions.
-        } @else {
+        } @else if (!isHome()) {
+          <!-- Not on home: it also lists closed-source applications, so a
+               site-wide license line would be misleading there. -->
           · MIT License
         }
       </p>
@@ -73,7 +75,17 @@
           </svg>
         </a>
         <a
-          href="https://www.linkedin.com/in/ariana-andreina-mora"
+          [href]="contactMailto"
+          aria-label="Email"
+          class="rounded-sm text-slate-600 transition-colors duration-200 hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5" aria-hidden="true">
+            <rect x="3" y="5" width="18" height="14" rx="1.5" />
+            <path d="M3 7l9 6 9-6" />
+          </svg>
+        </a>
+        <a
+          [href]="contact.linkedinUrl"
           target="_blank"
           rel="noopener"
           aria-label="LinkedIn"

@@ -9,10 +9,11 @@ import {
   pdfGeneratorLibrary,
 } from '../../shared/libraries';
 import { ApplicationsCarousel } from './components/applications-carousel/applications-carousel';
+import { ContactSection } from './components/contact-section/contact-section';
 
 @Component({
   selector: 'app-home',
-  imports: [RouterLink, ApplicationsCarousel],
+  imports: [RouterLink, ApplicationsCarousel, ContactSection],
   templateUrl: './home.html',
   styleUrl: './home.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

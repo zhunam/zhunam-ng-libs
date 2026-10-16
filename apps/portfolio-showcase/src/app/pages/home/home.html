@@ -8,14 +8,14 @@
     </div>
 
     <div
-      class="relative mx-auto flex min-h-[90vh] max-w-3xl flex-col items-center justify-center gap-8 px-6 py-24 text-center"
+      class="relative mx-auto flex min-h-[90vh] max-w-3xl flex-col items-center justify-center gap-6 px-8 py-24 text-center sm:gap-8 sm:px-6"
     >
-      <h1 class="text-6xl font-bold tracking-tight text-balance text-white lg:text-7xl">
-        Angular frontend, from products to libraries
+      <h1 class="text-4xl font-bold tracking-tight text-balance text-white sm:text-6xl lg:text-7xl">
+        From complete applications to reusable libraries
       </h1>
-      <p class="max-w-prose text-xl leading-relaxed text-pretty text-slate-300">
-        Applications shipped to real users, alongside a growing set of open-source Angular
-        libraries, each one standalone, signal-typed, and ready to install in your own project.
+      <p class="max-w-prose text-lg leading-relaxed text-pretty text-slate-300 sm:text-xl">
+        Applications running in production, and open-source libraries ready to install
+        in your own project, each built with the stack that fits it best.
       </p>
       <div class="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
         <a
@@ -29,6 +29,12 @@
           class="text-sm font-semibold text-slate-300 transition-colors duration-200 hover:text-[#8ba7a6] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8ba7a6]"
         >
           Explore the libraries
+        </a>
+        <a
+          href="#contact"
+          class="text-sm font-semibold text-slate-300 transition-colors duration-200 hover:text-[#8ba7a6] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8ba7a6]"
+        >
+          Get in touch
         </a>
       </div>
     </div>
@@ -330,8 +336,8 @@
         <p class="mt-3 text-slate-600">
           Two kinds of work. Applications: complete products like
           <span translate="no">Luan Patterns</span>, deployed on their own, plus live demos like the
-          <span translate="no">Crypto Market Dashboard</span>. And libraries: five independent Angular packages
-          published on npm, <span translate="no">Data Grid</span>, <span translate="no">Form Builder</span>, <span translate="no">Auth</span>,
+          <span translate="no">Crypto Market Dashboard</span>. And libraries: five independent packages for
+          Angular, published on npm, <span translate="no">Data Grid</span>, <span translate="no">Form Builder</span>, <span translate="no">Auth</span>,
           <span translate="no">PDF Generator</span>, and <span translate="no">Calendar</span>. New pieces of either kind show up as
           cards above once they're finished.
         </p>
@@ -402,7 +408,7 @@
         <summary
           class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-base-content focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
-          <span>What Angular versions are supported?</span>
+          <span>Which Angular versions do the libraries support?</span>
           <span
             class="shrink-0 text-xl leading-none font-normal text-slate-400 transition-transform duration-200 ease-out group-open:rotate-45"
             aria-hidden="true"
@@ -413,7 +419,8 @@
           Every library targets the same range,
           <span class="font-mono text-sm">^20.0.0 || ^21.0.0 || ^22.0.0</span>, reviewed each time
           Angular ships a new major and verified with real production builds at both ends of it.
-          The applications aren't constrained by that floor and run on recent Angular versions.
+          The applications aren't tied to that range: each one uses whatever stack and version fits
+          it.
         </p>
       </details>
 
@@ -458,4 +465,6 @@
       </details> -->
     </div>
   </section>
+
+  <app-contact-section />
 </div>

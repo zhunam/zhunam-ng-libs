@@ -2,6 +2,7 @@ import { Component, HostListener, computed, inject, signal } from '@angular/core
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
+import { contact, contactMailto } from './shared/contact';
 
 @Component({
   imports: [RouterLink, RouterOutlet],
@@ -14,6 +15,8 @@ export class App {
 
   protected title = 'portfolio-showcase';
   protected readonly currentYear = new Date().getFullYear();
+  protected readonly contact = contact;
+  protected readonly contactMailto = contactMailto;
 
   protected readonly scrolled = signal(false);
 
