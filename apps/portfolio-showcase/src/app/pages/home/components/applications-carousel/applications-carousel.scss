@@ -1,0 +1,134 @@
+$gap: 1.5rem;
+
+:host {
+  display: block;
+}
+
+.track {
+  display: flex;
+  gap: $gap;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  // Room for the cards' 2px hover lift and focus outline, which
+  // overflow-x: auto would otherwise clip.
+  padding: 0.5rem 0.25rem;
+  margin: -0.5rem -0.25rem;
+  // Without this, snapping aligns cards to the padding edge and leaves
+  // scrollLeft at a few px, which reads as "can scroll back".
+  scroll-padding-inline: 0.25rem;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+// Exactly 3 per view on wide screens, 2 on tablets; on phones a slice of
+// the next card peeks in so swiping is discoverable without arrows.
+.slide {
+  flex: 0 0 85%;
+  scroll-snap-align: start;
+
+  @media (min-width: 640px) {
+    flex-basis: calc((100% - #{$gap}) / 2);
+  }
+
+  @media (min-width: 1024px) {
+    flex-basis: calc((100% - 2 * #{$gap}) / 3);
+  }
+}
+
+// Raised surface (shadow, no border) per DESIGN.md's Ghost-Card Refusal.
+.arrow {
+  position: absolute;
+  top: 50%;
+  display: flex;
+  height: 2.5rem;
+  width: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: var(--color-base-100);
+  color: var(--color-base-content);
+  box-shadow: 0 2px 10px rgba(15, 37, 42, 0.12);
+  transition:
+    color 200ms ease-out,
+    opacity 200ms ease-out;
+
+  &:hover:not(:disabled) {
+    color: var(--color-primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  // On phones they'd sit on top of card text; the peeking next card and
+  // native swipe already signal that the row scrolls.
+  @media (max-width: 639px) {
+    display: none;
+  }
+}
+
+// Centered on the track's edge, half outside it, so they never cover a
+// card's CTA or text.
+.arrow--prev {
+  left: 0;
+  translate: -50% -50%;
+}
+
+.arrow--next {
+  right: 0;
+  translate: 50% -50%;
+}
+
+.dots {
+  display: flex;
+  justify-content: center;
+  margin-top: 0.75rem;
+}
+
+// The button is a 24px touch target (WCAG 2.5.8); the visible dot is its
+// ::before, so it can stay small without being hard to tap.
+.dot {
+  display: flex;
+  height: 1.5rem;
+  min-width: 1.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+
+  &::before {
+    content: '';
+    height: 0.5rem;
+    width: 0.5rem;
+    border-radius: 9999px;
+    background: #cbd5e1;
+    transition:
+      width 200ms ease-out,
+      background-color 200ms ease-out;
+  }
+
+  &:hover::before {
+    background: #94a3b8;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: -2px;
+  }
+}
+
+// Wider and in Signal Teal, so the current position reads by shape, not
+// only by color.
+.dot--active::before,
+.dot--active:hover::before {
+  width: 1.25rem;
+  background: var(--color-primary);
+}

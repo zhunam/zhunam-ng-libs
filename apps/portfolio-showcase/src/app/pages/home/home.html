@@ -8,23 +8,48 @@
     </div>
 
     <div
-      class="relative mx-auto flex min-h-[90vh] max-w-3xl flex-col items-center justify-center gap-8 px-6 py-24 text-center"
+      class="relative mx-auto flex min-h-[90vh] max-w-3xl flex-col items-center justify-center gap-6 px-8 py-24 text-center sm:gap-8 sm:px-6"
     >
-      <h1 class="text-6xl font-bold tracking-tight text-balance text-white lg:text-7xl">
-        Angular libraries, built for real products
+      <h1 class="text-4xl font-bold tracking-tight text-balance text-white sm:text-6xl lg:text-7xl">
+        From complete applications to reusable libraries
       </h1>
-      <p class="max-w-prose text-xl leading-relaxed text-pretty text-slate-300">
-        Every component ships as an independent Angular library, standalone, signal-typed, ready
-        to install in your own project exactly as it is.
+      <p class="max-w-prose text-lg leading-relaxed text-pretty text-slate-300 sm:text-xl">
+        Applications running in production, and open-source libraries ready to install
+        in your own project, each built with the stack that fits it best.
       </p>
-      <a
-        href="#library-explorer"
-        class="group inline-flex items-center gap-2 text-sm font-semibold text-white transition-colors duration-200 hover:text-[#8ba7a6] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8ba7a6]"
-      >
-        Explore the libraries
-        <!-- <span class="transition-transform duration-200 group-hover:translate-x-1" aria-hidden="true">→</span> -->
-      </a>
+      <div class="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
+        <a
+          href="#applications"
+          class="text-sm font-semibold text-white transition-colors duration-200 hover:text-[#8ba7a6] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8ba7a6]"
+        >
+          See the applications
+        </a>
+        <a
+          href="#library-explorer"
+          class="text-sm font-semibold text-slate-300 transition-colors duration-200 hover:text-[#8ba7a6] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8ba7a6]"
+        >
+          Explore the libraries
+        </a>
+        <a
+          href="#contact"
+          class="text-sm font-semibold text-slate-300 transition-colors duration-200 hover:text-[#8ba7a6] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8ba7a6]"
+        >
+          Get in touch
+        </a>
+      </div>
     </div>
+  </section>
+
+  <!-- Applications: apps/* demos and standalone products, never published
+       packages. Data-driven from shared/applications.ts so a new app is a
+       new entry there, not new markup. See DESIGN.md > Applications. -->
+  <section id="applications" class="flex scroll-mt-24 flex-col gap-6">
+    <div class="flex flex-col gap-2">
+      <h2 class="text-2xl font-bold tracking-tight text-base-content">Applications</h2>
+      <p class="text-slate-600">Complete products and live demos, built end to end.</p>
+    </div>
+
+    <app-applications-carousel [applications]="applications" />
   </section>
 
   <!-- Library Explorer -->
@@ -290,59 +315,6 @@
     </div>
   </section>
 
-  <!-- Featured Project: a separate, larger section from Library Explorer —
-       this is an apps/* portfolio piece, not a published library, see
-       DESIGN.md "Featured Project" under Components. -->
-  <section class="flex flex-col gap-4">
-    <span class="text-sm font-semibold text-base-content">Featured Project</span>
-
-    <a
-      [routerLink]="cryptoDashboard.route"
-      class="grid grid-cols-1 gap-6 rounded-box border border-slate-200 p-8 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary lg:grid-cols-2 lg:items-center"
-    >
-      <div class="flex flex-col items-start gap-3">
-        <span class="badge badge-primary w-fit text-xs">Live</span>
-        <h3 class="text-xl font-semibold text-base-content">{{ cryptoDashboard.name }}</h3>
-        <p class="max-w-prose text-slate-600">{{ cryptoDashboard.description }}</p>
-        <span class="btn btn-primary btn-sm mt-2 w-fit">View full demo</span>
-      </div>
-
-      <!-- Dark preview panel: a stylized, fixed-sample-data miniature of the
-           real dashboard, decoration only — never a live fetch or an iframe
-           of the actual page. See DESIGN.md > Featured Project. -->
-      <div class="flex flex-col gap-4 rounded-box bg-base-content p-5" aria-hidden="true">
-        <div class="flex justify-between gap-3 text-xs">
-          @for (coin of previewPriceStrip; track coin.symbol) {
-            <span class="flex items-center gap-1 text-slate-300" translate="no">
-              {{ coin.symbol }} <span class="font-medium text-white">{{ coin.price }}</span>
-              <span class="text-green-500">▲</span>
-            </span>
-          }
-        </div>
-
-        <svg viewBox="0 0 200 40" preserveAspectRatio="none" class="h-10 w-full text-[#8ba7a6]">
-          <polyline
-            points="0,32 25,28 50,30 75,18 100,22 125,12 150,15 175,6 200,10"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-        </svg>
-
-        <div class="flex flex-col gap-2 rounded-md bg-white/5 p-3">
-          @for (coin of previewMiniList; track coin.name) {
-            <div class="flex justify-between text-xs text-slate-300" translate="no">
-              <span>{{ coin.name }}</span>
-              <span class="font-medium text-white">{{ coin.price }}</span>
-            </div>
-          }
-        </div>
-      </div>
-    </a>
-  </section>
-
   <!-- FAQ -->
   <section class="flex flex-col gap-6">
     <div class="flex flex-col gap-2">
@@ -354,7 +326,7 @@
         <summary
           class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-base-content focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
-          <span>How many libraries are here right now?</span>
+          <span>What's in this portfolio?</span>
           <span
             class="shrink-0 text-xl leading-none font-normal text-slate-400 transition-transform duration-200 ease-out group-open:rotate-45"
             aria-hidden="true"
@@ -362,11 +334,12 @@
           >
         </summary>
         <p class="mt-3 text-slate-600">
-          Five so far, <span translate="no">Data Grid</span>,
-          <span translate="no">Form Builder</span>, <span translate="no">Auth</span>,
-          <span translate="no">PDF Generator</span>, and <span translate="no">Calendar</span>.
-          This site is built to host a growing set of them, new ones show up in the Library
-          Explorer above as they're finished, not bundled into this one.
+          Two kinds of work. Applications: complete products like
+          <span translate="no">Luan Patterns</span>, deployed on their own, plus live demos like the
+          <span translate="no">Crypto Market Dashboard</span>. And libraries: five independent packages for
+          Angular, published on npm, <span translate="no">Data Grid</span>, <span translate="no">Form Builder</span>, <span translate="no">Auth</span>,
+          <span translate="no">PDF Generator</span>, and <span translate="no">Calendar</span>. New pieces of either kind show up as
+          cards above once they're finished.
         </p>
       </details>
 
@@ -374,7 +347,7 @@
         <summary
           class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-base-content focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
-          <span>Is this free to use?</span>
+          <span>Is the code open source?</span>
           <span
             class="shrink-0 text-xl leading-none font-normal text-slate-400 transition-transform duration-200 ease-out group-open:rotate-45"
             aria-hidden="true"
@@ -382,9 +355,12 @@
           >
         </summary>
         <p class="mt-3 text-slate-600">
-          Yes, every library in this ecosystem ships under the MIT license, free for any use.
-          Some may add optional paid Pro tiers for specific advanced features down the line, but
-          there's no fixed timeline for that yet.
+          Depends on the piece. Every library ships under the MIT license, free for any use, and
+          some may add optional paid Pro tiers for advanced features later, with no fixed timeline
+          yet. The demos hosted on this site, the <span translate="no">Crypto Market Dashboard</span> included, live
+          in the same public repository as the libraries. Standalone products like
+          <span translate="no">Luan Patterns</span> are closed source: you can use them live, but their code isn't
+          published.
         </p>
       </details>
 
@@ -392,7 +368,7 @@
         <summary
           class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-base-content focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
-          <span>What Angular versions are supported?</span>
+          <span>Do the applications use the libraries?</span>
           <span
             class="shrink-0 text-xl leading-none font-normal text-slate-400 transition-transform duration-200 ease-out group-open:rotate-45"
             aria-hidden="true"
@@ -400,9 +376,51 @@
           >
         </summary>
         <p class="mt-3 text-slate-600">
-          Every library here targets the same floor:
+          The <span translate="no">Crypto Market Dashboard</span> does: its market table is
+          <span translate="no"><span class="font-mono text-sm">@zhunam/data-grid</span></span>, the currency converter is
+          <span translate="no"><span class="font-mono text-sm">@zhunam/form-builder</span></span>, and its PDF export is
+          <span translate="no"><span class="font-mono text-sm">@zhunam/pdf-generator</span></span>, imported only through
+          each package's public entry point, the same API an external project gets. That's the point of it: proving the
+          libraries hold up against real, live data, not just their own demo pages.
+        </p>
+      </details>
+
+      <details class="group py-5">
+        <summary
+          class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-base-content focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          <span>Is the data in the demos real?</span>
+          <span
+            class="shrink-0 text-xl leading-none font-normal text-slate-400 transition-transform duration-200 ease-out group-open:rotate-45"
+            aria-hidden="true"
+            >+</span
+          >
+        </summary>
+        <p class="mt-3 text-slate-600">
+          The library demos use sample data, so every feature can be tried without an account or an
+          API key. The <span translate="no">Crypto Market Dashboard</span> fetches live market data from the
+          <span translate="no">CoinGecko</span> public API on every visit. <span translate="no">Luan Patterns</span> works on your own
+          images, processed entirely in your browser: nothing is uploaded to a server.
+        </p>
+      </details>
+
+      <details class="group py-5">
+        <summary
+          class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-base-content focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          <span>Which Angular versions do the libraries support?</span>
+          <span
+            class="shrink-0 text-xl leading-none font-normal text-slate-400 transition-transform duration-200 ease-out group-open:rotate-45"
+            aria-hidden="true"
+            >+</span
+          >
+        </summary>
+        <p class="mt-3 text-slate-600">
+          Every library targets the same range,
           <span class="font-mono text-sm">^20.0.0 || ^21.0.0 || ^22.0.0</span>, reviewed each time
-          Angular ships a new major.
+          Angular ships a new major and verified with real production builds at both ends of it.
+          The applications aren't tied to that range: each one uses whatever stack and version fits
+          it.
         </p>
       </details>
 
@@ -410,7 +428,7 @@
         <summary
           class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-base-content focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
-          <span>Why build these instead of using something like Angular Material?</span>
+          <span>Why build libraries instead of using something like Angular Material?</span>
           <span
             class="shrink-0 text-xl leading-none font-normal text-slate-400 transition-transform duration-200 ease-out group-open:rotate-45"
             aria-hidden="true"
@@ -418,7 +436,11 @@
           >
         </summary>
         <p class="mt-3 text-slate-600">
-          Complete design systems are excellent, but they require adopting their entire visual language and CDK just to obtain a single component. Each library presented here focuses on a single problem, has no dependencies on CSS frameworks, and is small in size. They don't replace a complete design system when you really need one, but rather serve as an alternative when you don't.
+          Complete design systems are excellent, but they require adopting their entire visual
+          language and CDK just to obtain a single component. Each library here focuses on a single
+          problem, has no dependencies on CSS frameworks, and is small in size. They don't replace a
+          complete design system when you really need one, but rather serve as an alternative when
+          you don't.
         </p>
       </details>
 
@@ -443,4 +465,6 @@
       </details> -->
     </div>
   </section>
+
+  <app-contact-section />
 </div>

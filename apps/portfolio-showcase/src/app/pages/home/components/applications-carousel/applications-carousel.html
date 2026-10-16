@@ -1,0 +1,49 @@
+<div class="relative">
+  <ul #track class="track" aria-label="Applications" (scroll)="updateScrollState()">
+    @for (application of applications(); track application.name) {
+      <li class="slide">
+        <app-application-card class="h-full" [application]="application" />
+      </li>
+    }
+  </ul>
+
+  @if (canScrollPrev() || canScrollNext()) {
+    <button
+      type="button"
+      class="arrow arrow--prev"
+      aria-label="Previous applications"
+      [disabled]="!canScrollPrev()"
+      (click)="scrollByPage(-1)"
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5" aria-hidden="true">
+        <path d="M15 18l-6-6 6-6" />
+      </svg>
+    </button>
+    <button
+      type="button"
+      class="arrow arrow--next"
+      aria-label="Next applications"
+      [disabled]="!canScrollNext()"
+      (click)="scrollByPage(1)"
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5" aria-hidden="true">
+        <path d="M9 18l6-6-6-6" />
+      </svg>
+    </button>
+  }
+</div>
+
+@if (snapStops().length > 1) {
+  <div class="dots" role="group" aria-label="Choose applications">
+    @for (stop of snapStops(); track stop.left; let index = $index) {
+      <button
+        type="button"
+        class="dot"
+        [class.dot--active]="index === activeStop()"
+        [attr.aria-current]="index === activeStop() ? 'true' : null"
+        [attr.aria-label]="'Show ' + stop.leadingName"
+        (click)="scrollToStop(stop)"
+      ></button>
+    }
+  </div>
+}

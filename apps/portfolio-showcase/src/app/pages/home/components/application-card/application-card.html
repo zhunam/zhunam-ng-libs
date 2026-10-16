@@ -1,0 +1,73 @@
+@let app = application();
+
+<!-- The whole card is one click target; the "Open" label inside is styled
+     as a button but isn't a second nested link (invalid HTML). -->
+@switch (app.link.kind) {
+  @case ('internal') {
+    <a [routerLink]="app.link.route" class="card-link group">
+      <ng-container [ngTemplateOutlet]="body" />
+    </a>
+  }
+  @case ('external') {
+    <a [href]="app.link.url" target="_blank" rel="noopener" class="card-link group">
+      <ng-container [ngTemplateOutlet]="body" />
+    </a>
+  }
+}
+
+<ng-template #body>
+  <div class="relative aspect-[16/9] overflow-hidden rounded-field bg-base-content">
+    @switch (app.preview.kind) {
+      @case ('image') {
+        <img
+          [src]="app.preview.src"
+          [alt]="app.preview.alt"
+          [width]="app.preview.width"
+          [height]="app.preview.height"
+          loading="lazy"
+          decoding="async"
+          class="h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.02]"
+        />
+      }
+      @case ('market-miniature') {
+        <app-market-preview class="block h-full" />
+      }
+    }
+
+    <!-- Sits on the preview to save a row; the outline variant gets a solid
+         fill so it stays readable over any screenshot. -->
+    <span
+      class="badge badge-sm absolute top-2 left-2"
+      [class]="app.badge.filled ? 'badge-primary' : 'border-slate-200 bg-base-100 text-slate-600'"
+    >
+      {{ app.badge.label }}
+    </span>
+  </div>
+
+  <div class="flex flex-1 flex-col gap-2">
+    <div class="flex flex-col">
+      <h3 class="text-lg font-semibold text-base-content" translate="no">{{ app.name }}</h3>
+      <span class="font-mono text-xs text-slate-600" translate="no">{{ app.displayUrl }}</span>
+    </div>
+
+    <p class="line-clamp-3 text-sm text-slate-600" [title]="app.description">{{ app.description }}</p>
+
+    <ul class="flex flex-wrap gap-1.5" aria-label="Built with">
+      @for (tech of app.stack; track tech) {
+        <li class="rounded-selector border border-slate-200 px-1.5 py-0.5 text-xs text-slate-600">{{ tech }}</li>
+      }
+    </ul>
+
+    <span class="btn btn-primary btn-sm mt-auto w-fit">
+      @if (app.link.kind === 'external') {
+        Open app
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5" aria-hidden="true">
+          <path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" />
+        </svg>
+        <span class="sr-only">(opens in a new tab)</span>
+      } @else {
+        View live demo
+      }
+    </span>
+  </div>
+</ng-template>
