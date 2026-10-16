@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "portfolio-showcase",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["nx", "serve", "portfolio-showcase"],
+      "port": 4200
+    }
+  ]
+}

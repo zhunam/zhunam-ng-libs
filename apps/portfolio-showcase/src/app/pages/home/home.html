@@ -11,20 +11,45 @@
       class="relative mx-auto flex min-h-[90vh] max-w-3xl flex-col items-center justify-center gap-8 px-6 py-24 text-center"
     >
       <h1 class="text-6xl font-bold tracking-tight text-balance text-white lg:text-7xl">
-        Angular libraries, built for real products
+        Angular frontend, from products to libraries
       </h1>
       <p class="max-w-prose text-xl leading-relaxed text-pretty text-slate-300">
-        Every component ships as an independent Angular library, standalone, signal-typed, ready
-        to install in your own project exactly as it is.
+        Applications shipped to real users, alongside a growing set of open-source Angular
+        libraries, each one standalone, signal-typed, and ready to install in your own project.
       </p>
-      <a
-        href="#library-explorer"
-        class="group inline-flex items-center gap-2 text-sm font-semibold text-white transition-colors duration-200 hover:text-[#8ba7a6] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8ba7a6]"
-      >
-        Explore the libraries
-        <!-- <span class="transition-transform duration-200 group-hover:translate-x-1" aria-hidden="true">→</span> -->
-      </a>
+      <div class="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
+        <a
+          href="#applications"
+          class="text-sm font-semibold text-white transition-colors duration-200 hover:text-[#8ba7a6] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8ba7a6]"
+        >
+          See the applications
+        </a>
+        <a
+          href="#library-explorer"
+          class="text-sm font-semibold text-slate-300 transition-colors duration-200 hover:text-[#8ba7a6] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8ba7a6]"
+        >
+          Explore the libraries
+        </a>
+      </div>
     </div>
+  </section>
+
+  <!-- Applications: apps/* demos and standalone products, never published
+       packages. Data-driven from shared/applications.ts so a new app is a
+       new entry there, not new markup. See DESIGN.md > Applications. -->
+  <section id="applications" class="flex scroll-mt-24 flex-col gap-6">
+    <div class="flex flex-col gap-2">
+      <h2 class="text-2xl font-bold tracking-tight text-base-content">Applications</h2>
+      <p class="text-slate-600">Complete products and live demos, built end to end.</p>
+    </div>
+
+    <ul class="grid grid-cols-1 gap-6 md:grid-cols-2">
+      @for (application of applications; track application.name) {
+        <li>
+          <app-application-card class="h-full" [application]="application" />
+        </li>
+      }
+    </ul>
   </section>
 
   <!-- Library Explorer -->
@@ -290,59 +315,6 @@
     </div>
   </section>
 
-  <!-- Featured Project: a separate, larger section from Library Explorer —
-       this is an apps/* portfolio piece, not a published library, see
-       DESIGN.md "Featured Project" under Components. -->
-  <section class="flex flex-col gap-4">
-    <span class="text-sm font-semibold text-base-content">Featured Project</span>
-
-    <a
-      [routerLink]="cryptoDashboard.route"
-      class="grid grid-cols-1 gap-6 rounded-box border border-slate-200 p-8 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary lg:grid-cols-2 lg:items-center"
-    >
-      <div class="flex flex-col items-start gap-3">
-        <span class="badge badge-primary w-fit text-xs">Live</span>
-        <h3 class="text-xl font-semibold text-base-content">{{ cryptoDashboard.name }}</h3>
-        <p class="max-w-prose text-slate-600">{{ cryptoDashboard.description }}</p>
-        <span class="btn btn-primary btn-sm mt-2 w-fit">View full demo</span>
-      </div>
-
-      <!-- Dark preview panel: a stylized, fixed-sample-data miniature of the
-           real dashboard, decoration only — never a live fetch or an iframe
-           of the actual page. See DESIGN.md > Featured Project. -->
-      <div class="flex flex-col gap-4 rounded-box bg-base-content p-5" aria-hidden="true">
-        <div class="flex justify-between gap-3 text-xs">
-          @for (coin of previewPriceStrip; track coin.symbol) {
-            <span class="flex items-center gap-1 text-slate-300" translate="no">
-              {{ coin.symbol }} <span class="font-medium text-white">{{ coin.price }}</span>
-              <span class="text-green-500">▲</span>
-            </span>
-          }
-        </div>
-
-        <svg viewBox="0 0 200 40" preserveAspectRatio="none" class="h-10 w-full text-[#8ba7a6]">
-          <polyline
-            points="0,32 25,28 50,30 75,18 100,22 125,12 150,15 175,6 200,10"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-        </svg>
-
-        <div class="flex flex-col gap-2 rounded-md bg-white/5 p-3">
-          @for (coin of previewMiniList; track coin.name) {
-            <div class="flex justify-between text-xs text-slate-300" translate="no">
-              <span>{{ coin.name }}</span>
-              <span class="font-medium text-white">{{ coin.price }}</span>
-            </div>
-          }
-        </div>
-      </div>
-    </a>
-  </section>
-
   <!-- FAQ -->
   <section class="flex flex-col gap-6">
     <div class="flex flex-col gap-2">
@@ -382,9 +354,11 @@
           >
         </summary>
         <p class="mt-3 text-slate-600">
-          Yes, every library in this ecosystem ships under the MIT license, free for any use.
+          The libraries, yes: every one of them ships under the MIT license, free for any use.
           Some may add optional paid Pro tiers for specific advanced features down the line, but
-          there's no fixed timeline for that yet.
+          there's no fixed timeline for that yet. The applications are a different case: the demos
+          hosted on this site are open source alongside the libraries, while standalone products
+          like <span translate="no">Luan Patterns</span> are closed source.
         </p>
       </details>
 

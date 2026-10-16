@@ -1,0 +1,29 @@
+:host {
+  display: block;
+}
+
+// Shared by both link variants (routerLink vs external href) so their
+// shape and hover/focus states can't drift apart. Same treatment as the
+// Library Explorer cards, see DESIGN.md > Interactive Cards.
+.card-link {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  gap: 1.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-box);
+  padding: 1.5rem;
+  transition:
+    transform 200ms ease-out,
+    border-color 200ms ease-out;
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: var(--color-primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+}

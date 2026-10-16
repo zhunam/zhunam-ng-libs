@@ -14,50 +14,36 @@ describe('Home', () => {
 
     fixture = TestBed.createComponent(Home);
     component = fixture.componentInstance;
+    fixture.detectChanges();
     await fixture.whenStable();
   });
 
   it('should create', () => {
     expect(component).toBeTruthy();
   });
-});
 
-// Separate describe (not merged into the one above: that's a bigger
-// restructure than the narrow NG0201 fix this file needed, left alone
-// on purpose). Both configure the same provideRouter([]) now; this one
-// predates that fix and was added specifically to exercise the
-// Featured Project assertions while the suite above still hit the
-// preexisting NG0201/ActivatedRoute failure (documented, now fixed, in
-// the root ROADMAP.md's infrastructure lessons).
-describe('Home (Featured Project section)', () => {
-  let fixture: ComponentFixture<Home>;
-
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [Home],
-      providers: [provideRouter([])],
-    }).compileComponents();
-
-    fixture = TestBed.createComponent(Home);
-    fixture.detectChanges();
-    await fixture.whenStable();
-  });
-
-  it('renders the Featured Project section with a real link to the crypto dashboard route, never empty/placeholder', () => {
+  it('renders the hero for the whole portfolio, linking to both applications and libraries', () => {
     const nativeElement = fixture.nativeElement as HTMLElement;
 
-    expect(nativeElement.textContent).toContain('Featured Project');
-    expect(nativeElement.textContent).toContain('Crypto Market Dashboard');
-
-    const link = nativeElement.querySelector('a[href="/crypto-dashboard"]');
-    expect(link).toBeTruthy();
-    expect(link?.getAttribute('href')).toBe('/crypto-dashboard');
+    expect(nativeElement.querySelector('h1')?.textContent).not.toMatch(/^\s*Angular libraries/);
+    expect(nativeElement.querySelector('a[href="#applications"]')).toBeTruthy();
+    expect(nativeElement.querySelector('a[href="#library-explorer"]')).toBeTruthy();
   });
 
-  it('shows the Live badge on the Featured Project card, honestly (real live data behind it)', () => {
+  it('links the crypto dashboard card to its internal route with the Live badge (real live data behind it)', () => {
     const nativeElement = fixture.nativeElement as HTMLElement;
-    const badge = nativeElement.querySelector('a[href="/crypto-dashboard"] .badge-primary');
+    const link = nativeElement.querySelector('#applications a[href="/crypto-dashboard"]');
 
-    expect(badge?.textContent?.trim()).toBe('Live');
+    expect(link?.textContent).toContain('Crypto Market Dashboard');
+    expect(link?.querySelector('.badge-primary')?.textContent?.trim()).toBe('Live');
+  });
+
+  it('opens Luan Patterns in a new tab, without a Live badge (no live data behind it)', () => {
+    const nativeElement = fixture.nativeElement as HTMLElement;
+    const link = nativeElement.querySelector('#applications a[href="https://luan-patterns.pages.dev/"]');
+
+    expect(link?.getAttribute('target')).toBe('_blank');
+    expect(link?.getAttribute('rel')).toContain('noopener');
+    expect(link?.querySelector('.badge-primary')).toBeNull();
   });
 });
