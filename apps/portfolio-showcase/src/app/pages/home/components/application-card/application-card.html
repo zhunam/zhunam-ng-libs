@@ -16,7 +16,7 @@
 }
 
 <ng-template #body>
-  <div class="aspect-[16/9] overflow-hidden rounded-box bg-base-content">
+  <div class="relative aspect-[16/9] overflow-hidden rounded-field bg-base-content">
     @switch (app.preview.kind) {
       @case ('image') {
         <img
@@ -33,23 +33,28 @@
         <app-market-preview class="block h-full" />
       }
     }
-  </div>
 
-  <div class="flex flex-1 flex-col gap-3">
-    <span class="badge w-fit text-xs" [class]="app.badge.filled ? 'badge-primary' : 'badge-outline text-slate-600'">
+    <!-- Sits on the preview to save a row; the outline variant gets a solid
+         fill so it stays readable over any screenshot. -->
+    <span
+      class="badge badge-sm absolute top-2 left-2"
+      [class]="app.badge.filled ? 'badge-primary' : 'border-slate-200 bg-base-100 text-slate-600'"
+    >
       {{ app.badge.label }}
     </span>
+  </div>
 
-    <div class="flex flex-col gap-1">
-      <h3 class="text-xl font-semibold text-base-content" translate="no">{{ app.name }}</h3>
+  <div class="flex flex-1 flex-col gap-2">
+    <div class="flex flex-col">
+      <h3 class="text-lg font-semibold text-base-content" translate="no">{{ app.name }}</h3>
       <span class="font-mono text-xs text-slate-600" translate="no">{{ app.displayUrl }}</span>
     </div>
 
-    <p class="max-w-prose text-slate-600">{{ app.description }}</p>
+    <p class="line-clamp-3 text-sm text-slate-600" [title]="app.description">{{ app.description }}</p>
 
-    <ul class="flex flex-wrap gap-2" aria-label="Built with">
+    <ul class="flex flex-wrap gap-1.5" aria-label="Built with">
       @for (tech of app.stack; track tech) {
-        <li class="rounded-selector border border-slate-200 px-2 py-0.5 text-xs text-slate-600">{{ tech }}</li>
+        <li class="rounded-selector border border-slate-200 px-1.5 py-0.5 text-xs text-slate-600">{{ tech }}</li>
       }
     </ul>
 

@@ -8,11 +8,11 @@ import {
   formBuilderLibrary,
   pdfGeneratorLibrary,
 } from '../../shared/libraries';
-import { ApplicationCard } from './components/application-card/application-card';
+import { ApplicationsCarousel } from './components/applications-carousel/applications-carousel';
 
 @Component({
   selector: 'app-home',
-  imports: [RouterLink, ApplicationCard],
+  imports: [RouterLink, ApplicationsCarousel],
   templateUrl: './home.html',
   styleUrl: './home.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

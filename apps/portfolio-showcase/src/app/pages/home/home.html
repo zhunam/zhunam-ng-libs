@@ -43,13 +43,7 @@
       <p class="text-slate-600">Complete products and live demos, built end to end.</p>
     </div>
 
-    <ul class="grid grid-cols-1 gap-6 md:grid-cols-2">
-      @for (application of applications; track application.name) {
-        <li>
-          <app-application-card class="h-full" [application]="application" />
-        </li>
-      }
-    </ul>
+    <app-applications-carousel [applications]="applications" />
   </section>
 
   <!-- Library Explorer -->
