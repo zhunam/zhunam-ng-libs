@@ -27,7 +27,7 @@ for which API of each library it consumes and why.
 | --- | --- | --- | --- |
 | Data Grid | [`@zhunam/data-grid`](https://www.npmjs.com/package/@zhunam/data-grid) | 3.0.0 | Table with column sorting, pagination, and row selection. |
 | Form Builder | [`@zhunam/form-builder`](https://www.npmjs.com/package/@zhunam/form-builder) | 2.0.0 | Dynamic reactive forms from a declarative field configuration. |
-| Auth | [`@zhunam/auth`](https://www.npmjs.com/package/@zhunam/auth) | 2.0.0 | Unified wrapper over Firebase Auth and Supabase Auth, with a route guard and ready-made forms. |
+| Auth | [`@zhunam/auth`](https://www.npmjs.com/package/@zhunam/auth) | 3.2.0 | Unified wrapper over Firebase Auth and Supabase Auth, with a route guard, ready-made forms, code-based password reset, and pluggable session storage. |
 | PDF Generator | [`@zhunam/pdf-generator`](https://www.npmjs.com/package/@zhunam/pdf-generator) | 2.0.0 | Client-side PDF documents from a declarative, typed template, with a live preview component. |
 | Calendar | [`@zhunam/calendar`](https://www.npmjs.com/package/@zhunam/calendar) | 2.0.0 | Signal-based event store with real RRULE recurrence, an optional Google Calendar connector, and a month/week/day UI component. |
 

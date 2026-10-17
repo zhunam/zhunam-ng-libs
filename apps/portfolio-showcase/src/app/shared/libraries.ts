@@ -35,10 +35,10 @@ export const libraries: LibraryEntry[] = [
   {
     name: 'Auth',
     importPath: '@zhunam/auth',
-    description: 'Unified wrapper over Firebase Auth and Supabase Auth, with a route guard and ready-made forms.',
+    description: 'Unified wrapper over Firebase Auth and Supabase Auth, with a route guard, ready-made forms, code-based password reset, and pluggable session storage.',
     route: '/auth',
     status: 'available',
-    version: '2.0.0',
+    version: '3.2.0',
   },
   {
     name: 'PDF Generator',
