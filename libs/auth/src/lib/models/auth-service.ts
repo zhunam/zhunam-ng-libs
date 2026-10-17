@@ -60,20 +60,55 @@ export interface AuthService {
    * The two providers this library supports handle this step
    * differently, which is why `code` is optional and provider-specific:
    * - Firebase requires `code`, the `oobCode` query parameter from the
-   *   reset link, extracted by the consumer from the page URL. Calling
-   *   this without one fails with `AUTH_ERROR_CODES.invalidActionCode`,
-   *   without ever reaching the Firebase SDK.
-   * - Supabase ignores `code` entirely: clicking the reset link already
-   *   establishes a recovery session client-side (see
-   *   `SupabaseAuthService.completePasswordReset()`'s own comment for
-   *   the exact mechanism), so there's nothing left for a code to
-   *   select.
+   *   reset link, extracted by the consumer from the page URL, unless
+   *   `verifyResetCode()` already verified one. Calling this with
+   *   neither fails with `AUTH_ERROR_CODES.invalidActionCode`, without
+   *   ever reaching the Firebase SDK.
+   * - Supabase ignores `code` entirely: clicking the reset link (or
+   *   `verifyResetCode()`) already establishes a recovery session
+   *   client-side (see `SupabaseAuthService.completePasswordReset()`'s
+   *   own comment for the exact mechanism), so there's nothing left for
+   *   a code to select.
    *
    * @param newPassword The user's new password.
-   * @param code Provider-specific action code. Required for Firebase,
-   *   ignored by Supabase.
+   * @param code Provider-specific action code. Required for Firebase
+   *   unless `verifyResetCode()` ran first, ignored by Supabase.
    */
   completePasswordReset?(newPassword: string, code?: string): Promise<void>;
+
+  /**
+   * Verifies a password reset code typed in by the user, as an
+   * alternative to opening the reset link (e.g. in a desktop app, where
+   * the link opens the browser instead of the app). Once it resolves,
+   * call `completePasswordReset(newPassword)` without a `code`. Optional:
+   * both `FirebaseAuthService` and `SupabaseAuthService` support it.
+   *
+   * - Supabase: `code` is the 6-digit code from the reset email (the
+   *   email template must include `{{ .Token }}`), and `email` is
+   *   required. A successful verification signs the user in with a
+   *   recovery session, so `currentUser()` is set from that point on.
+   * - Firebase: `code` is the `oobCode` from the reset email and `email`
+   *   is ignored. The verified code is kept privately (never exposed on
+   *   the service object) until `completePasswordReset()` succeeds.
+   *
+   * Rejects with one of:
+   * - `AUTH_ERROR_CODES.invalidActionCode`: the code is empty, wrong, or
+   *   already used. Supabase reports an expired code this way too (its
+   *   server doesn't distinguish the two), so treat both codes alike.
+   * - `AUTH_ERROR_CODES.expiredActionCode`: Firebase only, the code expired.
+   * - `AUTH_ERROR_CODES.invalidEmail`: Supabase only, `email` is missing.
+   *   Rejected locally, before ever reaching the SDK.
+   *
+   * @param code The reset code the user received by email.
+   * @param email The email the code was sent to. Required for Supabase,
+   *   ignored by Firebase.
+   * @example
+   * await authService.resetPassword(email);
+   * // ...the user types in the code from the email
+   * await authService.verifyResetCode?.(code, email);
+   * await authService.completePasswordReset?.(newPassword);
+   */
+  verifyResetCode?(code: string, email?: string): Promise<void>;
 
   /**
    * Updates the signed-in user's display name. Optional: both

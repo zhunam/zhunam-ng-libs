@@ -106,6 +106,7 @@ protected onLoginSuccess(user: AuthUser): void {
 | `signOut()`                              | `Promise<void>`            | Signs out the current user.                         |
 | `resetPassword(email)`                  | `Promise<void>`            | Sends a password reset email via the provider's native flow. |
 | `completePasswordReset?(newPassword, code?)` | `Promise<void>`      | Optional. Completes a reset started by `resetPassword()`. See "Completing a password reset" below, the per-provider behavior differs. |
+| `verifyResetCode?(code, email?)`        | `Promise<void>`            | Optional. Verifies a reset code typed in by the user, instead of opening the reset link. See "Resetting a password with a code" below. |
 | `updateProfile?(displayName)`           | `Promise<void>`            | Optional. Updates the signed-in user's display name. See "Updating profile and password" below. |
 | `changePassword?(currentPassword, newPassword)` | `Promise<void>`     | Optional. Changes the signed-in user's password, verifying `currentPassword` first. See "Updating profile and password" below. |
 | `getIdToken()`                          | `Promise<string \| null>`  | Fresh ID token for authenticated HTTP calls, `null` if signed out. |
@@ -159,9 +160,9 @@ try {
 | `weakPassword` (`auth/weak-password`) | `auth/weak-password` | `weak_password` |
 | `tooManyRequests` (`auth/too-many-requests`) | `auth/too-many-requests` | `over_request_rate_limit`, `over_email_send_rate_limit` |
 | `networkRequestFailed` (`auth/network-request-failed`) | `auth/network-request-failed` | An `AuthRetryableFetchError` instance |
-| `invalidEmail` (`auth/invalid-email`) | `auth/invalid-email` | `email_address_invalid` |
-| `invalidActionCode` (`auth/invalid-action-code`) | `auth/invalid-action-code`, or thrown locally by `completePasswordReset()` when called without a `code` | An `AuthSessionMissingError` instance (see "Completing a password reset") |
-| `expiredActionCode` (`auth/expired-action-code`) | `auth/expired-action-code` | Not applicable |
+| `invalidEmail` (`auth/invalid-email`) | `auth/invalid-email` | `email_address_invalid`, or thrown locally by `verifyResetCode()` when called without an `email` |
+| `invalidActionCode` (`auth/invalid-action-code`) | `auth/invalid-action-code`, or thrown locally by `completePasswordReset()` when called without a `code` (and none verified) or by `verifyResetCode()` with an empty one | `otp_expired` (wrong, used, or expired reset code), an `AuthSessionMissingError` instance (see "Completing a password reset"), or thrown locally by `verifyResetCode()` with an empty code |
+| `expiredActionCode` (`auth/expired-action-code`) | `auth/expired-action-code` | Not applicable: Supabase reports an expired code as `otp_expired`, the same as a wrong one |
 | `unknown` (`auth/unknown`) | Any other Firebase code, or an error with no code at all | Any other error, including `same_password` (Supabase rejects `changePassword()`'s `newPassword` when it's the same as the current one; this specific case has no dedicated code, check `cause` to distinguish it) |
 
 ### Completing a password reset
@@ -172,7 +173,8 @@ handle it differently, which is why `code` is optional:
 
 - **Firebase**: requires `code`, the `oobCode` query parameter from the
   reset link. Your app extracts it from the page URL (this library has
-  no routing opinion) and passes it through. Calling this without one
+  no routing opinion) and passes it through, unless `verifyResetCode()`
+  already verified one (see the next section). Calling this with neither
   fails locally with `AUTH_ERROR_CODES.invalidActionCode`, without ever
   reaching the Firebase SDK.
 - **Supabase**: ignores `code` entirely. Clicking the reset link already
@@ -181,6 +183,42 @@ handle it differently, which is why `code` is optional:
   (both default to values that make this work automatically); by the
   time your app calls this, the session `updateUser()` needs is already
   active.
+
+### Resetting a password with a code
+
+The reset link doesn't suit every app: in a desktop app (Electron,
+Tauri), it opens the system browser instead of the app. As an
+alternative, the user types the code from the email into your app, and
+`verifyResetCode(code, email?)` verifies it before
+`completePasswordReset(newPassword)` sets the new password:
+
+```typescript
+await authService.resetPassword(email);
+// ...the user types in the code from the email
+await authService.verifyResetCode?.(code, email);
+await authService.completePasswordReset?.(newPassword);
+```
+
+- **Supabase**: `code` is the 6-digit code, so the "Reset Password"
+  email template must include `{{ .Token }}` (the default template only
+  has the link). `email` is required. A successful verification signs
+  the user in with a recovery session (`currentUser()` is set and
+  `onAuthStateChange` emits `PASSWORD_RECOVERY`), which is the session
+  `completePasswordReset()` then uses. A wrong, already used, or
+  expired code all reject with `AUTH_ERROR_CODES.invalidActionCode`:
+  Supabase's server returns the same error for all three.
+- **Firebase**: there's no 6-digit code. `code` is the `oobCode` from
+  the reset link, and `email` is ignored. The verified code is kept in
+  a private field (never visible through `JSON.stringify()` or
+  `Object.keys()` on the service) and used by
+  `completePasswordReset(newPassword)` when called without a `code`.
+  It's discarded once the reset succeeds, or when a later
+  `verifyResetCode()` fails. A wrong code rejects with
+  `invalidActionCode`, an expired one with `expiredActionCode`.
+
+Treat `invalidActionCode` and `expiredActionCode` the same in your UI
+("the code is wrong or expired, request a new one"), so it behaves
+identically on both providers.
 
 ### Updating profile and password
 
@@ -267,7 +305,77 @@ async onSubmit(email: string, password: string, rememberMe: boolean) {
 
 Supabase ignores `persistent` completely: its `persistSession` is a
 setting on the Supabase client itself, chosen once when the client is
-created, not something a single sign-in call can override.
+created, not something a single sign-in call can override. Set it, and
+where the session is stored, through `provideSupabaseAuth`'s `auth`
+option (see "Custom session storage" below).
+
+### Custom session storage (Supabase)
+
+By default, Supabase keeps the session in the window's `localStorage`.
+`provideSupabaseAuth({ url, anonKey, auth })` forwards `auth` to the
+Supabase client, so you can store it elsewhere. Leaving `auth` out keeps
+the exact same behavior as before this option existed.
+
+The adapter's methods can be synchronous or return a `Promise`. For
+example, in Electron, to keep the session in the main process, encrypted
+with `safeStorage`, instead of in the renderer's `localStorage`:
+
+```typescript
+// renderer: app.config.ts
+// window.sessionStore is exposed by your preload script via contextBridge,
+// forwarding each call to the main process over IPC.
+const ipcSessionStorage: SupabaseAuthStorage = {
+  getItem: async (key) => {
+    try {
+      return await window.sessionStore.get(key);
+    } catch {
+      // Resolve null instead of rejecting: see the note below.
+      return null;
+    }
+  },
+  setItem: (key, value) => window.sessionStore.set(key, value),
+  removeItem: (key) => window.sessionStore.remove(key),
+};
+
+provideSupabaseAuth({
+  url: environment.supabase.url,
+  anonKey: environment.supabase.anonKey,
+  auth: {
+    storage: ipcSessionStorage,
+    storageKey: 'my-app-session',
+    detectSessionInUrl: false, // no OAuth/email-link redirects into the app
+  },
+});
+```
+
+```typescript
+// main process
+ipcMain.handle('session:set', (_event, key: string, value: string) => {
+  store.set(key, safeStorage.encryptString(value).toString('base64'));
+});
+ipcMain.handle('session:get', (_event, key: string) => {
+  const encrypted = store.get(key);
+  return encrypted ? safeStorage.decryptString(Buffer.from(encrypted, 'base64')) : null;
+});
+ipcMain.handle('session:remove', (_event, key: string) => store.delete(key));
+```
+
+Things to keep in mind:
+
+- The values passed to `setItem` contain the access and refresh tokens.
+  Never log them, in either process.
+- A rejected `setItem`/`removeItem` (e.g. `safeStorage` unavailable)
+  makes the `AuthService` call that triggered it (`signIn`,
+  `verifyResetCode`, `signOut`, ...) reject with
+  `AUTH_ERROR_CODES.unknown`, with the original error in `cause`.
+- `getItem` should resolve `null` on a failed read rather than reject.
+  Supabase reads the stored session once on startup inside a promise it
+  never awaits, so a rejection there becomes an unhandled promise
+  rejection that no `AuthService` method can catch. A later failed read
+  (e.g. during `getIdToken()`) rejects normally with
+  `AUTH_ERROR_CODES.unknown`.
+- `flowType: 'pkce'` needs `@supabase/supabase-js` 2.21 or later; older
+  2.x versions ignore it.
 
 | Other exports        | Type                            | Description                                                        |
 | --------------------- | -------------------------------- | --------------------------------------------------------------------- |
@@ -301,6 +409,20 @@ created, not something a single sign-in call can override.
 | ------------ | -------- | -------------------------------------------------- |
 | `url`        | `string` | Supabase project URL, e.g. `https://your-project.supabase.co`. |
 | `anonKey`    | `string` | Supabase anonymous (public) API key for this project. |
+| `auth`       | `SupabaseAuthClientOptions \| undefined` | Optional. Forwarded to the Supabase client's `auth` options. Left out, Supabase's own defaults apply, as in 3.1.0. |
+
+`SupabaseAuthClientOptions` (every field optional, anything left out keeps Supabase's default)
+
+| Field | Type | Supabase default |
+| ----- | ---- | ---------------- |
+| `storage` | `SupabaseAuthStorage` | `window.localStorage` |
+| `storageKey` | `string` | `sb-<project-ref>-auth-token` |
+| `persistSession` | `boolean` | `true` |
+| `autoRefreshToken` | `boolean` | `true` |
+| `detectSessionInUrl` | `boolean` | `true` |
+| `flowType` | `'implicit' \| 'pkce'` | `'implicit'` |
+
+`SupabaseAuthStorage`: `getItem(key)`, `setItem(key, value)`, `removeItem(key)`, each returning its value directly or as a `Promise`. See "Custom session storage" above.
 
 ### `@zhunam/auth/form-ui`
 

@@ -40,6 +40,7 @@ function createFakeClient() {
       resetPasswordForEmail: vi.fn(),
       updateUser: vi.fn(),
       getSession: vi.fn(),
+      verifyOtp: vi.fn(),
       onAuthStateChange: vi.fn(),
     },
   } as unknown as SupabaseClient;
@@ -512,6 +513,79 @@ describe('SupabaseAuthService', () => {
       await expect(service.changePassword('current-pw', 'current-pw')).rejects.toMatchObject({
         code: AUTH_ERROR_CODES.unknown,
         cause: supabaseError,
+      });
+    });
+  });
+
+  describe('A7: verifyResetCode', () => {
+    const verifyOtp = () => fakeClient.auth.verifyOtp as ReturnType<typeof vi.fn>;
+
+    it('calls verifyOtp with type recovery, then completePasswordReset updates the password on that session', async () => {
+      const service = createService();
+      const user = createSupabaseUser();
+      verifyOtp().mockImplementation(async () => {
+        // The real client notifies PASSWORD_RECOVERY before resolving.
+        authStateCallback('PASSWORD_RECOVERY', createSession(user));
+        return { data: { user, session: createSession(user) }, error: null };
+      });
+      (fakeClient.auth.updateUser as ReturnType<typeof vi.fn>).mockResolvedValue({ data: { user }, error: null });
+
+      await service.verifyResetCode('123456', 'user@example.com');
+      expect(service.isAuthenticated()).toBe(true);
+      await service.completePasswordReset('new-password');
+
+      expect(verifyOtp()).toHaveBeenCalledWith({ email: 'user@example.com', token: '123456', type: 'recovery' });
+      expect(fakeClient.auth.updateUser).toHaveBeenCalledWith({ password: 'new-password' });
+    });
+
+    it('without an email, fails locally with invalidEmail and never calls verifyOtp', async () => {
+      const service = createService();
+
+      await expect(service.verifyResetCode('123456')).rejects.toMatchObject({ code: AUTH_ERROR_CODES.invalidEmail });
+      expect(verifyOtp()).not.toHaveBeenCalled();
+    });
+
+    it('an empty code fails locally with invalidActionCode and never calls verifyOtp', async () => {
+      const service = createService();
+
+      await expect(service.verifyResetCode('', 'user@example.com')).rejects.toMatchObject({
+        code: AUTH_ERROR_CODES.invalidActionCode,
+      });
+      expect(verifyOtp()).not.toHaveBeenCalled();
+    });
+
+    it('maps otp_expired (Supabase uses it for both a wrong and an expired code) to invalidActionCode', async () => {
+      const service = createService();
+      const supabaseError = new AuthApiError('Token has expired or is invalid', 403, 'otp_expired');
+      verifyOtp().mockResolvedValue({ data: { user: null, session: null }, error: supabaseError });
+
+      const rejection = service.verifyResetCode('000000', 'user@example.com');
+
+      await expect(rejection).rejects.toBeInstanceOf(AuthServiceError);
+      await expect(rejection).rejects.toMatchObject({ code: AUTH_ERROR_CODES.invalidActionCode, cause: supabaseError });
+      expect(service.isAuthenticated()).toBe(false);
+    });
+
+    it('maps a rate-limit error to tooManyRequests', async () => {
+      const service = createService();
+      verifyOtp().mockResolvedValue({
+        data: { user: null, session: null },
+        error: new AuthApiError('Rate limit', 429, 'over_request_rate_limit'),
+      });
+
+      await expect(service.verifyResetCode('123456', 'user@example.com')).rejects.toMatchObject({
+        code: AUTH_ERROR_CODES.tooManyRequests,
+      });
+    });
+
+    it('normalizes an error verifyOtp throws instead of returning (e.g. a failing storage adapter)', async () => {
+      const service = createService();
+      const storageError = new Error('IPC channel closed');
+      verifyOtp().mockRejectedValue(storageError);
+
+      await expect(service.verifyResetCode('123456', 'user@example.com')).rejects.toMatchObject({
+        code: AUTH_ERROR_CODES.unknown,
+        cause: storageError,
       });
     });
   });

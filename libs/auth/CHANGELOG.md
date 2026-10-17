@@ -5,6 +5,39 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
 
 ## [Unreleased]
 
+### Added
+- `SupabaseAuthConfig.auth?: SupabaseAuthClientOptions`, forwarded to
+  the Supabase client's `auth` options: `storage`, `storageKey`,
+  `persistSession`, `autoRefreshToken`, `detectSessionInUrl`,
+  `flowType`. `storage` takes a `SupabaseAuthStorage` adapter whose
+  methods may be synchronous or return a `Promise` (e.g. an Electron
+  adapter that keeps the session in the main process over IPC). Without
+  `auth`, the client is created exactly as in 3.1.0. Keys set to
+  `undefined` are dropped, so they keep Supabase's default instead of
+  overriding it. See the README's "Custom session storage" section.
+- `AuthService.verifyResetCode?(code, email?)`: optional, additive, no
+  breaking change. Verifies a password reset code typed in by the user
+  (instead of opening the reset link), then
+  `completePasswordReset(newPassword)` finishes the reset.
+  - Supabase: `verifyOtp({ email, token, type: 'recovery' })`, which
+    signs the user in with a recovery session. `email` is required
+    (rejects locally with `AUTH_ERROR_CODES.invalidEmail` without it).
+    `otp_expired`, which Supabase returns for a wrong, used, or expired
+    code alike, maps to `AUTH_ERROR_CODES.invalidActionCode`.
+  - Firebase: `verifyPasswordResetCode(auth, code)`; `email` is ignored.
+    The verified code is kept in an ECMAScript private field and used by
+    `completePasswordReset(newPassword)` when called without a `code`,
+    cleared once the reset succeeds or a later verification fails.
+  - An empty `code` rejects locally with `invalidActionCode` on both.
+
+### Fixed
+- `SupabaseAuthService`: errors supabase-js throws instead of returning
+  as `{ error }` (anything that isn't one of its own `AuthError`s, e.g.
+  a storage adapter whose `setItem` rejects while saving a session) now
+  reject as `AuthServiceError` with `AUTH_ERROR_CODES.unknown` and the
+  original error in `cause`, as the `AuthService` contract already
+  documented. Previously they reached the consumer unnormalized.
+
 ## [3.1.0] - 2026-10-02
 
 ### Added

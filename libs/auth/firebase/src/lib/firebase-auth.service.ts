@@ -15,6 +15,7 @@ import {
   updatePassword,
   updateProfile,
   User,
+  verifyPasswordResetCode,
 } from 'firebase/auth';
 import {
   AUTH_ERROR_CODES,
@@ -92,6 +93,10 @@ async function runFirebase<T>(operation: () => Promise<T>): Promise<T> {
  */
 export class FirebaseAuthService implements AuthService {
   private readonly userSignal = signal<AuthUser | null>(null);
+  // A real ECMAScript private field, not `private`: a verified reset code
+  // is a credential, and TypeScript's `private` still shows up in
+  // JSON.stringify()/Object.keys() at runtime.
+  #verifiedResetCode: string | null = null;
 
   readonly currentUser = this.userSignal.asReadonly();
   readonly isAuthenticated = computed(() => this.userSignal() !== null);
@@ -170,19 +175,39 @@ export class FirebaseAuthService implements AuthService {
   /**
    * Firebase-specific: `code` is the `oobCode` query parameter from the
    * password reset link, which the consumer must extract from the page
-   * URL themselves (this library has no routing opinion). Calling this
-   * without one fails locally with `AUTH_ERROR_CODES.invalidActionCode`,
+   * URL themselves (this library has no routing opinion), or the one
+   * `verifyResetCode()` already verified. Calling this with neither
+   * fails locally with `AUTH_ERROR_CODES.invalidActionCode`,
    * without ever reaching the Firebase SDK.
    */
   async completePasswordReset(newPassword: string, code?: string): Promise<void> {
-    if (!code) {
+    const resetCode = code || this.#verifiedResetCode;
+    if (!resetCode) {
       throw new AuthServiceError(
         AUTH_ERROR_CODES.invalidActionCode,
         'A password reset code is required to complete the reset with Firebase.',
         undefined,
       );
     }
-    return runFirebase(() => confirmPasswordReset(this.auth, code, newPassword));
+    await runFirebase(() => confirmPasswordReset(this.auth, resetCode, newPassword));
+    this.#verifiedResetCode = null;
+  }
+
+  /**
+   * Firebase-specific: `email` is ignored, the code alone identifies the
+   * account. The verified code is what `completePasswordReset()` uses
+   * when called without one.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async verifyResetCode(code: string, _email?: string): Promise<void> {
+    // Cleared up front so a failed verification never leaves an older,
+    // already-verified code behind for completePasswordReset() to pick up.
+    this.#verifiedResetCode = null;
+    if (!code) {
+      throw new AuthServiceError(AUTH_ERROR_CODES.invalidActionCode, 'A password reset code is required.', undefined);
+    }
+    await runFirebase(() => verifyPasswordResetCode(this.auth, code));
+    this.#verifiedResetCode = code;
   }
 
   async updateProfile(displayName: string): Promise<void> {

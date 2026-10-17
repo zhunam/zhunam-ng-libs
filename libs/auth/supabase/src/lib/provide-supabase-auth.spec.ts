@@ -33,4 +33,51 @@ describe('provideSupabaseAuth', () => {
     expect(authService.currentUser()).toBeNull();
     expect(authService.isAuthenticated()).toBe(false);
   });
+
+  it('without auth options, calls createClient with exactly url and anonKey, as in 3.1.0', () => {
+    TestBed.configureTestingModule({
+      providers: [provideZonelessChangeDetection(), provideSupabaseAuth(config)],
+    });
+
+    TestBed.inject(AUTH_SERVICE);
+
+    expect(createClientMock.mock.calls[0]).toEqual([config.url, config.anonKey]);
+  });
+
+  it('forwards auth options, including an async storage adapter, to createClient as-is', () => {
+    const storage = {
+      getItem: vi.fn(async () => null),
+      setItem: vi.fn(async () => undefined),
+      removeItem: vi.fn(async () => undefined),
+    };
+    const auth = {
+      storage,
+      storageKey: 'heflex-session',
+      persistSession: true,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+      flowType: 'pkce' as const,
+    };
+    TestBed.configureTestingModule({
+      providers: [provideZonelessChangeDetection(), provideSupabaseAuth({ ...config, auth })],
+    });
+
+    TestBed.inject(AUTH_SERVICE);
+
+    expect(createClientMock).toHaveBeenCalledWith(config.url, config.anonKey, { auth });
+    expect(createClientMock.mock.calls[0][2].auth.storage).toBe(storage);
+  });
+
+  it('drops keys set to undefined, so they keep Supabase defaults instead of overriding them', () => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideZonelessChangeDetection(),
+        provideSupabaseAuth({ ...config, auth: { storageKey: 'heflex-session', persistSession: undefined } }),
+      ],
+    });
+
+    TestBed.inject(AUTH_SERVICE);
+
+    expect(createClientMock.mock.calls[0][2]).toEqual({ auth: { storageKey: 'heflex-session' } });
+  });
 });
