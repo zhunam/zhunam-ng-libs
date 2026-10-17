@@ -5,6 +5,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/), versioning foll
 
 ## [Unreleased]
 
+## [3.2.0] - 2026-10-17
+
 ### Added
 - `SupabaseAuthConfig.auth?: SupabaseAuthClientOptions`, forwarded to
   the Supabase client's `auth` options: `storage`, `storageKey`,

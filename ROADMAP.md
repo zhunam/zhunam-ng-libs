@@ -20,7 +20,7 @@ Calendar integration) completada y publicada.
 librería el 2026-09-29** (esta lista se desactualiza rápido, siempre
 confirmar contra `package.json` real antes de citarla en otro lado, no
 copiarla de memoria): `@zhunam/data-grid@4.2.0`,
-`@zhunam/form-builder@3.1.0`, `@zhunam/auth@3.0.0`,
+`@zhunam/form-builder@3.1.0`, `@zhunam/auth@3.2.0` (2026-10-17),
 `@zhunam/pdf-generator@2.0.0`, `@zhunam/calendar@2.0.0`.
 
 La siguiente y última fase de la secuencia numerada es el dashboard
@@ -62,7 +62,7 @@ data-grid, form-builder, pdf-generator) instead of standing alone.
    persistence). **DONE, published on npm as `@zhunam/form-builder@3.1.0`**
 3. **Modular auth system** (`libs/auth`, thin wrapper/starter around
    Firebase/Supabase Auth): 100% free. **DONE, published on npm as
-   `@zhunam/auth@3.0.0`**
+   `@zhunam/auth@3.2.0`**
 4. **Client-side document (PDF) generator** (`libs/pdf-generator`):
    mostly free, possible template sales (Gumroad). **DONE, published on
    npm as `@zhunam/pdf-generator@2.0.0`**
