@@ -71,8 +71,25 @@ function mapSupabaseError(error: unknown): AuthServiceError {
       return new AuthServiceError(AUTH_ERROR_CODES.tooManyRequests, message, error);
     case 'email_address_invalid':
       return new AuthServiceError(AUTH_ERROR_CODES.invalidEmail, message, error);
+    // Supabase's server returns this same code for a wrong code and an
+    // expired one ("Token has expired or is invalid"), so there's no way
+    // to tell expiredActionCode apart here.
+    case 'otp_expired':
+      return new AuthServiceError(AUTH_ERROR_CODES.invalidActionCode, message, error);
     default:
       return new AuthServiceError(AUTH_ERROR_CODES.unknown, message, error);
+  }
+}
+
+// Most failures come back as `{ error }`, but supabase-js rethrows
+// anything that isn't one of its own AuthErrors, e.g. a custom async
+// `storage` adapter whose setItem() rejects while saving a new session.
+// Without this, that rejection would reach the consumer unnormalized.
+async function runSupabase<T>(operation: () => Promise<T>): Promise<T> {
+  try {
+    return await operation();
+  } catch (error) {
+    throw error instanceof AuthServiceError ? error : mapSupabaseError(error);
   }
 }
 
@@ -117,65 +134,101 @@ export class SupabaseAuthService implements AuthService {
    */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async signIn(email: string, password: string, _options?: AuthSignInOptions): Promise<AuthUser> {
-    const { data, error } = await this.client.auth.signInWithPassword({ email, password });
-    if (error) throw mapSupabaseError(error);
-    return toAuthUser(data.user);
+    return runSupabase(async () => {
+      const { data, error } = await this.client.auth.signInWithPassword({ email, password });
+      if (error) throw mapSupabaseError(error);
+      return toAuthUser(data.user);
+    });
   }
 
   async signUp(email: string, password: string, profile?: AuthSignUpProfile): Promise<AuthUser> {
-    const { data, error } = await this.client.auth.signUp({
-      email,
-      password,
-      // "full_name" is the same key toAuthUser() reads first, see its
-      // own comment above for why (matches the common OAuth convention).
-      ...(profile?.displayName ? { options: { data: { full_name: profile.displayName } } } : {}),
+    return runSupabase(async () => {
+      const { data, error } = await this.client.auth.signUp({
+        email,
+        password,
+        // "full_name" is the same key toAuthUser() reads first, see its
+        // own comment above for why (matches the common OAuth convention).
+        ...(profile?.displayName ? { options: { data: { full_name: profile.displayName } } } : {}),
+      });
+      if (error) throw mapSupabaseError(error);
+      if (!data.user) {
+        throw new Error('Supabase signUp() did not return a user.');
+      }
+      return toAuthUser(data.user);
     });
-    if (error) throw mapSupabaseError(error);
-    if (!data.user) {
-      throw new Error('Supabase signUp() did not return a user.');
-    }
-    return toAuthUser(data.user);
   }
 
   async signOut(): Promise<void> {
-    const { error } = await this.client.auth.signOut();
-    if (error) throw mapSupabaseError(error);
+    return runSupabase(async () => {
+      const { error } = await this.client.auth.signOut();
+      if (error) throw mapSupabaseError(error);
+    });
   }
 
   async resetPassword(email: string): Promise<void> {
-    const { error } = await this.client.auth.resetPasswordForEmail(email);
-    if (error) throw mapSupabaseError(error);
+    return runSupabase(async () => {
+      const { error } = await this.client.auth.resetPasswordForEmail(email);
+      if (error) throw mapSupabaseError(error);
+    });
   }
 
   /**
    * Supabase-specific: `code` is ignored entirely. Clicking the reset
    * link already establishes a recovery session client-side, through
    * whatever `detectSessionInUrl`/`flowType` the client was created
-   * with (see `provide-supabase-auth.ts`); by the time this runs, the
-   * session `updateUser()` needs is already active, with nothing left
-   * for a code to select.
+   * with (see `provide-supabase-auth.ts`), and `verifyResetCode()` does
+   * the same from a typed-in code; by the time this runs, the session
+   * `updateUser()` needs is already active, with nothing left for a
+   * code to select.
    */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async completePasswordReset(newPassword: string, _code?: string): Promise<void> {
-    const { error } = await this.client.auth.updateUser({ password: newPassword });
-    if (error) throw mapSupabaseError(error);
+    return runSupabase(async () => {
+      const { error } = await this.client.auth.updateUser({ password: newPassword });
+      if (error) throw mapSupabaseError(error);
+    });
+  }
+
+  /**
+   * Supabase-specific: `email` is required, `verifyOtp()` has no way to
+   * look up the account from the 6-digit code alone. On success the
+   * client emits `PASSWORD_RECOVERY` with the recovery session, which is
+   * what sets `currentUser()` (constructor listener above).
+   */
+  async verifyResetCode(code: string, email?: string): Promise<void> {
+    return runSupabase(async () => {
+      if (!email) {
+        throw new AuthServiceError(
+          AUTH_ERROR_CODES.invalidEmail,
+          'An email is required to verify a password reset code with Supabase.',
+          undefined,
+        );
+      }
+      if (!code) {
+        throw new AuthServiceError(AUTH_ERROR_CODES.invalidActionCode, 'A password reset code is required.', undefined);
+      }
+      const { error } = await this.client.auth.verifyOtp({ email, token: code, type: 'recovery' });
+      if (error) throw mapSupabaseError(error);
+    });
   }
 
   async updateProfile(displayName: string): Promise<void> {
-    if (!this.userSignal()) {
-      // Same local-guard pattern as changePassword() below: reject
-      // before ever reaching the SDK when there's no signed-in user.
-      throw new AuthServiceError(AUTH_ERROR_CODES.userNotFound, 'No user is currently signed in.', undefined);
-    }
-    // "full_name" matches toAuthUser()'s own read order above. The
-    // server merges this into the user's existing user_metadata rather
-    // than replacing it wholesale (confirmed against the PUT /user REST
-    // endpoint this client calls, not the admin API's replace
-    // semantics), so other metadata keys (e.g. from an OAuth sign-up)
-    // survive this call. onAuthStateChange's own USER_UPDATED listener
-    // (constructor above) updates userSignal, no manual set needed here.
-    const { error } = await this.client.auth.updateUser({ data: { full_name: displayName } });
-    if (error) throw mapSupabaseError(error);
+    return runSupabase(async () => {
+      if (!this.userSignal()) {
+        // Same local-guard pattern as changePassword() below: reject
+        // before ever reaching the SDK when there's no signed-in user.
+        throw new AuthServiceError(AUTH_ERROR_CODES.userNotFound, 'No user is currently signed in.', undefined);
+      }
+      // "full_name" matches toAuthUser()'s own read order above. The
+      // server merges this into the user's existing user_metadata rather
+      // than replacing it wholesale (confirmed against the PUT /user REST
+      // endpoint this client calls, not the admin API's replace
+      // semantics), so other metadata keys (e.g. from an OAuth sign-up)
+      // survive this call. onAuthStateChange's own USER_UPDATED listener
+      // (constructor above) updates userSignal, no manual set needed here.
+      const { error } = await this.client.auth.updateUser({ data: { full_name: displayName } });
+      if (error) throw mapSupabaseError(error);
+    });
   }
 
   /**
@@ -196,28 +249,32 @@ export class SupabaseAuthService implements AuthService {
    * session from the sign-in just above always is.
    */
   async changePassword(currentPassword: string, newPassword: string): Promise<void> {
-    const user = this.userSignal();
-    if (!user || !user.email) {
-      // Same local-guard pattern as updateProfile() above: no email
-      // means no password credential exists to verify currentPassword
-      // against (e.g. a phone-only account, or one linked only to an
-      // OAuth provider).
-      throw new AuthServiceError(AUTH_ERROR_CODES.userNotFound, 'No user is currently signed in.', undefined);
-    }
+    return runSupabase(async () => {
+      const user = this.userSignal();
+      if (!user || !user.email) {
+        // Same local-guard pattern as updateProfile() above: no email
+        // means no password credential exists to verify currentPassword
+        // against (e.g. a phone-only account, or one linked only to an
+        // OAuth provider).
+        throw new AuthServiceError(AUTH_ERROR_CODES.userNotFound, 'No user is currently signed in.', undefined);
+      }
 
-    const { error: signInError } = await this.client.auth.signInWithPassword({
-      email: user.email,
-      password: currentPassword,
+      const { error: signInError } = await this.client.auth.signInWithPassword({
+        email: user.email,
+        password: currentPassword,
+      });
+      if (signInError) throw mapSupabaseError(signInError);
+
+      const { error: updateError } = await this.client.auth.updateUser({ password: newPassword });
+      if (updateError) throw mapSupabaseError(updateError);
     });
-    if (signInError) throw mapSupabaseError(signInError);
-
-    const { error: updateError } = await this.client.auth.updateUser({ password: newPassword });
-    if (updateError) throw mapSupabaseError(updateError);
   }
 
   async getIdToken(): Promise<string | null> {
-    const { data, error } = await this.client.auth.getSession();
-    if (error) throw mapSupabaseError(error);
-    return data.session?.access_token ?? null;
+    return runSupabase(async () => {
+      const { data, error } = await this.client.auth.getSession();
+      if (error) throw mapSupabaseError(error);
+      return data.session?.access_token ?? null;
+    });
   }
 }

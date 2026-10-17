@@ -80,3 +80,15 @@
       estilo propio. `@zhunam/form-builder` peerDependency subido a
       `^3.0.0`. `MockAuthService` de la demo actualizado para reflejar
       los nuevos códigos/parámetros sin cambiar ningún texto visible.
+- [x] 3.2.0 (aditivo, sin breaking change), pedido para uso en Electron:
+      `SupabaseAuthConfig.auth?` reenvía `storage` (adaptadores sync o
+      async), `storageKey`, `persistSession`, `autoRefreshToken`,
+      `detectSessionInUrl` y `flowType` a `createClient`, con tipos
+      propios (`SupabaseAuthClientOptions`, `SupabaseAuthStorage`), sin
+      exponer tipos de supabase-js. Sin `auth`, `createClient` se llama
+      exactamente como en 3.1.0. `verifyResetCode?(code, email?)` opcional
+      en `AuthService` para recuperar la contraseña con código en vez de
+      enlace (Supabase `verifyOtp` type `recovery`, Firebase
+      `verifyPasswordResetCode` guardando el código en un campo `#privado`).
+      Fix: errores que supabase-js lanza (no devuelve) ahora se normalizan
+      a `AuthServiceError`.

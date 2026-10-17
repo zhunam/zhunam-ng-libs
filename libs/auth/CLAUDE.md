@@ -42,10 +42,21 @@ Ver ROADMAP.md en esta misma carpeta para el detalle completo.
   `displayName` de primera clase: se lee de `user_metadata.full_name` o
   `user_metadata.name` (lo que exista), cae a `null` si no hay ninguno.
   Ver el comentario en `toAuthUser()` del entry point. Los errores de
-  Supabase no se lanzan como excepción (vienen como `{ data, error }`);
-  la implementación los relanza (`throw error`) sin traducirlos, para
-  cumplir el contrato de `AuthService` (Promise que rechaza) sin alterar
-  el objeto de error real.
+  Supabase vienen como `{ data, error }` y se mapean con
+  `mapSupabaseError()` a `AuthServiceError`; además cada método corre
+  dentro de `runSupabase()`, porque supabase-js sí lanza (no devuelve)
+  todo error que no sea un `AuthError` propio, p. ej. un `storage`
+  async cuyo `setItem` rechaza. `SupabaseAuthConfig.auth` se reenvía a
+  `createClient` con tipos propios (`SupabaseAuthClientOptions`); sin
+  `auth`, `createClient` se llama con solo `(url, anonKey)`, como en
+  3.1.0. Limitación conocida del SDK: un `getItem` que rechaza durante
+  el arranque produce un unhandled rejection dentro de supabase-js
+  (promesa no esperada en `onAuthStateChange`), fuera del alcance de
+  esta librería; el README pide resolver `null` en ese caso.
+- Recuperación con código (`verifyResetCode`): en Firebase el código
+  verificado vive en `#verifiedResetCode` (campo privado real, con test
+  de JSON.stringify/Object.keys/Reflect.ownKeys), se limpia al
+  completar el reset o si una verificación posterior falla.
 - `@zhunam/auth/form-ui`: `LoginForm`, `RegisterForm`, `ResetPasswordForm`,
   tres componentes standalone independientes que envuelven
   `<lib-form-builder>` de `@zhunam/form-builder` internamente e inyectan

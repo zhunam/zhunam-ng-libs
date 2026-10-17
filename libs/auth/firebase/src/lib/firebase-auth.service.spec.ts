@@ -16,6 +16,7 @@ const {
   reauthenticateWithCredentialMock,
   updatePasswordMock,
   emailAuthProviderCredentialMock,
+  verifyPasswordResetCodeMock,
 } = vi.hoisted(() => ({
   onAuthStateChangedMock: vi.fn(),
   signInWithEmailAndPasswordMock: vi.fn(),
@@ -28,6 +29,7 @@ const {
   reauthenticateWithCredentialMock: vi.fn(),
   updatePasswordMock: vi.fn(),
   emailAuthProviderCredentialMock: vi.fn(),
+  verifyPasswordResetCodeMock: vi.fn(),
 }));
 
 vi.mock('firebase/auth', () => ({
@@ -41,6 +43,7 @@ vi.mock('firebase/auth', () => ({
   confirmPasswordReset: confirmPasswordResetMock,
   reauthenticateWithCredential: reauthenticateWithCredentialMock,
   updatePassword: updatePasswordMock,
+  verifyPasswordResetCode: verifyPasswordResetCodeMock,
   EmailAuthProvider: { credential: emailAuthProviderCredentialMock },
   browserLocalPersistence: 'browserLocalPersistence-sentinel',
   browserSessionPersistence: 'browserSessionPersistence-sentinel',
@@ -501,6 +504,114 @@ describe('FirebaseAuthService', () => {
       });
       expect(service.currentUser()).toEqual(beforeUser);
       setFakeAuthCurrentUser(null);
+    });
+  });
+
+  describe('A7: verifyResetCode', () => {
+    function firebaseError(code: string): Error {
+      return Object.assign(new Error(`Firebase: Error (${code}).`), { code });
+    }
+
+    it('verifies the code, then completePasswordReset without a code uses the verified one', async () => {
+      const service = createService();
+      verifyPasswordResetCodeMock.mockResolvedValue('user@example.com');
+      confirmPasswordResetMock.mockResolvedValue(undefined);
+
+      await service.verifyResetCode('oob-code-123');
+      await service.completePasswordReset('new-password');
+
+      expect(verifyPasswordResetCodeMock).toHaveBeenCalledWith(fakeAuth, 'oob-code-123');
+      expect(confirmPasswordResetMock).toHaveBeenCalledWith(fakeAuth, 'oob-code-123', 'new-password');
+    });
+
+    it('an explicit code passed to completePasswordReset wins over the verified one', async () => {
+      const service = createService();
+      verifyPasswordResetCodeMock.mockResolvedValue('user@example.com');
+      confirmPasswordResetMock.mockResolvedValue(undefined);
+
+      await service.verifyResetCode('verified-code');
+      await service.completePasswordReset('new-password', 'explicit-code');
+
+      expect(confirmPasswordResetMock).toHaveBeenCalledWith(fakeAuth, 'explicit-code', 'new-password');
+    });
+
+    it('ignores the email argument', async () => {
+      const service = createService();
+      verifyPasswordResetCodeMock.mockResolvedValue('user@example.com');
+
+      await service.verifyResetCode('oob-code-123', 'other@example.com');
+
+      expect(verifyPasswordResetCodeMock).toHaveBeenCalledWith(fakeAuth, 'oob-code-123');
+    });
+
+    it('an empty code fails locally with invalidActionCode and never calls the SDK', async () => {
+      const service = createService();
+
+      await expect(service.verifyResetCode('')).rejects.toMatchObject({ code: AUTH_ERROR_CODES.invalidActionCode });
+      expect(verifyPasswordResetCodeMock).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['auth/invalid-action-code', AUTH_ERROR_CODES.invalidActionCode],
+      ['auth/expired-action-code', AUTH_ERROR_CODES.expiredActionCode],
+    ])('maps %s to the normalized code, cause preserved', async (firebaseCode, expectedCode) => {
+      const service = createService();
+      const original = firebaseError(firebaseCode);
+      verifyPasswordResetCodeMock.mockRejectedValue(original);
+
+      const rejection = service.verifyResetCode('bad-code');
+
+      await expect(rejection).rejects.toBeInstanceOf(AuthServiceError);
+      await expect(rejection).rejects.toMatchObject({ code: expectedCode, cause: original });
+    });
+
+    it('a failed verification discards a previously verified code', async () => {
+      const service = createService();
+      verifyPasswordResetCodeMock.mockResolvedValueOnce('user@example.com');
+      await service.verifyResetCode('first-code');
+      verifyPasswordResetCodeMock.mockRejectedValueOnce(firebaseError('auth/expired-action-code'));
+      await expect(service.verifyResetCode('second-code')).rejects.toBeInstanceOf(AuthServiceError);
+
+      await expect(service.completePasswordReset('new-password')).rejects.toMatchObject({
+        code: AUTH_ERROR_CODES.invalidActionCode,
+      });
+      expect(confirmPasswordResetMock).not.toHaveBeenCalled();
+    });
+
+    it('the verified code is single-use: cleared once completePasswordReset succeeds', async () => {
+      const service = createService();
+      verifyPasswordResetCodeMock.mockResolvedValue('user@example.com');
+      confirmPasswordResetMock.mockResolvedValue(undefined);
+      await service.verifyResetCode('oob-code-123');
+      await service.completePasswordReset('new-password');
+
+      await expect(service.completePasswordReset('another-password')).rejects.toMatchObject({
+        code: AUTH_ERROR_CODES.invalidActionCode,
+      });
+      expect(confirmPasswordResetMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('keeps the verified code when completePasswordReset fails, so the user can retry with another password', async () => {
+      const service = createService();
+      verifyPasswordResetCodeMock.mockResolvedValue('user@example.com');
+      confirmPasswordResetMock.mockRejectedValueOnce(firebaseError('auth/weak-password')).mockResolvedValueOnce(undefined);
+      await service.verifyResetCode('oob-code-123');
+
+      await expect(service.completePasswordReset('weak')).rejects.toMatchObject({ code: AUTH_ERROR_CODES.weakPassword });
+      await service.completePasswordReset('strong-password');
+
+      expect(confirmPasswordResetMock).toHaveBeenLastCalledWith(fakeAuth, 'oob-code-123', 'strong-password');
+    });
+
+    it('never exposes the verified code through JSON.stringify, Object.keys or Reflect.ownKeys', async () => {
+      const service = createService();
+      verifyPasswordResetCodeMock.mockResolvedValue('user@example.com');
+      await service.verifyResetCode('secret-oob-code');
+
+      expect(JSON.stringify(service)).not.toContain('secret-oob-code');
+      const ownValues = Reflect.ownKeys(service).map((key) => (service as unknown as Record<PropertyKey, unknown>)[key]);
+      expect(ownValues).not.toContain('secret-oob-code');
+      expect(Object.keys(service).some((key) => /code/i.test(key))).toBe(false);
     });
   });
 });
